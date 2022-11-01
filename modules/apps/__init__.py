@@ -1,7 +1,6 @@
-from email.mime import image
-from corerest import *
-from coreetcd import *
 from flask import request
+from corerest import *
+from corerqlite import *
 import docker
 import uuid
 docker_client = docker.from_env()
@@ -11,51 +10,47 @@ def install_app():
     app_id = str(uuid.uuid4())
     container_id = docker_client.containers.create(name=app_id+"_"+request.args["name"], detach=True, image=request.args["image"], 
         ports={request.args["inport"]: request.args["outport"]},).id
-    etcd_client.write('/apps/' + app_id + "/status", "stopped")
-    etcd_client.write('/apps/' + app_id + "/name", request.args["name"])
-    etcd_client.write('/apps/' + app_id + "/image", request.args["image"])
-    etcd_client.write('/apps/' + app_id + "/inport", request.args["inport"])
-    etcd_client.write('/apps/' + app_id + "/outport", request.args["outport"])
-    etcd_client.write('/apps/' + app_id + "/container_id", container_id)
+    db_cursor.execute("""
+        INSERT INTO app (id, owner_user_id, name, container_id, image, inner_port, outer_port, status) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (app_id, request.user["id"], request.args["name"], container_id, 
+        request.args["image"], request.args["inport"], request.args["outport"], 
+        "stopped"
+    ))
     return {"result": "ok"}
 
 @flask_app.route("/apps/start")
 def start_app():
     app_id = request.args["id"]
-    docker_client.containers.get(etcd_client.read(app_id + "/container_id").value).start()
-    etcd_client.write(app_id + "/status", "running")
+    app = db_cursor.execute("SELECT * FROM app WHERE id = ?", (app_id,)).fetchone()
+    docker_client.containers.get(app["container_id"]).start()
+    db_cursor.execute("UPDATE app SET status = ? WHERE id = ?", ("running", app_id))
     return {"result": "ok"}
 
 @flask_app.route("/apps/stop")
 def stop_app():
     app_id = request.args["id"]
-    docker_client.containers.get(etcd_client.read(app_id + "/container_id").value).stop()
-    etcd_client.write(app_id + "/status", "stopped")
+    app = db_cursor.execute("SELECT * FROM app WHERE id = ?", (app_id,)).fetchone()
+    docker_client.containers.get(app["container_id"]).stop()
+    db_cursor.execute("UPDATE app SET status = ? WHERE id = ?", ("stopped", app_id))
     return {"result": "ok"}
 
 @flask_app.route("/apps/uninstall")
 def uninstall_app():
     app_id = request.args["id"]
-    container_id = etcd_client.read(app_id + "/container_id").value
+    print(app_id)
+    app = db_cursor.execute("SELECT * FROM app WHERE id = ?", (app_id,)).fetchone()
+    container_id = app["container_id"]
     try:
         docker_client.containers.get(container_id).stop()
         docker_client.containers.get(container_id).remove()
     except:
         pass
-    etcd_client.delete(request.args["id"], True)
+    db_cursor.execute("DELETE FROM app WHERE id = ?", (app_id,))
     return {"result": "ok"}
 
 @flask_app.route("/apps/list")
 def list_app():
-    def get_item(item):
-        return {
-            "id": item.key,
-            "name": etcd_client.read(item.key + "/name").value,
-            "status": etcd_client.get(item.key + "/status").value,
-            "image": etcd_client.get(item.key + "/image").value,
-            "inport": etcd_client.get(item.key + "/inport").value,
-            "outport": etcd_client.get(item.key + "/outport").value,
-            "container_id": etcd_client.get(item.key + "/container_id").value,
-        }
+    apps = db_cursor.execute("SELECT * FROM app").fetchall()
     
-    return list(map(get_item, filter(lambda item: item.key != '/apps', etcd_client.read('/apps').children)))
+    return list(map(lambda item: dict(item), apps))

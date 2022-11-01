@@ -1,5 +1,5 @@
 from corerest import *
-from coreetcd import *
+from corerqlite import *
 from flask import request
 import config
 import uuid
@@ -8,24 +8,24 @@ import jwt
 @flask_app.route("/users/add")
 def add_user():
     id = str(uuid.uuid4())
-    etcd_client.write('/users/' + id + '/name', request.args["name"])
-    etcd_client.write('/users/' + id + '/roles', "user")
+    db_cursor.execute("INSERT INTO user (id, name, role) VALUES (?, ?, ?)", (id, request.args["name"], "user"))
     return {"result": "ok"}
 
 @flask_app.route("/users/list")
 def list_user():
-    def filter_json(item):
-        user = {}
-        user["roles"] = etcd_client.get(item.key + "/roles").value.split(",")
-        user["key"] = item.key
-        user["token"] = str(jwt.encode({"id": item.key}, config.secret, algorithm="HS256"), "utf-8")
+    def filter_json(user):
+        user = dict(user)
+        user["token"] = str(jwt.encode({"id": user["id"]}, config.secret, algorithm="HS256"), "utf-8")
         return user
-    return list(map(lambda item: filter_json(item), etcd_client.read('/users').children))
+    users = db_cursor.execute("SELECT * FROM user").fetchall()
+    return list(map(lambda item: filter_json(item), users))
 
-try:
-    etcd_client.get('/root')
-except:
-    etcd_client.write('/users/root/name', "root")
-    etcd_client.write('/users/root/roles', "root")
+root_user = db_cursor.execute("SELECT * FROM user WHERE role = 'admin' LIMIT 1").fetchone()
+if (root_user == None):
+    id = str(uuid.uuid4())
+    name = "root"
+    role = "admin"
+    db_cursor.execute("INSERT INTO user VALUES (?, ?, ?)", (id, name, role))
+    root_user = db_cursor.execute("SELECT * FROM user WHERE role = 'admin' LIMIT 1").fetchone()
 
-print("root token: " + str(jwt.encode({"id": "/users/root"}, config.secret, algorithm="HS256"), "utf-8"))
+print("root token: " + str(jwt.encode({"id": root_user["id"]}, config.secret, algorithm="HS256"), "utf-8"))

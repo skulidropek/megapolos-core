@@ -1,14 +1,10 @@
 from corerest import *
-from coreetcd import *
+from corerqlite import *
 from flask import request
 import modules.users
 import modules.apps
 import config
 import jwt
-
-@flask_app.route("/")
-def hello_world():
-    return etcd_client.get('/b').value
 
 port = 5100
 
@@ -17,9 +13,9 @@ def auth():
     try:
         token = dict(request.args)["token"]
         auth_data = jwt.decode(token, config.secret, algorithms=["HS256"])
-        try:
-            etcd_client.get(auth_data["id"])
-        except:
+        user = db_cursor.execute("SELECT * FROM user WHERE id = ?", (auth_data["id"],)).fetchone()
+        request.user = user
+        if (user == None):
             return {"result": "error", "error": "auth"}
         return
     except:
