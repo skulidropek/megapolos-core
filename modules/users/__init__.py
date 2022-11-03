@@ -17,7 +17,9 @@ def list_user():
         user = dict(user)
         user["token"] = str(jwt.encode({"id": user["id"]}, config.secret, algorithm="HS256"), "utf-8")
         return user
+    print("before_users_list")
     users = db_cursor.execute("SELECT * FROM user").fetchall()
+    print("after_users_list")
     return list(map(lambda item: filter_json(item), users))
 
 root_user = db_cursor.execute("SELECT * FROM user WHERE role = 'admin' LIMIT 1").fetchone()
