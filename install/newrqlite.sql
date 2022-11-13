@@ -5,6 +5,9 @@ group_user (
     id text not null primary key,
     name text not null,
     rest_api text not null,
+    create_date date not null, 
+    update_date date not null,
+    disable_date date not null 
 )
 
 -- users 
@@ -14,7 +17,12 @@ user (
     id text not null primary key,
     name text not null,
     group_user_id text not null,
-    rest_api text not null 
+    rest_api text not null,
+    -- enable/disable
+    user_status text not null,
+    create_date date not null, 
+    update_date date not null,
+    disable_date date not null 
     FOREIGN KEY (group_user_id) REFERENCES group_user(id)
 )
 
@@ -25,6 +33,8 @@ app (
     name text not null unique,
     owner_user_id text not null,
     status text not null,
+    create_date date not null, 
+    update_date date not null,
     FOREIGN KEY (owner_user_id) REFERENCES user(id)
 )
 
@@ -34,8 +44,14 @@ image (
     id text not null primary key,
     name text not null unique,
     app_id text not null,
-    has_state int not null,
+    repository not null,
     --true statefull/false stateless
+    has_state int not null,
+    -- git branch name or other
+    tags text not null,
+    create_date date not null, 
+    update_date date not null,
+    commit_id text not null, 
     FOREIGN KEY (app_id) REFERENCES app(id)
 )
 
@@ -43,13 +59,18 @@ image (
 CREATE TABLE IF NOT EXISTS
 app_instance (
     id text not null primary key,
+    -- image tag, git branch name 
     name text not null unique,
     user_id text not null,
-    status text not null,
+    life_status text not null,
+    app_instance_url text not null,
     app_id text not null, 
     instance_type_id text not null,  
     deploy_strategy_id text not null, 
     remove_strategy_id text not null, 
+    create_date date not null, 
+    update_date date not null, 
+    remove_date date not null,
     FOREIGN KEY (instance_type_id) REFERENCES instance_type(id)
     FOREIGN KEY (deploy_strategy_id) REFERENCES deploy_strategy(id)
     FOREIGN KEY (remove_strategy_id) REFERENCES remove_strategy(id)
@@ -111,6 +132,10 @@ container (
     inner_port integer not null,
     outer_port integer not null,
     app_instance_id text not null,
+    life_status text not null,
+    create_date date not null, 
+    update_date date not null, 
+    remove_date date not null,
     FOREIGN KEY (app_instance_id) REFERENCES app_instance(id)
     FOREIGN KEY (node_id) REFERENCES node(id)
     FOREIGN KEY (image_id) REFERENCES image(id)
@@ -123,6 +148,11 @@ node (
     url text not null,
     cpu text not null,
     memory text not null,
+    -- iswork, restart, remove
+    life_status text not null,    
+    create_date date not null, 
+    update_date date not null, 
+    remove_date date not null,
 )
 
 -- ?
@@ -149,6 +179,10 @@ device (
     node_id text not null,
     driver_id text not null,
     url text not null,
+    life_status text not null, 
+    create_date date not null, 
+    update_date date not null, 
+    remove_date date not null,
     FOREIGN KEY (device_type_id) REFERENCES device_type(id)
     FOREIGN KEY (node_id) REFERENCES node(id)
     FOREIGN KEY (driver_id) REFERENCES driver(id)
@@ -171,7 +205,7 @@ VALUES
     ("mongo_db"),
     ("broker");
 
-
+-- compile time: git, runner, images
 CREATE TABLE IF NOT EXISTS
 app_device (
     id text not null primary key,
@@ -179,4 +213,14 @@ app_device (
     device_id text not null,
     FOREIGN KEY (device_id) REFERENCES device(id)
     FOREIGN KEY (app_id) REFERENCES app(id)
+)
+
+-- runtime: proxy, db, broker 
+CREATE TABLE IF NOT EXISTS
+app_instance_device (
+    id text not null primary key,
+    app_instance_id text not null,     
+    device_id text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id)
+    FOREIGN KEY (app_instance_id) REFERENCES app_instance(id)
 )
