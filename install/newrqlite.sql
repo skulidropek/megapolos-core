@@ -1,11 +1,11 @@
-## user group
+-- user group
 CREATE TABLE IF NOT EXISTS
 group_user (
     id text not null primary key,
     name text not null,
 )
 
-## users 
+-- users 
 CREATE TABLE IF NOT EXISTS
 user (
     id text not null primary key,
@@ -24,18 +24,26 @@ app (
     FOREIGN KEY (owner_user_id) REFERENCES user(id)
 )
 
--- image
+-- runtime image
 CREATE TABLE IF NOT EXISTS
 container (
     id text not null primary key,
     name text not null unique,
-    image text not null
+    image_id text not null
     app_id text not null,
     node_id text not null,
     inner_port integer not null,
     outer_port integer not null,
     FOREIGN KEY (app_id) REFERENCES app(id)
     FOREIGN KEY (node_id) REFERENCES node(id)
+    FOREIGN KEY (image_id) REFERENCES image(id)
+)
+
+-- images can be install
+CREATE TABLE IF NOT EXISTS
+image (
+    id text not null primary key,
+    name text not null unique,
 )
 
 CREATE TABLE IF NOT EXISTS
@@ -43,6 +51,14 @@ node (
     id text not null primary key,
     name text not null unique,
     url text not null,
+    cpu text not null,
+    memory text not null,
+)
+
+CREATE TABLE IF NOT EXISTS
+volume (
+    id text not null primary key,
+    name text not null unique,
 )
 
 CREATE TABLE IF NOT EXISTS
@@ -59,9 +75,11 @@ device (
     id text not null primary key,
     name text not null unique,
     device_type_id text not null,
+    node_id text not null,
     driver_id text not null,
     url text not null,
     FOREIGN KEY (device_type_id) REFERENCES device_type(id)
+    FOREIGN KEY (node_id) REFERENCES node(id)
     FOREIGN KEY (driver_id) REFERENCES driver(id)
 )
 
