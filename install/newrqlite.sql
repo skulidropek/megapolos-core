@@ -155,13 +155,6 @@ node (
     remove_date date not null,
 )
 
--- ?
-CREATE TABLE IF NOT EXISTS
-volume (
-    id text not null primary key,
-    name text not null unique,
-)
-
 CREATE TABLE IF NOT EXISTS
 driver (
     id text not null primary key,
@@ -197,6 +190,7 @@ device_type (
 
 INSERT INTO device_type (name)
 VALUES
+    ("volume"),
 	("git"),
 	("runner"),
 	("images"),    
