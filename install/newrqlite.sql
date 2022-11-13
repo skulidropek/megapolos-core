@@ -31,9 +31,11 @@ container (
     name text not null unique,
     image text not null
     app_id text not null,
+    node_id text not null,
     inner_port integer not null,
     outer_port integer not null,
     FOREIGN KEY (app_id) REFERENCES app(id)
+    FOREIGN KEY (node_id) REFERENCES node(id)
 )
 
 CREATE TABLE IF NOT EXISTS
@@ -41,7 +43,6 @@ node (
     id text not null primary key,
     name text not null unique,
     url text not null,
-    FOREIGN KEY (app_id) REFERENCES app(id)
 )
 
 CREATE TABLE IF NOT EXISTS
