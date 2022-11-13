@@ -26,7 +26,7 @@ user (
     FOREIGN KEY (group_user_id) REFERENCES group_user(id)
 )
 
--- docker compose
+-- analogue docker compose
 CREATE TABLE IF NOT EXISTS
 app (
     id text not null primary key,
@@ -55,7 +55,7 @@ image (
     FOREIGN KEY (app_id) REFERENCES app(id)
 )
 
--- docker compose runtime / helm chart
+-- analogue docker compose runtime / analogue helm chart
 CREATE TABLE IF NOT EXISTS
 app_instance (
     id text not null primary key,
