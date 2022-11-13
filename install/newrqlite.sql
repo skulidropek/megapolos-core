@@ -24,26 +24,76 @@ app (
     FOREIGN KEY (owner_user_id) REFERENCES user(id)
 )
 
--- runtime image
-CREATE TABLE IF NOT EXISTS
-container (
-    id text not null primary key,
-    name text not null unique,
-    image_id text not null
-    app_id text not null,
-    node_id text not null,
-    inner_port integer not null,
-    outer_port integer not null,
-    FOREIGN KEY (app_id) REFERENCES app(id)
-    FOREIGN KEY (node_id) REFERENCES node(id)
-    FOREIGN KEY (image_id) REFERENCES image(id)
-)
-
 -- images can be install
 CREATE TABLE IF NOT EXISTS
 image (
     id text not null primary key,
     name text not null unique,
+    app_id text not null,
+    FOREIGN KEY (app_id) REFERENCES app(id)
+)
+
+-- docker compose runtime helm chart
+CREATE TABLE IF NOT EXISTS
+app_instance (
+    id text not null primary key,
+    name text not null unique,
+    owner_user_id text not null,
+    status text not null,
+    app_id text not null, 
+    instance_type_id text not null,  
+    deploy_strategy_id text not null, 
+    FOREIGN KEY (instance_type_id) REFERENCES instance_type(id)
+    FOREIGN KEY (deploy_strategy_id) REFERENCES deploy_strategy(id)
+    FOREIGN KEY (app_id) REFERENCES app(id)
+    FOREIGN KEY (owner_user_id) REFERENCES user(id)
+)
+
+-- prod, test, demo
+CREATE TABLE IF NOT EXISTS
+instance_type (
+    id text not null primary key,
+    name text not null unique,
+)
+
+INSERT INTO instance_type (name)
+VALUES
+	("prod"),
+	("test"),
+	("demo"),    
+	("master"),
+    ("feature");
+
+-- rolling, recreate, bg: blue/green, canary, dark: A/B
+CREATE TABLE IF NOT EXISTS
+deploy_strategy (
+    id text not null primary key,
+    name text not null unique,
+)
+
+INSERT INTO deploy_strategy (name)
+VALUES
+	("rolling"),
+	("recreate"),
+	("bg"),    
+	("proxy"),
+    ("canary"),
+    ("dark");
+
+-- runtime image
+CREATE TABLE IF NOT EXISTS
+container (
+    id text not null primary key,
+    docker_runtime_id text not null,
+    name text not null unique,
+    image_id text not null,
+    node_id text not null,
+    inner_port integer not null,
+    outer_port integer not null,
+    app_instance_id text not null,
+    FOREIGN KEY (app_instance_id) REFERENCES app_instance(id)
+    FOREIGN KEY (node_id) REFERENCES node(id)
+    FOREIGN KEY (image_id) REFERENCES image(id)
 )
 
 CREATE TABLE IF NOT EXISTS
@@ -55,6 +105,7 @@ node (
     memory text not null,
 )
 
+-- ?
 CREATE TABLE IF NOT EXISTS
 volume (
     id text not null primary key,
