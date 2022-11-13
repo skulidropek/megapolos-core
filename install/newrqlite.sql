@@ -1,16 +1,20 @@
 -- user group
+-- rest_api [command_uri + crud]
 CREATE TABLE IF NOT EXISTS
 group_user (
     id text not null primary key,
     name text not null,
+    rest_api text not null,
 )
 
 -- users 
+-- rest_api [command_uri + crud]
 CREATE TABLE IF NOT EXISTS
 user (
     id text not null primary key,
     name text not null,
-    group_user_id text not null
+    group_user_id text not null,
+    rest_api text not null 
     FOREIGN KEY (group_user_id) REFERENCES group_user(id)
 )
 
@@ -30,23 +34,27 @@ image (
     id text not null primary key,
     name text not null unique,
     app_id text not null,
+    has_state int not null,
+    --true statefull/false stateless
     FOREIGN KEY (app_id) REFERENCES app(id)
 )
 
--- docker compose runtime helm chart
+-- docker compose runtime / helm chart
 CREATE TABLE IF NOT EXISTS
 app_instance (
     id text not null primary key,
     name text not null unique,
-    owner_user_id text not null,
+    user_id text not null,
     status text not null,
     app_id text not null, 
     instance_type_id text not null,  
     deploy_strategy_id text not null, 
+    remove_strategy_id text not null, 
     FOREIGN KEY (instance_type_id) REFERENCES instance_type(id)
     FOREIGN KEY (deploy_strategy_id) REFERENCES deploy_strategy(id)
+    FOREIGN KEY (remove_strategy_id) REFERENCES remove_strategy(id)
     FOREIGN KEY (app_id) REFERENCES app(id)
-    FOREIGN KEY (owner_user_id) REFERENCES user(id)
+    FOREIGN KEY (user_id) REFERENCES user(id)
 )
 
 -- prod, test, demo
@@ -76,9 +84,21 @@ VALUES
 	("rolling"),
 	("recreate"),
 	("bg"),    
-	("proxy"),
     ("canary"),
-    ("dark");
+    ("dark"),
+    ("restore");
+
+-- full, achive
+CREATE TABLE IF NOT EXISTS
+remove_strategy (
+    id text not null primary key,
+    name text not null unique,
+)
+
+INSERT INTO remove_strategy (name)
+VALUES
+	("full"),
+	("achive");    
 
 -- runtime image
 CREATE TABLE IF NOT EXISTS
