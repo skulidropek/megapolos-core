@@ -1,8 +1,17 @@
+## user group
+CREATE TABLE IF NOT EXISTS
+group_user (
+    id text not null primary key,
+    name text not null,
+)
+
+## users 
 CREATE TABLE IF NOT EXISTS
 user (
     id text not null primary key,
     name text not null,
-    role text not null
+    group_user_id text not null
+    FOREIGN KEY (group_user_id) REFERENCES group_user(id)
 )
 
 -- docker compose
@@ -35,14 +44,24 @@ node (
     FOREIGN KEY (app_id) REFERENCES app(id)
 )
 
+CREATE TABLE IF NOT EXISTS
+driver (
+    id text not null primary key,
+    name text not null unique,
+    app_id text not null, 
+    FOREIGN KEY (app_id) REFERENCES app(id)
+)
+
 -- gitlab, runner, other programm
 CREATE TABLE IF NOT EXISTS
 device (
     id text not null primary key,
     name text not null unique,
     device_type_id text not null,
+    driver_id text not null,
     url text not null,
     FOREIGN KEY (device_type_id) REFERENCES device_type(id)
+    FOREIGN KEY (driver_id) REFERENCES driver(id)
 )
 
 -- git, runner, proxy other type
@@ -61,3 +80,13 @@ VALUES
     ("sql_db"),
     ("mongo_db"),
     ("broker");
+
+
+CREATE TABLE IF NOT EXISTS
+app_device (
+    id text not null primary key,
+    app_id text not null,     
+    device_id text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id)
+    FOREIGN KEY (app_id) REFERENCES app(id)
+)
