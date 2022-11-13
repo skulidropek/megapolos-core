@@ -26,7 +26,7 @@ user (
     FOREIGN KEY (group_user_id) REFERENCES group_user(id)
 )
 
--- analogue docker compose
+-- analogue docker compose manifest file
 CREATE TABLE IF NOT EXISTS
 app (
     id text not null primary key,
