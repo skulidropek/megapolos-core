@@ -1,0 +1,30 @@
+{
+  "name": "megapolos-core",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/megapolos/megapolos-core.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://gitlab.com/megapolos/megapolos-core/issues"
+  },
+  "homepage": "https://gitlab.com/megapolos/megapolos-core#readme",
+  "dependencies": {
+    "dockerode": "^3.3.4",
+    "express": "^4.18.2",
+    "rqlite-js": "^2.5.5"
+  },
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^8.27.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0"
+  }
+}
