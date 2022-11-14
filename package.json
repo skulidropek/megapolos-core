@@ -17,14 +17,29 @@
   },
   "homepage": "https://gitlab.com/megapolos/megapolos-core#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "dockerode": "^3.3.4",
     "express": "^4.18.2",
+    "jsonwebtoken": "^8.5.1",
     "rqlite-js": "^2.5.5"
   },
-  "type": "module",
   "devDependencies": {
+    "@types/dockerode": "^3.3.13",
+    "@types/express": "^4.17.14",
+    "@types/jsonwebtoken": "^8.5.9",
+    "@typescript-eslint/eslint-plugin": "^5.42.1",
+    "@typescript-eslint/parser": "^5.42.1",
     "eslint": "^8.27.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.26.0"
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-standard-with-typescript": "^23.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.5.1",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "prettier": "^2.7.1",
+    "ts-node": "^10.9.1",
+    "tsc": "^2.0.4",
+    "typescript": "^4.8.4"
   }
 }
