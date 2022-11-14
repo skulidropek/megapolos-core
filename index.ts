@@ -11,6 +11,7 @@ const port = 5100;
 console.log(__dirname);
 
 app.use(cors());
+app.use(express.json());
 app.use(async (req, res, next) => {
   let decoded;
   try {

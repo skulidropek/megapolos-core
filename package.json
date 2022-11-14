@@ -21,7 +21,8 @@
     "dockerode": "^3.3.4",
     "express": "^4.18.2",
     "jsonwebtoken": "^8.5.1",
-    "rqlite-js": "^2.5.5"
+    "rqlite-js": "^2.5.5",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/dockerode": "^3.3.13",
