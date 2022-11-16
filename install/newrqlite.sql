@@ -4,10 +4,10 @@ CREATE TABLE IF NOT EXISTS
 group_user (
     id text not null primary key,
     name text not null,
-    rest_api text not null,
+    rest_api text,
     create_date date not null, 
     update_date date not null,
-    disable_date date not null 
+    disable_date date
 )
 
 -- users 
@@ -17,12 +17,12 @@ user (
     id text not null primary key,
     name text not null,
     group_user_id text not null,
-    rest_api text not null,
+    rest_api text
     -- enable/disable
-    user_status text not null,
-    create_date date not null, 
-    update_date date not null,
-    disable_date date not null 
+    user_status text not null default 'enable',
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')),
+    disable_date date
     FOREIGN KEY (group_user_id) REFERENCES group_user(id)
 )
 
@@ -32,9 +32,9 @@ app (
     id text not null primary key,
     name text not null unique,
     owner_user_id text not null,
-    status text not null,
-    create_date date not null, 
-    update_date date not null,
+    status text default 'stoppd',
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')),
     FOREIGN KEY (owner_user_id) REFERENCES user(id)
 )
 
@@ -46,11 +46,11 @@ image (
     app_id text not null,
     repository not null,
     --true statefull/false stateless
-    has_state int not null,
+    has_state int not null default 1,
     -- git branch name or other
-    tags text not null,
-    create_date date not null, 
-    update_date date not null,
+    tags text not null default '',
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')),
     commit_id text not null, 
     FOREIGN KEY (app_id) REFERENCES app(id)
 )
@@ -68,9 +68,9 @@ app_instance (
     instance_type_id text not null,  
     deploy_strategy_id text not null, 
     remove_strategy_id text not null, 
-    create_date date not null, 
-    update_date date not null, 
-    remove_date date not null,
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')), 
+    remove_date date,
     FOREIGN KEY (instance_type_id) REFERENCES instance_type(id)
     FOREIGN KEY (deploy_strategy_id) REFERENCES deploy_strategy(id)
     FOREIGN KEY (remove_strategy_id) REFERENCES remove_strategy(id)
@@ -82,7 +82,7 @@ app_instance (
 CREATE TABLE IF NOT EXISTS
 instance_type (
     id text not null primary key,
-    name text not null unique,
+    name text not null unique
 )
 
 INSERT INTO instance_type (name)
@@ -97,7 +97,7 @@ VALUES
 CREATE TABLE IF NOT EXISTS
 deploy_strategy (
     id text not null primary key,
-    name text not null unique,
+    name text not null unique
 )
 
 INSERT INTO deploy_strategy (name)
@@ -113,7 +113,7 @@ VALUES
 CREATE TABLE IF NOT EXISTS
 remove_strategy (
     id text not null primary key,
-    name text not null unique,
+    name text not null unique
 )
 
 INSERT INTO remove_strategy (name)
@@ -130,12 +130,12 @@ container (
     image_id text not null,
     node_id text not null,
     inner_port integer not null,
-    outer_port integer not null,
+    outer_port integer,
     app_instance_id text not null,
-    life_status text not null,
-    create_date date not null, 
-    update_date date not null, 
-    remove_date date not null,
+    life_status text not null default 'running',
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')), 
+    remove_date date,
     FOREIGN KEY (app_instance_id) REFERENCES app_instance(id)
     FOREIGN KEY (node_id) REFERENCES node(id)
     FOREIGN KEY (image_id) REFERENCES image(id)
@@ -145,14 +145,14 @@ CREATE TABLE IF NOT EXISTS
 node (
     id text not null primary key,
     name text not null unique,
-    url text not null,
-    cpu text not null,
-    memory text not null,
+    url text,
+    cpu text,
+    memory text,
     -- iswork, restart, remove
-    life_status text not null,    
-    create_date date not null, 
-    update_date date not null, 
-    remove_date date not null,
+    life_status text not null default 'running',    
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')), 
+    remove_date date
 )
 
 CREATE TABLE IF NOT EXISTS
@@ -171,11 +171,11 @@ device (
     device_type_id text not null,
     node_id text not null,
     driver_id text not null,
-    url text not null,
-    life_status text not null, 
-    create_date date not null, 
-    update_date date not null, 
-    remove_date date not null,
+    url text,
+    life_status text not null default 'running', 
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')),
+    remove_date date,
     FOREIGN KEY (device_type_id) REFERENCES device_type(id)
     FOREIGN KEY (node_id) REFERENCES node(id)
     FOREIGN KEY (driver_id) REFERENCES driver(id)
@@ -185,7 +185,7 @@ device (
 CREATE TABLE IF NOT EXISTS
 device_type (
     id text not null primary key,
-    name text not null unique,
+    name text not null unique
 )
 
 INSERT INTO device_type (name)
