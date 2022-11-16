@@ -2,6 +2,7 @@ import { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import coreRqlite from '../../coreRqlite';
 import docker from '../../coreDocker';
+import { AppInput } from '../../types';
 
 const getPort = async () => {
   let usedPorts = (await coreRqlite.query('SELECT port FROM app')).toArray().map((app) => app.port);
@@ -23,17 +24,18 @@ const apps = (expressApp:Express) => {
     const appId = uuidv4();
     const userId = uuidv4();
     const outerPort = await getPort();
+    const input = req.body as AppInput;
     try {
-      docker.getImage(req.body.image);
+      docker.getImage(input.image);
     } catch {
-      await docker.pull(req.body.image);
+      await docker.pull(input.image);
     }
     const containerId = (await docker.createContainer({
-      name: appId + '_' + req.body.name,
-      Image: req.body.image,
+      name: appId + '_' + input.name,
+      Image: input.image,
       HostConfig: {
         PortBindings: {
-          [req.body.inport + '/tcp']: [{ HostPort: outerPort.toString() }],
+          [input.inport + '/tcp']: [{ HostPort: outerPort.toString() }],
         },
         ExtraHosts: [
           'host.docker.internal:host-gateway',
@@ -42,12 +44,12 @@ const apps = (expressApp:Express) => {
     })).id;
     await coreRqlite.execute([[`
         INSERT INTO user (id, name, role) VALUES (?, ?, ?)
-    `, userId, 'app_' + req.body.name, 'app']]);
+    `, userId, 'app_' + input.name, 'app']]);
     await coreRqlite.execute([[`
         INSERT INTO app (id, owner_user_id, name, container_id, image, inner_port, outer_port, status) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, appId, userId, req.body.name, containerId, 
-    req.body.image, req.body.inport, outerPort, 'stopped']]);
+    `, appId, userId, input.name, containerId, 
+    input.image, input.inport, outerPort, 'stopped']]);
     res.send({ 'result': 'ok' });
   });
 

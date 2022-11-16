@@ -8,8 +8,6 @@ import config from './config/config.json';
 const app = express();
 const port = 5100;
 
-console.log(__dirname);
-
 app.use(cors());
 app.use(express.json());
 app.use(async (req, res, next) => {
@@ -21,7 +19,7 @@ app.use(async (req, res, next) => {
     return;
   }
   const user = await coreRqlite.query([['SELECT * FROM user WHERE id = ?', decoded.id]]);
-  if (user.results[0].data.length === 0) {
+  if (user.toArray().length === 0) {
     res.status(401).send('Unauthorized');
   } else {
     next();
