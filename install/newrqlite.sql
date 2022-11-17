@@ -5,8 +5,8 @@ group_user (
     id text not null primary key,
     name text not null,
     rest_api text,
-    create_date date (DATETIME('now')),
-    update_date date (DATETIME('now')),
+    create_date date default (DATETIME('now')),
+    update_date date default (DATETIME('now')),
     disable_date date
 )
 
