@@ -10,12 +10,16 @@ const users = (app:Express) => {
     const id = uuidv4();
     const input = req.body as UserInput;
     
-    await coreRqlite.execute([['INSERT INTO user (id, name, role) VALUES (?, ?, ?)', id, input.name, 'user']]);
+    await coreRqlite.execute([['INSERT INTO user (id, name, group_user_id) VALUES (?, ?, ?)', id, input.name, 'user']]);
     res.send({ 'result': 'ok' });
   });
 
   app.post('/users/list', async (req, res) => {
-    const results = (await coreRqlite.query('SELECT * FROM user')).toArray();
+    console.log(req.user);
+    const results = (await coreRqlite.query(`
+    SELECT u.*, u.group_user_id as role FROM user u
+    LEFT JOIN group_user g ON g.id = u.group_user_id
+    `)).toArray();
     results.forEach((result) => {
       result.token = jwt.sign({ id: result.id }, config.secret);
     });
