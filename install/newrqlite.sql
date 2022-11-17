@@ -46,6 +46,7 @@ image (
     app_id text not null,
     repository not null,
     --true statefull/false stateless
+    inner_port integer not null,
     has_state int not null default 1,
     -- git branch name or other
     tags text not null default '',
@@ -129,7 +130,6 @@ container (
     name text not null unique,
     image_id text not null,
     node_id text not null,
-    inner_port integer not null,
     outer_port integer,
     app_instance_id text not null,
     life_status text not null default 'running',
