@@ -5,7 +5,7 @@ import docker from '../../coreDocker';
 import { AppInput } from '../../types';
 
 const getPort = async () => {
-  let usedPorts = (await coreRqlite.query('SELECT port FROM app')).toArray().map((app) => app.port);
+  let usedPorts = (await coreRqlite.query('SELECT outer_port FROM app')).toArray().map((app) => app.port);
   for (let i = 10000; i < 20000; i++) {
     if (!usedPorts.includes(i)) {
       return i;

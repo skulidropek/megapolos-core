@@ -9,6 +9,8 @@ const api = {
     if (results.hasError()) {
       throw new Error(results.getFirstError());
     }
+    const toArray = results.toArray.bind(results);
+    results.toArray = () => toArray().filter(row => Object.keys(row).length > 0);
     return results;
   },
   execute: async (query: string | string[][]):Promise<DataResults> => {
@@ -16,6 +18,8 @@ const api = {
     if (results.hasError()) {
       throw new Error(results.getFirstError());
     }
+    const toArray = results.toArray.bind(results);
+    results.toArray = () => toArray().filter(row => Object.keys(row).length > 0);
     return results;
   },
 };
