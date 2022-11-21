@@ -10,10 +10,28 @@ export interface AppInput {
 export interface AppInstanceInput {
   app_id: string,
   name: string,
+  containers: {
+    [key: string]: {
+      devices: {
+        [key: string]: {
+          parameters: [string],
+          env_parameters: {
+            [key: string]: string,
+          }
+        }
+      }
+  }
 }
 
 export interface UserInput {
   name: string,
+}
+
+export interface DeviceInput {
+  name: string,
+  type: string,
+  inner_port: number,
+  image: string,
 }
 
 declare global {
