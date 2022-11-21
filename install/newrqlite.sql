@@ -218,3 +218,24 @@ app_instance_device (
     FOREIGN KEY (device_id) REFERENCES device(id)
     FOREIGN KEY (app_instance_id) REFERENCES app_instance(id)
 )
+
+CREATE TABLE IF NOT EXISTS
+container_device_env_option (
+    id text not null primary key,
+    container_id text not null
+    device_id text not null
+    container_env_name text not null
+    device_option_name text not null
+    FOREIGN KEY (device_id) REFERENCES device(id)
+    FOREIGN KEY (container_instance_id) REFERENCES container(id)
+)
+
+CREATE TABLE IF NOT EXISTS
+container_device_option (
+    id text not null primary key,
+    container_id text not null
+    device_id text not null
+    device_option_name text not null
+    FOREIGN KEY (device_id) REFERENCES device(id)
+    FOREIGN KEY (container_instance_id) REFERENCES container(id)
+)
