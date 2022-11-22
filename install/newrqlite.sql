@@ -132,7 +132,7 @@ container (
     node_id text not null,
     outer_port integer,
     app_instance_id text not null,
-    life_status text not null default 'running',
+    life_status text not null default 'stopped',
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')), 
     remove_date date,
@@ -220,22 +220,31 @@ app_instance_device (
 )
 
 CREATE TABLE IF NOT EXISTS
+container_device (
+    id text not null primary key,
+    container_id text not null,     
+    device_id text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id)
+    FOREIGN KEY (container_id) REFERENCES container(id)
+)
+
+CREATE TABLE IF NOT EXISTS
 container_device_env_option (
     id text not null primary key,
-    container_id text not null
-    device_id text not null
-    container_env_name text not null
-    device_option_name text not null
-    FOREIGN KEY (device_id) REFERENCES device(id)
-    FOREIGN KEY (container_instance_id) REFERENCES container(id)
+    container_id text not null,
+    device_id text not null,
+    container_env_name text not null,
+    device_option_name text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
 )
 
 CREATE TABLE IF NOT EXISTS
 container_device_option (
     id text not null primary key,
-    container_id text not null
-    device_id text not null
-    device_option_name text not null
-    FOREIGN KEY (device_id) REFERENCES device(id)
-    FOREIGN KEY (container_instance_id) REFERENCES container(id)
+    container_id text not null,
+    device_id text not null,
+    device_option_name text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
 )
