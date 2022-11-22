@@ -227,7 +227,7 @@ container_device_env_option (
     container_env_name text not null
     device_option_name text not null
     FOREIGN KEY (device_id) REFERENCES device(id)
-    FOREIGN KEY (container_instance_id) REFERENCES container(id)
+    FOREIGN KEY (container_id) REFERENCES container(id)
 )
 
 CREATE TABLE IF NOT EXISTS
@@ -237,5 +237,5 @@ container_device_option (
     device_id text not null
     device_option_name text not null
     FOREIGN KEY (device_id) REFERENCES device(id)
-    FOREIGN KEY (container_instance_id) REFERENCES container(id)
+    FOREIGN KEY (container_id) REFERENCES container(id)
 )
