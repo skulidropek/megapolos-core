@@ -132,7 +132,7 @@ container (
     node_id text not null,
     outer_port integer,
     app_instance_id text not null,
-    life_status text not null default 'running',
+    life_status text not null default 'stopped',
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')), 
     remove_date date,
