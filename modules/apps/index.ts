@@ -40,6 +40,33 @@ const createContainer = async (
     appId: string, appInstanceId: string, innerPort: number, outerPort: number
   },
 ) => {
+  const envParameters = (await coreRqlite.query([[`
+    SELECT * FROM container_device_env_option WHERE container_id = ?
+  `, data.containerId]])).toArray();
+  let deviceParameters = {};
+
+  const devices = (await coreRqlite.query([[`
+    SELECT c.*, d.id AS device_id FROM device d
+    JOIN container_device cd ON d.id = cd.device_id
+    LEFT JOIN driver dr ON d.driver_id = dr.id
+    LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
+    LEFT JOIN container c ON ai.id = c.app_instance_id
+    WHERE cd.container_id = ?
+  `, data.containerId]])).toArray();
+  for (let i in devices) {
+    const device = devices[i];
+    const result = (await fetch(`http://localhost:${device.outer_port}/app_options_env/get`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: data.userId,
+      }),
+    }));
+    deviceParameters = { ...await result.json() };
+  }
+
   return (docker.createContainer({
     name: data.containerId + '_' + data.imageName,
     Image: data.imageRepository,
@@ -51,6 +78,7 @@ const createContainer = async (
       'MEGAPOLOS_CONTAINER_ID=' + data.containerId,
       'MEGAPOLOS_IMAGE_ID=' + data.imageId,
       'MEGAPOLOS_PATH_DATA=' + megapolosPath + '/data',
+      ...envParameters.map((env) => env.container_env_name + '=' + deviceParameters[env.device_option_name]),
     ],
     ExposedPorts: {
       [`${data.innerPort}/tcp`]: {},
@@ -95,6 +123,52 @@ export const createAppInstance = async (input: AppInstanceInput) => {
     } catch {
       await docker.pull(image.repository);
     }
+    for (let deviceId in input.containers[image.id].devices) {
+      const containerDeviceId = uuidv4();
+      const deviceInput = input.containers[image.id].devices[deviceId];
+      await coreRqlite.execute([[`
+        INSERT INTO container_device (id, container_id, device_id)
+        VALUES (?, ?, ?)
+      `, containerDeviceId, containerId, deviceId]]);
+
+      const deviceContainer = (await coreRqlite.query([[`
+        SELECT c.*, d.device_type_id FROM device d
+        LEFT JOIN driver dr ON d.driver_id = dr.id
+        LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
+        LEFT JOIN container c ON ai.id = c.app_instance_id
+        WHERE d.id = ?
+        LIMIT 1
+      `, deviceId]])).toArray()[0];
+      if (deviceContainer.device_type_id === 'db') {
+        await fetch(`http://localhost:${deviceContainer.outer_port}/databases/add`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userId,
+          }),
+        });
+        // const deviceOptions = await fetch(`http://localhost:${deviceContainer.outer_port}/app_options_env/get`, {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //   },
+        //   body: JSON.stringify({
+        //     user_id: userId,
+        //   }),
+        // });
+      }
+
+      for (let envId in deviceInput.env_parameters) {
+        const containerDeviceEnvId = uuidv4();
+        await coreRqlite.execute([[`
+          INSERT INTO container_device_env_option (id, container_id, device_id, device_option_name, container_env_name)
+          VALUES (?, ?, ?, ?, ?)
+        `, containerDeviceEnvId, containerId, deviceId, envId, deviceInput.env_parameters[envId]]]);
+      }
+    }
+
     const dockerRuntimeId = (await createContainer({
       containerId, imageId: image.id, imageName: image.name,
       imageRepository: image.repository,
@@ -159,6 +233,30 @@ export const removeAppInstance = async (appInstanceId) => {
     }
       
     await coreRqlite.execute([['DELETE FROM container WHERE id = ?', container.id]]);
+    const devices = (await coreRqlite.query([[`
+    SELECT c.*, d.id AS device_id, d.device_type_id AS device_type_id FROM device d
+    JOIN container_device cd ON d.id = cd.device_id
+    LEFT JOIN driver dr ON d.driver_id = dr.id
+    LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
+    LEFT JOIN container c ON ai.id = c.app_instance_id
+    WHERE cd.container_id = ?
+  `, container.id]])).toArray();
+    for (let i in devices) {
+      const device = devices[i];
+      if (device.device_type_id === 'db') {
+        await fetch(`http://localhost:${device.outer_port}/databases/remove`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: instance.user_id,
+          }),
+        });
+      }
+    }
+    await coreRqlite.execute([['DELETE FROM container_device WHERE container_id = ?', container.id]]);
+    await coreRqlite.execute([['DELETE FROM container_device_env_option WHERE container_id = ?', container.id]]);
   }
   await coreRqlite.execute([[
     'DELETE FROM app_instance WHERE id = ?', appInstanceId]]);

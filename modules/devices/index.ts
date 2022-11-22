@@ -90,6 +90,7 @@ const devices = (expressApp:Express) => {
       LEFT JOIN driver dr ON d.driver_id = dr.id
       LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
       LEFT JOIN container c ON ai.id = c.app_instance_id
+      WHERE d.id = ?
       LIMIT 1
     `, deviceId]])).toArray()[0];
 
