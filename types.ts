@@ -14,7 +14,9 @@ export interface AppInstanceInput {
     [key: string]: {
       devices: {
         [key: string]: {
-          parameters: [string],
+          parameters: {
+            [key: string]: string,
+          },
           env_parameters: {
             [key: string]: string,
           }

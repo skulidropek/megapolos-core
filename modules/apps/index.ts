@@ -1,8 +1,9 @@
 import { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { promisify } from 'util';
+import fetch from 'cross-fetch';
 import coreRqlite from '../../coreRqlite';
 import docker from '../../coreDocker';
-import { promisify } from 'util';
 import { AppInput, AppInstanceInput } from '../../types';
 import { createToken, megapolosPath } from '../../index';
 const exec = promisify(require('child_process').exec);
@@ -48,7 +49,7 @@ const createContainer = async (
   let deviceParameters = {};
 
   const devices = (await coreRqlite.query([[`
-    SELECT c.*, d.id AS device_id FROM device d
+    SELECT c.*, d.id AS device_id, d.device_type_id AS device_type_id FROM device d
     JOIN container_device cd ON d.id = cd.device_id
     LEFT JOIN driver dr ON d.driver_id = dr.id
     LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
@@ -69,6 +70,39 @@ const createContainer = async (
     deviceParameters = { ...await result.json() };
   }
 
+  const repositoryDevice = devices.find((device) => device.device_type_id === 'repository');
+  const builderDevice = devices.find((device) => device.device_type_id === 'builder');
+  if (repositoryDevice && builderDevice) {
+    const repositoryResult = await fetch(`http://localhost:${repositoryDevice.outer_port}/clone_container`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        container_id: data.containerId,
+      }),
+    });
+    const repository = await repositoryResult.json();
+    await fetch(`http://localhost:${builderDevice.outer_port}/build`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: data.imageName,
+        path: repository.path,
+      }),
+    });
+  }
+
+  const containerDevice = (await coreRqlite.query([[`
+  SELECT dr.id AS driver_id, d.id AS device_id, d.device_type_id AS device_type_id FROM device d
+  LEFT JOIN driver dr ON d.driver_id = dr.id
+  LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
+  LEFT JOIN container c ON ai.id = c.app_instance_id
+  WHERE c.id = ?
+`, data.containerId]])).toArray()[0];
+
   return (docker.createContainer({
     name: data.containerId + '_' + data.imageName,
     Image: data.imageRepository,
@@ -76,6 +110,9 @@ const createContainer = async (
       'MEGAPOLOS=1',
       'MEGAPOLOS_TOKEN=' + createToken(data.userId),
       'MEGAPOLOS_APP_ID=' + data.appId,
+      'MEGAPOLOS_DRIVER_ID=' + containerDevice?.driver_id || '',
+      'MEGAPOLOS_DEVICE_ID=' + containerDevice?.device_id || '',
+      'MEGAPOLOS_DEVICE_TYPE_ID=' + containerDevice?.device_type_id || '',
       'MEGAPOLOS_APP_INSTANCE_ID=' + data.appInstanceId,
       'MEGAPOLOS_CONTAINER_ID=' + data.containerId,
       'MEGAPOLOS_IMAGE_ID=' + data.imageId,
@@ -173,12 +210,23 @@ export const createAppInstance = async (input: AppInstanceInput, isDevice = fals
         // });
         }
 
-        for (let envId in deviceInput.env_parameters) {
-          const containerDeviceEnvId = uuidv4();
-          await coreRqlite.execute([[`
+        if (deviceInput.env_parameters) {
+          for (let envId in deviceInput.env_parameters) {
+            const containerDeviceEnvId = uuidv4();
+            await coreRqlite.execute([[`
           INSERT INTO container_device_env_option (id, container_id, device_id, device_option_name, container_env_name)
           VALUES (?, ?, ?, ?, ?)
         `, containerDeviceEnvId, containerId, deviceId, envId, deviceInput.env_parameters[envId]]]);
+          }
+        }
+        if (deviceInput.parameters) {
+          for (let optionName in deviceInput.parameters) {
+            const containerDeviceEnvId = uuidv4();
+            await coreRqlite.execute([[`
+          INSERT INTO container_device_option (id, container_id, device_id, device_option_name, container_option_value)
+          VALUES (?, ?, ?, ?, ?)
+        `, containerDeviceEnvId, containerId, deviceId, optionName, deviceInput.parameters[optionName]]]);
+          }
         }
       }
     }
@@ -271,6 +319,7 @@ export const removeAppInstance = async (appInstanceId, isDevice = false) => {
     }
     await coreRqlite.execute([['DELETE FROM container_device WHERE container_id = ?', container.id]]);
     await coreRqlite.execute([['DELETE FROM container_device_env_option WHERE container_id = ?', container.id]]);
+    await coreRqlite.execute([['DELETE FROM container_device_option WHERE container_id = ?', container.id]]);
   }
   await coreRqlite.execute([[
     'DELETE FROM app_instance WHERE id = ?', appInstanceId]]);

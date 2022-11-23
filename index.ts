@@ -42,7 +42,9 @@ app.post('/shell_command', async (req, res) => {
     return;
   }
   const command = req.body.command;
-  const result = await exec(command, { uid: parseInt(osUserId) });
+  const result = await exec(command,
+    // , { uid: parseInt(osUserId) }
+  );
   res.send(result);
 });  
 
@@ -70,20 +72,24 @@ export const megapolosPath = __dirname;
   const containers = (await coreRqlite.query([['SELECT * FROM container']])).toArray();
   for (let i in containers) {
     const container = containers[i];
-    const containerInfo = await docker.getContainer(container.docker_runtime_id).inspect();
-    if (container.life_status === 'running' && !containerInfo.State.Running) {
-      try {
-        await docker.getContainer(container.docker_runtime_id).start();
-      } catch (e) {
-        console.error(e);
+    try {
+      const containerInfo = await docker.getContainer(container.docker_runtime_id).inspect();
+      if (container.life_status === 'running' && !containerInfo.State.Running) {
+        try {
+          await docker.getContainer(container.docker_runtime_id).start();
+        } catch (e) {
+          console.error(e);
+        }
       }
-    }
-    if (container.life_status === 'stopped' && containerInfo.State.Running) {
-      try {
-        await docker.getContainer(container.docker_runtime_id).stop();
-      } catch (e) {
-        console.error(e);
+      if (container.life_status === 'stopped' && containerInfo.State.Running) {
+        try {
+          await docker.getContainer(container.docker_runtime_id).stop();
+        } catch (e) {
+          console.error(e);
+        }
       }
+    } catch (e) {
+      console.error(e);
     }
   }
 

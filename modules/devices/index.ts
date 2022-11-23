@@ -109,6 +109,54 @@ const devices = (expressApp:Express) => {
       });
     }
   });
+
+  expressApp.post('/devices/app_options/get_fields', async (req, res) => {
+    try {
+      const deviceId = req.body.id;
+
+      const container = (await coreRqlite.query([[`
+      SELECT c.* FROM device d
+      LEFT JOIN driver dr ON d.driver_id = dr.id
+      LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
+      LEFT JOIN container c ON ai.id = c.app_instance_id
+      WHERE d.id = ?
+      LIMIT 1
+    `, deviceId]])).toArray()[0];
+
+      const fields = await fetch(`http://localhost:${container.outer_port}/app_options/get_fields`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+      res.send(await fields.json());
+    } catch (e) {
+      console.error(e);
+      res.status(400).send({
+        error: e,
+      });
+    }
+  });
+
+  expressApp.post('/devices/get_options', async (req, res) => {
+    try {
+      const options = (await coreRqlite.query([[`
+      SELECT * FROM container_device_option WHERE device_id = ? AND container_id = ?
+    `, req.body.device_id, req.body.container_id]])).toArray();
+
+      const optionsObject = {};
+      options.forEach((option) => {
+        optionsObject[option.device_option_name] = option.container_option_value;
+      });
+      res.send(optionsObject);
+    } catch (e) {
+      console.error(e);
+      res.status(400).send({
+        error: e,
+      });
+    }
+  });
 };
 
 export default devices;
