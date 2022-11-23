@@ -36,8 +36,13 @@ app.use(async (req, res, next) => {
 });
 
 app.post('/shell_command', async (req, res) => {
+  const osUserId = req.user.os_user_id;
+  if (!osUserId) {
+    res.status(400).send('No os user id');
+    return;
+  }
   const command = req.body.command;
-  const result = await exec(command);
+  const result = await exec(command, { uid: parseInt(osUserId) });
   res.send(result);
 });  
 
@@ -82,7 +87,7 @@ export const megapolosPath = __dirname;
     }
   }
 
-  app.listen(port, async () => {
+  app.listen(port, '0.0.0.0', async () => {
     console.log(`Example app listening on port ${port}`);
     const query = `
     SELECT u.* FROM user u

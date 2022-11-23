@@ -34,7 +34,7 @@ const devices = (expressApp:Express) => {
         app_id: appId,
         name: input.name,
         containers: {},
-      });
+      }, true);
       await startAppInstance(appInstanceId);
       coreRqlite.execute([[`
       INSERT INTO driver (id, name, app_id) VALUES (?, ?, ?)
@@ -63,7 +63,7 @@ const devices = (expressApp:Express) => {
       const appInstance = (await coreRqlite.query([[`
       SELECT * FROM app_instance WHERE app_id = ?
     `, driver.app_id]])).toArray()[0];
-      await removeAppInstance(appInstance.id);
+      await removeAppInstance(appInstance.id, true);
       await uninstallApp(driver.app_id);
       await coreRqlite.execute([[`
       DELETE FROM device WHERE id = ?

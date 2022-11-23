@@ -2,8 +2,10 @@ import { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import coreRqlite from '../../coreRqlite';
 import docker from '../../coreDocker';
+import { promisify } from 'util';
 import { AppInput, AppInstanceInput } from '../../types';
 import { createToken, megapolosPath } from '../../index';
+const exec = promisify(require('child_process').exec);
 
 const getPort = async () => {
   let usedPorts = (await coreRqlite.query('SELECT outer_port FROM container')).toArray().map((app) => app.outer_port);
@@ -94,7 +96,7 @@ const createContainer = async (
   }));
 };
 
-export const createAppInstance = async (input: AppInstanceInput) => {
+export const createAppInstance = async (input: AppInstanceInput, isDevice = false) => {
   const appInstanceId = uuidv4();
   const userId = uuidv4();
 
@@ -105,9 +107,19 @@ export const createAppInstance = async (input: AppInstanceInput) => {
       SELECT * FROM image WHERE app_id = ?
     `, input.app_id]])).toArray();
 
+  let linuxUserId = '';
+  if (isDevice) {
+    await exec(`useradd -m -s /bin/bash ${userId.replace(/-/g, '')}`);
+    linuxUserId = (await exec('cat /etc/passwd')).stdout.
+      split('\n').
+      filter((user) => user.startsWith(userId.replace(/-/g, ''))).
+      join('\n').
+      split(':')[2];
+  }
+
   await coreRqlite.execute([[`
-      INSERT INTO user (id, name, group_user_id) VALUES (?, ?, ?)
-    `, userId, 'app_' + input.name, 'app']]);
+      INSERT INTO user (id, name, group_user_id, os_user_id) VALUES (?, ?, ?, ?)
+    `, userId, 'app_' + input.name, isDevice ? 'device' : 'app', linuxUserId]]);
 
   await coreRqlite.execute([[`
     INSERT INTO app_instance (id, name, user_id, life_status, app_instance_url, app_id, instance_type_id, deploy_strategy_id, remove_strategy_id)
@@ -123,15 +135,16 @@ export const createAppInstance = async (input: AppInstanceInput) => {
     } catch {
       await docker.pull(image.repository);
     }
-    for (let deviceId in input.containers[image.id].devices) {
-      const containerDeviceId = uuidv4();
-      const deviceInput = input.containers[image.id].devices[deviceId];
-      await coreRqlite.execute([[`
+    if (input.containers[image.id]) {
+      for (let deviceId in input.containers[image.id].devices) {
+        const containerDeviceId = uuidv4();
+        const deviceInput = input.containers[image.id].devices[deviceId];
+        await coreRqlite.execute([[`
         INSERT INTO container_device (id, container_id, device_id)
         VALUES (?, ?, ?)
       `, containerDeviceId, containerId, deviceId]]);
 
-      const deviceContainer = (await coreRqlite.query([[`
+        const deviceContainer = (await coreRqlite.query([[`
         SELECT c.*, d.device_type_id FROM device d
         LEFT JOIN driver dr ON d.driver_id = dr.id
         LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
@@ -139,16 +152,16 @@ export const createAppInstance = async (input: AppInstanceInput) => {
         WHERE d.id = ?
         LIMIT 1
       `, deviceId]])).toArray()[0];
-      if (deviceContainer.device_type_id === 'db') {
-        await fetch(`http://localhost:${deviceContainer.outer_port}/databases/add`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userId,
-          }),
-        });
+        if (deviceContainer.device_type_id === 'db') {
+          await fetch(`http://localhost:${deviceContainer.outer_port}/databases/add`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_id: userId,
+            }),
+          });
         // const deviceOptions = await fetch(`http://localhost:${deviceContainer.outer_port}/app_options_env/get`, {
         //   method: 'POST',
         //   headers: {
@@ -158,14 +171,15 @@ export const createAppInstance = async (input: AppInstanceInput) => {
         //     user_id: userId,
         //   }),
         // });
-      }
+        }
 
-      for (let envId in deviceInput.env_parameters) {
-        const containerDeviceEnvId = uuidv4();
-        await coreRqlite.execute([[`
+        for (let envId in deviceInput.env_parameters) {
+          const containerDeviceEnvId = uuidv4();
+          await coreRqlite.execute([[`
           INSERT INTO container_device_env_option (id, container_id, device_id, device_option_name, container_env_name)
           VALUES (?, ?, ?, ?, ?)
         `, containerDeviceEnvId, containerId, deviceId, envId, deviceInput.env_parameters[envId]]]);
+        }
       }
     }
 
@@ -216,7 +230,7 @@ export const stopAppInstance = async (appInstanceId) => {
     'UPDATE app_instance SET life_status = ? WHERE id = ?', 'stopped', appInstanceId]]);
 };
 
-export const removeAppInstance = async (appInstanceId) => {
+export const removeAppInstance = async (appInstanceId, isDevice = false) => {
   const instance = (await coreRqlite.query([['SELECT * FROM app_instance WHERE id = ?', appInstanceId]])).toArray()[0];
   const containers = (await coreRqlite.query([['SELECT * FROM container WHERE app_instance_id = ?', appInstanceId]])).toArray();
   for (let i in containers) {
@@ -262,6 +276,10 @@ export const removeAppInstance = async (appInstanceId) => {
     'DELETE FROM app_instance WHERE id = ?', appInstanceId]]);
   await coreRqlite.execute([[
     'DELETE FROM user WHERE id = ?', instance.user_id]]);
+
+  if (isDevice) {
+    await exec(`userdel -r ${instance.user_id.replace(/-/g, '')}`);
+  }
 };
 
 export const uninstallApp = async (appId) => {
