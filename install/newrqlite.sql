@@ -19,6 +19,7 @@ user (
     group_user_id text not null,
     rest_api text
     -- enable/disable
+    os_user_id text
     user_status text not null default 'enable',
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')),
