@@ -2,10 +2,12 @@ import { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { promisify } from 'util';
 import fetch from 'cross-fetch';
+import { promises as fs } from 'fs';
 import coreRqlite from '../../coreRqlite';
 import docker from '../../coreDocker';
 import { AppInput, AppInstanceInput } from '../../types';
 import { createToken, megapolosPath } from '../../index';
+
 const exec = promisify(require('child_process').exec);
 
 const getPort = async () => {
@@ -93,6 +95,10 @@ const createContainer = async (
         path: repository.path,
       }),
     });
+
+    if (repository.path.startsWith(megapolosPath + '/data/')) {
+      fs.rmdir(repository.path, { recursive: true });
+    }
   }
 
   const containerDevice = (await coreRqlite.query([[`
