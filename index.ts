@@ -12,6 +12,7 @@ const exec = promisify(require('child_process').exec);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import types from './types';
 import docker from './coreDocker';
+import UserModel from './modules/models/user.model';
 
 const app = express();
 const port = 5100;
@@ -26,11 +27,11 @@ app.use(async (req, res, next) => {
     res.status(401).send('Unauthorized');
     return;
   }
-  const user = await coreRqlite.query([['SELECT * FROM user WHERE id = ?', decoded.id]]);
-  if (user.toArray().length === 0) {
+  const user = await UserModel.getUserById(decoded.id);
+  if (!user) {
     res.status(401).send('Unauthorized');
   } else {
-    req.user = user.toArray()[0];
+    req.user = user;
     next();
   }
 });
@@ -95,16 +96,15 @@ export const megapolosPath = __dirname;
 
   app.listen(port, '0.0.0.0', async () => {
     console.log(`Example app listening on port ${port}`);
-    const query = `
-    SELECT u.* FROM user u
-    LEFT JOIN group_user g ON g.id = u.group_user_id
-    WHERE g.name = ?
-  `;
-    let admin = await coreRqlite.query([[query, 'root']]);
-    if (!admin.toArray().length) {
-      admin = await coreRqlite.execute([['INSERT INTO user (id, name, group_user_id ) VALUES (?, ?, ?)', uuidv4(), 'root', 'root']]);
-      admin = await coreRqlite.query([[query, 'root']]);
+    let admins = await UserModel.getUsersByRole('root');
+    if (!admins.length) {
+      await UserModel.createUser({
+        groupUserId: 'root',
+        name: 'root',
+        id: uuidv4(),
+      });
+      admins = await UserModel.getUsersByRole('root');
     }
-    console.log(createToken(admin.toArray()[0].id));
+    console.log(createToken(admins[0].id));
   });
 })();

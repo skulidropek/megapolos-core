@@ -4,7 +4,7 @@ import { DataResult, DataResults } from './rqlite-ts/api/results';
 const dataApiClient = new rqlite.DataApiClient('http://localhost:4001');
 
 const api = {
-  query: async (query: string | string[][]):Promise<DataResults> => {
+  query: async (query: string | (string | undefined)[][]):Promise<DataResults> => {
     const results/*:DataResults*/ = await dataApiClient.query(query);
     if (results.hasError()) {
       throw new Error(results.getFirstError());
@@ -13,7 +13,7 @@ const api = {
     results.toArray = () => toArray().filter(row => Object.keys(row).length > 0);
     return results;
   },
-  execute: async (query: string | string[][]):Promise<DataResults> => {
+  execute: async (query: string | (string | undefined)[][]):Promise<DataResults> => {
     const results = await dataApiClient.execute(query);
     if (results.hasError()) {
       throw new Error(results.getFirstError());

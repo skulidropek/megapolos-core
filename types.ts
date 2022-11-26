@@ -1,3 +1,5 @@
+import { UserTable } from "./modules/models/tables"
+
 export interface AppInput {
   name: string,
   images: [{
@@ -39,7 +41,7 @@ export interface DeviceInput {
 declare global {
   namespace Express {
     export interface Request {
-      user?: any;
+      user?: UserTable;
     }
   }
 }
