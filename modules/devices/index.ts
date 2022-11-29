@@ -3,10 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 import fetch from 'cross-fetch';
 import coreRqlite from '../../coreRqlite';
 import { DeviceInput } from '../../types';
-import { createAppInstance, installApp, removeAppInstance, startAppInstance, uninstallApp } from '../apps';
 import DeviceModel from '../models/device.model';
 import AppInstanceModel from '../models/appInstance.model';
 import BaseDevice from './baseDevice';
+import AppAction from '../actions/app.action';
+import AppInstanceAction from '../actions/appInstance.action';
+
 const devices = (expressApp:Express) => {
   expressApp.post('/devices/list', async (req, res) => {
     try {
@@ -25,7 +27,7 @@ const devices = (expressApp:Express) => {
       const input: DeviceInput = req.body;
       const deviceId = uuidv4();
       const driverId = uuidv4();
-      const appId = await installApp(req.user.id, {
+      const appId = await AppAction.installApp(req.user.id, {
         name: input.name,
         images: [{
           name: input.name,
@@ -33,12 +35,12 @@ const devices = (expressApp:Express) => {
           inner_port: input.inner_port,
         }],
       });
-      const appInstanceId = await createAppInstance({
+      const appInstanceId = await AppInstanceAction.createAppInstance({
         app_id: appId,
         name: input.name,
         containers: {},
       }, true);
-      await startAppInstance(appInstanceId);
+      await AppInstanceAction.startAppInstance(appInstanceId);
       await DeviceModel.createDriver({
         id: driverId,
         name: input.name,
@@ -66,8 +68,8 @@ const devices = (expressApp:Express) => {
       const device = await DeviceModel.getDevice(deviceId);
       const driver = await DeviceModel.getDriver(device.driver_id);
       const appInstance = await AppInstanceModel.getFirstAppInstanceOfApp(driver.app_id);
-      await removeAppInstance(appInstance.id, true);
-      await uninstallApp(driver.app_id);
+      await AppInstanceAction.removeAppInstance(appInstance.id, true);
+      await AppAction.uninstallApp(driver.app_id);
       await DeviceModel.removeDevice(deviceId);
       await DeviceModel.removeDriver(device.driver_id);
 

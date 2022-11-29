@@ -13,6 +13,7 @@ const exec = promisify(require('child_process').exec);
 import types from './types';
 import docker from './coreDocker';
 import UserModel from './modules/models/user.model';
+import AppInstanceModel from './modules/models/appInstance.model';
 
 const app = express();
 const port = 5100;
@@ -70,7 +71,7 @@ export const megapolosPath = __dirname;
       });
     } 
   });
-  const containers = (await coreRqlite.query([['SELECT * FROM container']])).toArray();
+  const containers = await AppInstanceModel.getContainers();
   for (let i in containers) {
     const container = containers[i];
     try {
@@ -94,17 +95,18 @@ export const megapolosPath = __dirname;
     }
   }
 
+  let admins = await UserModel.getUsersByRole('root');
+  if (!admins.length) {
+    await UserModel.createUser({
+      groupUserId: 'root',
+      name: 'root',
+      id: uuidv4(),
+    });
+    admins = await UserModel.getUsersByRole('root');
+  }
+  console.log(createToken(admins[0].id));
+
   app.listen(port, '0.0.0.0', async () => {
     console.log(`Example app listening on port ${port}`);
-    let admins = await UserModel.getUsersByRole('root');
-    if (!admins.length) {
-      await UserModel.createUser({
-        groupUserId: 'root',
-        name: 'root',
-        id: uuidv4(),
-      });
-      admins = await UserModel.getUsersByRole('root');
-    }
-    console.log(createToken(admins[0].id));
   });
 })();

@@ -33,6 +33,10 @@ class AppInstanceModel {
     return (await coreRqlite.query([['SELECT * FROM container WHERE id = ?', containerId]])).toArray()[0];
   }
 
+  static async getContainers():Promise<ContainerTable[]> {
+    return (await coreRqlite.query([['SELECT * FROM container']])).toArray();
+  }
+
   static async updateAppInstanceLifeStatus(appInstanceId: string, lifeStatus: string) {
     await coreRqlite.execute([[
       'UPDATE app_instance SET life_status = ? WHERE id = ?', lifeStatus, appInstanceId
