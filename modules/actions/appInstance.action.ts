@@ -49,16 +49,21 @@ class AppInstanceAction {
   
     const repositoryDevice = devices.find((device) => device.device_type_id === 'repository');
     const builderDevice = devices.find((device) => device.device_type_id === 'builder');
-    if (repositoryDevice && builderDevice) {
-      const repositoryDeviceObject = new RepositoryDevice(repositoryDevice.outer_port);
-      const repository = await repositoryDeviceObject.cloneContainer(data.containerId);
+    if (builderDevice) {
       const builderDeviceObject = new BuilderDevice(builderDevice.outer_port);
-      await builderDeviceObject.build(data.imageName, repository.path);
-  
-      if (repository.path.startsWith(megapolosPath + '/data/') &&
-        fsSync.existsSync(repository.path)
-      ) {
-        fs.rmdir(repository.path, { recursive: true });
+      if (repositoryDevice) {
+        const repositoryDeviceObject = new RepositoryDevice(repositoryDevice.outer_port);
+        const repository = await repositoryDeviceObject.cloneContainer(data.containerId);
+        const builderDeviceObject = new BuilderDevice(builderDevice.outer_port);
+        await builderDeviceObject.build(data.imageName, repository.path);
+    
+        if (repository.path.startsWith(megapolosPath + '/data/') &&
+          fsSync.existsSync(repository.path)
+        ) {
+          fs.rmdir(repository.path, { recursive: true });
+        }
+      } else {
+        await builderDeviceObject.buildLocal(data.containerId, data.imageName);
       }
     }
   
@@ -204,7 +209,7 @@ class AppInstanceAction {
       await AppInstanceModel.createContainer({
         id: containerId,
         docker_runtime_id: dockerRuntimeId,
-        name: image.name,
+        name: app.name + '_' + input.name + '_' + image.name,
         image_id: image.id,
         node_id: '',
         outer_port: outerPort,
@@ -284,7 +289,11 @@ class AppInstanceAction {
     await UserModel.removeUser(instance.user_id);
   
     if (isDevice) {
-      await exec(`userdel -r ${instance.user_id.replace(/-/g, '')}`);
+      try {
+        await exec(`userdel -r ${instance.user_id.replace(/-/g, '')}`);
+      } catch(e) {
+        console.error(e);
+      }
     }
   }
 

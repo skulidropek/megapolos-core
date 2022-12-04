@@ -10,6 +10,11 @@ import UserController from './modules/controllers/user.controller';
 import EventController from './modules/controllers/event.controller';
 import NodeController from './modules/controllers/node.controller';
 
+if (process.getuid() != 0) {
+  console.error('You must run this app as root');
+  process.exit(1);
+}
+
 const app = express();
 const port = 5100;
 
