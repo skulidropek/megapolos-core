@@ -1,4 +1,10 @@
 {
+    "compilerOptions": {
+        "types": ["@types/node"],
+        "noEmit": true,
+        "allowJs": true
+      },
     "extends": "./tsconfig.json",
-    "include": ["./**/*.ts", "./**/*.js", "./.*.js", "./**/*.json"]
+    "include": ["./**/*.*.ts", "./**/*.ts", "./**/*.action.ts", "./**/*.js", "./.*.js", "./**/*.json"],
+    "exclude": ["node_modules", "dist", "data", "volumes"]
 }

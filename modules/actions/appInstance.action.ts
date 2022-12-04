@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { promisify } from 'util';
 import { promises as fs } from 'fs';
+import fsSync from 'fs';
 import docker from '../../coreDocker';
 import { AppInstanceInput } from '../../types';
-import { createToken, megapolosPath } from '../../index';
+import { megapolosPath } from '../../index';
 import AppModel from '../models/app.model';
 import AppInstanceModel from '../models/appInstance.model';
 import UserModel from '../models/user.model';
@@ -12,8 +13,11 @@ import BaseDevice from '../devices/baseDevice';
 import DatabaseDevice from '../devices/databaseDevice';
 import RepositoryDevice from '../devices/repositoryDevice';
 import BuilderDevice from '../devices/builderDevice';
+import UserAction from './user.action';
+import EventsObserver from '../events/eventsObserver';
+import DockerEvent from '../events/docker.event';
 
-const exec = promisify(require('child_process').exec);
+const exec =   promisify(require('child_process').exec);
 
 class AppInstanceAction {
   static async getPort() {
@@ -51,19 +55,26 @@ class AppInstanceAction {
       const builderDeviceObject = new BuilderDevice(builderDevice.outer_port);
       await builderDeviceObject.build(data.imageName, repository.path);
   
-      if (repository.path.startsWith(megapolosPath + '/data/')) {
+      if (repository.path.startsWith(megapolosPath + '/data/') &&
+        fsSync.existsSync(repository.path)
+      ) {
         fs.rmdir(repository.path, { recursive: true });
       }
     }
   
     const containerDevice = await DeviceModel.getDeviceFromContainer(data.containerId);
   
+    const megapolosVolume = megapolosPath + '/volumes/' + data.containerId;
+
+    if (!fsSync.existsSync(megapolosVolume)) {
+      await fs.mkdir(megapolosVolume);
+    }
     return (docker.createContainer({
       name: data.containerId + '_' + data.imageName,
       Image: data.imageRepository,
       Env: [
         'MEGAPOLOS=1',
-        'MEGAPOLOS_TOKEN=' + createToken(data.userId),
+        'MEGAPOLOS_TOKEN=' + UserAction.createToken(data.userId),
         'MEGAPOLOS_APP_ID=' + data.appId,
         'MEGAPOLOS_DRIVER_ID=' + containerDevice?.driver_id || '',
         'MEGAPOLOS_DEVICE_ID=' + containerDevice?.device_id || '',
@@ -84,6 +95,7 @@ class AppInstanceAction {
             HostPort: data.outerPort.toString(),
           }],
         },
+        Binds: [megapolosVolume + ':/megapolos'],
       },
     }));
   }
@@ -250,7 +262,11 @@ class AppInstanceAction {
       } catch (e) {
         console.error(e);
       }
-      
+      const megapolosVolume = megapolosPath + '/volumes/' + container.id;
+      if (fsSync.existsSync(megapolosVolume)) {
+        await fs.rmdir(megapolosVolume, { recursive: true });
+      }
+    
       await AppInstanceModel.deleteContainer(container.id);
       const devices = await DeviceModel.getDevicesOfContainer(container.id);
       for (let i in devices) {
@@ -269,6 +285,47 @@ class AppInstanceAction {
   
     if (isDevice) {
       await exec(`userdel -r ${instance.user_id.replace(/-/g, '')}`);
+    }
+  }
+
+  static async dockerEvents() {
+    docker.getEvents({}, function (err, data) {
+      if (err) {
+        console.error(err.message);
+      } else {
+        data.on('data', function (chunk) {
+          EventsObserver.listener<DockerEvent>({
+            type: 'DockerEvent',
+            data: JSON.parse(chunk.toString('utf8')),
+          });           
+        });
+      } 
+    });
+  }
+
+  static async restoreContainers() {
+    const containers = await AppInstanceModel.getContainers();
+    for (let i in containers) {
+      const container = containers[i];
+      try {
+        const containerInfo = await docker.getContainer(container.docker_runtime_id).inspect();
+        if (container.life_status === 'running' && !containerInfo.State.Running) {
+          try {
+            await docker.getContainer(container.docker_runtime_id).start();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        if (container.life_status === 'stopped' && containerInfo.State.Running) {
+          try {
+            await docker.getContainer(container.docker_runtime_id).stop();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 }

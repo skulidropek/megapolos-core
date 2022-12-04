@@ -6,7 +6,6 @@ class AppAction {
   static async installApp(userId, input: AppInput) {
     const appId = uuidv4();
       
-    console.log(input);
     await AppModel.createApp({
       id: appId,
       ownerUserId: userId,

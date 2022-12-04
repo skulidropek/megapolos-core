@@ -1,6 +1,9 @@
-interface Docker {
-  status: string;
-  id: string;
-  from: string;
+import { MegapolosEvent } from './event';
+
+
+interface DockerEvent extends MegapolosEvent {
+  type: 'DockerEvent';
+  data: any;
 }
 
+export default DockerEvent;

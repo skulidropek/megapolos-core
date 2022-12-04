@@ -5,4 +5,5 @@ module.exports = {
   parserOptions: {
     project: './tsconfig.eslint.json',
   },
+  ignorePatterns: ['node_modules', 'dist', 'data', 'volumes'],
 };

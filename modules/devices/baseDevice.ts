@@ -1,5 +1,11 @@
 import fetch from 'cross-fetch';
 
+interface Manifest {
+  name: string;
+  container_fields: [string];
+  container_env_fields: [string];
+}
+
 class BaseDevice {
   port: number;
 
@@ -18,12 +24,16 @@ class BaseDevice {
     return results.json();
   }
 
-  async getFields():Promise<{ [key: string]: string }> {
-    return this.request('/app_options/get_fields', {});
+  async getManifest():Promise<Manifest> {
+    return this.request('/get_manifest', {});
   }
 
-  async getEnvFields():Promise<{ [key: string]: string }> {
-    return this.request('/app_options_env/get_fields', {});
+  async getFields():Promise<[string]> {
+    return (await this.getManifest()).container_fields;
+  }
+
+  async getEnvFields():Promise<[string]> {
+    return (await this.getManifest()).container_env_fields;
   }
 
   async getEnvFieldsValues(userId: string):Promise<{ [key: string]: string }> {
