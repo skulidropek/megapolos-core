@@ -250,3 +250,22 @@ container_device_option (
     FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
 )
+
+CREATE TABLE IF NOT EXISTS
+volume (
+    id text not null primary key,
+    type text not null default 'auto', -- 'auto', 'path'
+    path text,
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')),
+    remove_date date
+)
+
+CREATE TABLE IF NOT EXISTS
+container_volume (
+    id text not null primary key,
+    container_id text not null,
+    volume_id text not null,
+    FOREIGN KEY (volume_id) REFERENCES volume(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
+)
