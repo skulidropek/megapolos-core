@@ -1,14 +1,10 @@
-import { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import fetch from 'cross-fetch';
-import coreRqlite from '../../coreRqlite';
-import { ContainerDeviceInput, DeviceInput, resolver, TypedRequestBody } from '../../types';
+import { ContainerDeviceInput, DeviceInput, resolver } from '../../types';
 import DeviceModel from '../models/device.model';
 import AppInstanceModel from '../models/appInstance.model';
 import BaseDevice, { Manifest } from '../devices/baseDevice';
 import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
-import BaseController from './base.controller';
 import { sleep } from '../..';
 import { createModule, gql } from 'graphql-modules';
 import { ContainerDeviceOptionTable, DeviceTable } from '../models/tables';

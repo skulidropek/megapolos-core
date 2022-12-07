@@ -1,16 +1,20 @@
+import { gql } from 'graphql-request';
 import BaseDevice from './baseDevice';
 
 class BuilderDevice extends BaseDevice {
   async build(image:string, path:string) {
-    return this.request('/build', {
-      image, path,
-    });
+    return this.client.request(gql`
+      mutation($image: String, $path: String) {
+        build(image: $image, path: $path)
+      }
+    `, { image, path });
   }
   async buildLocal(containerId: string, image: string) {
-    return this.request('/build_local', {
-      container_id: containerId,
-      image
-    });
+    return this.client.request(gql`
+      mutation($containerId: String, $image: String) {
+        buildLocal (container_id: $containerId, image: $image)
+      }
+    `, { containerId, image });
   }
 }
 

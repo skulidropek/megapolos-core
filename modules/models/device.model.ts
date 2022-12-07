@@ -83,7 +83,7 @@ class DeviceModel {
     SELECT c.*, 
     d.id AS device_id, d.device_type_id AS device_type_id, d.name AS device_name
     FROM device d
-    JOIN container_device cd ON d.id = cd.device_id
+    LEFT JOIN container_device cd ON d.id = cd.device_id
     LEFT JOIN driver dr ON d.driver_id = dr.id
     LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
     LEFT JOIN container c ON ai.id = c.app_instance_id

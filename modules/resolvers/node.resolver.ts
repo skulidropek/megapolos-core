@@ -1,10 +1,8 @@
 import { promisify } from 'util';
 const exec = promisify(require('child_process').exec);
 
-import BaseController from './base.controller';
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import types, { resolver, TypedRequestBody } from '../../types';
+import { resolver } from '../../types';
 import { createModule, gql } from 'graphql-modules';
 
 const nodeModule = createModule({

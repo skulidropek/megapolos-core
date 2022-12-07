@@ -1,12 +1,10 @@
-import { Express } from 'express';
 import docker from '../../coreDocker';
-import { AppInput, AppInstanceInput, resolver, TypedRequestBody } from '../../types';
+import { AppInput, AppInstanceInput, resolver } from '../../types';
 import AppModel from '../models/app.model';
 import AppInstanceModel from '../models/appInstance.model';
 import { AppInstanceTable, AppTable, ContainerTable, ImageTable } from '../models/tables';
 import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
-import BaseController from './base.controller';
 import DeviceModel from '../models/device.model';
 import { createModule, gql } from 'graphql-modules';
 

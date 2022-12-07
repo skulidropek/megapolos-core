@@ -36,9 +36,11 @@ const graphqlServer = async () => {
         }
       },
     });
+
+    const port = 5100;
  
-    server.listen().then(({ url }) => {
-      console.log(`Apollo server ready at ${url}`);
+    server.listen({ port }).then(({ url }) => {
+      console.log(`Apollo server ready at ${port}`);
     });
 
   } catch (e) {

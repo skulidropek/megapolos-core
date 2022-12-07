@@ -37,14 +37,16 @@ class AppInstanceAction {
     },
   ) {
     const envParameters = await DeviceModel.getEnvOfContainer(data.containerId);
-    let deviceParameters = {};
+    let deviceParameters:{key: string, value: string}[] = [];
   
     const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
+    console.log(devices);
     for (let i in devices) {
       const device = devices[i];
       const deviceObject = new BaseDevice(device.outer_port);
       const result = await deviceObject.getEnvFieldsValues(data.userId);
-      deviceParameters = { ...result };
+      console.log(result);
+      deviceParameters = deviceParameters.concat(result);
     }
   
     const repositoryDevice = devices.find((device) => device.device_type_id === 'repository');
@@ -88,7 +90,7 @@ class AppInstanceAction {
         'MEGAPOLOS_CONTAINER_ID=' + data.containerId,
         'MEGAPOLOS_IMAGE_ID=' + data.imageId,
         'MEGAPOLOS_PATH_DATA=' + megapolosPath + '/data',
-        ...envParameters.map((env) => env.container_env_name + '=' + deviceParameters[env.device_option_name]),
+        ...envParameters.map((env) => env.container_env_name + '=' + deviceParameters.find(option => option.key === env.device_option_name).value),
       ],
       ExposedPorts: {
         [`${data.innerPort}/tcp`]: {},
@@ -193,10 +195,11 @@ class AppInstanceAction {
       }
 
       const imageContainer = input.containers.find((container) => container.image_id === image.id);
+      console.log(imageContainer);
       if (imageContainer) {
         for (let j in imageContainer.devices) {
           const deviceInput = imageContainer.devices[j];
-          AppInstanceAction.addDeviceToContainer(containerId, deviceInput.id, userId, deviceInput);
+          await AppInstanceAction.addDeviceToContainer(containerId, deviceInput.id, userId, deviceInput);
         }
       }
   

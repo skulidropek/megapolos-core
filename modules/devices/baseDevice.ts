@@ -1,4 +1,4 @@
-import fetch from 'cross-fetch';
+import { gql, GraphQLClient } from 'graphql-request';
 
 export interface Manifest {
   name: string;
@@ -8,25 +8,26 @@ export interface Manifest {
 }
 
 class BaseDevice {
+  client: GraphQLClient;
   port: number;
 
   constructor(port: number) {
     this.port = port;
-  }
 
-  async request(url: string, options: any) {
-    const results = await fetch(`http://localhost:${this.port}${url}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(options),
-    });
-    return results.json();
+    this.client = new GraphQLClient(`http://localhost:${port}/graphql`);
   }
 
   async getManifest():Promise<Manifest> {
-    return this.request('/get_manifest', {});
+    return (await this.client.request(gql`
+      query {
+        getManifest {
+          name
+          type
+          container_fields
+          container_env_fields
+        }
+      }
+      `)).getManifest;
   }
 
   async getFields():Promise<[string]> {
@@ -37,8 +38,15 @@ class BaseDevice {
     return (await this.getManifest()).container_env_fields;
   }
 
-  async getEnvFieldsValues(userId: string):Promise<{ [key: string]: string }> {
-    return this.request('/app_options_env/get', { user_id: userId });
+  async getEnvFieldsValues(userId: string):Promise<{ key: string, value: string }[]> {
+    return (await this.client.request(gql`
+      query($userId: String) {
+        getAppOptionsEnv(userId: $userId) {
+          key
+          value
+        }
+      }
+    `, { userId })).getAppOptionsEnv;
   }
 
 }
