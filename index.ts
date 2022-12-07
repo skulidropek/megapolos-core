@@ -10,6 +10,8 @@ import UserController from './modules/controllers/user.controller';
 import EventController from './modules/controllers/event.controller';
 import NodeController from './modules/controllers/node.controller';
 
+import graphqlServer from './grapgql';
+
 if (process.getuid() != 0) {
   console.error('You must run this app as root');
   process.exit(1);
@@ -39,4 +41,11 @@ export const megapolosPath = __dirname;
   app.listen(port, '0.0.0.0', async () => {
     console.log(`Example app listening on port ${port}`);
   });
+  graphqlServer();
 })();
+
+export function sleep(ms:number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}

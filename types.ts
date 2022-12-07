@@ -1,4 +1,4 @@
-import { UserTable } from "./modules/models/tables"
+import { UserTable } from './modules/models/tables';
 
 export interface AppInput {
   name: string,
@@ -9,22 +9,29 @@ export interface AppInput {
   }]
 }
 
+export interface ContainerDeviceInput {
+  id: string
+  parameters: {
+    key: string
+    value: string
+  }[],
+  env_parameters: {
+    key: string
+    value: string
+  }[],
+}
+
 export interface AppInstanceInput {
   app_id: string,
   name: string,
   containers: {
-    [key: string]: {
-      devices: {
-        [key: string]: {
-          parameters: {
-            [key: string]: string,
-          },
-          env_parameters: {
-            [key: string]: string,
-          }
-        }
-      }
-  }
+    image_id: string,
+    devices: ContainerDeviceInput[]
+    volumes: { 
+      type: 'auto' | 'path',
+      path: string,
+    }[],
+  }[]
 }
 
 export interface UserInput {
@@ -33,7 +40,6 @@ export interface UserInput {
 
 export interface DeviceInput {
   name: string,
-  type: string,
   inner_port: number,
   image: string,
 }
@@ -45,5 +51,17 @@ declare global {
     }
   }
 }
+
+export interface TypedRequestBody<T> extends Express.Request {
+  body: T
+}
+
+export type Context = {
+  user: UserTable,
+};
+
+export type Resolver<TArguments, TResult> = (parent, args:TArguments, contextValue: Context, info) => TResult | Promise<TResult>;
+
+export const resolver = <TArguments, TResult>(func:Resolver<TArguments, TResult>) => func;
 
 export default {};

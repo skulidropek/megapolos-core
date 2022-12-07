@@ -4,13 +4,13 @@ const exec = promisify(require('child_process').exec);
 import BaseController from './base.controller';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import types from '../../types';
+import types, { TypedRequestBody } from '../../types';
 
 class NodeController extends BaseController {
   initializeRoutes(): void {
     const app = this.expressApp;
 
-    app.post('/shell_command', async (req, res) => {
+    app.post('/shell_command', async (req: TypedRequestBody<{ command: string }>, res) => {
       try {
         const osUserId = req.user.os_user_id;
         if (!osUserId) {

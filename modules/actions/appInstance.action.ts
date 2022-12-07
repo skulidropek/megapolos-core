@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import fsSync from 'fs';
 import docker from '../../coreDocker';
-import { AppInstanceInput } from '../../types';
+import { AppInstanceInput, ContainerDeviceInput } from '../../types';
 import { megapolosPath } from '../../index';
 import AppModel from '../models/app.model';
 import AppInstanceModel from '../models/appInstance.model';
@@ -104,6 +104,47 @@ class AppInstanceAction {
       },
     }));
   }
+
+  static async addDeviceToContainer(containerId: string, deviceId: string, 
+    userId: string, deviceInput: ContainerDeviceInput) {
+    const containerDeviceId = uuidv4();
+    await DeviceModel.addDeviceToContainer({
+      containerDeviceId,
+      containerId,
+      deviceId,
+    });
+
+    const deviceContainer = await DeviceModel.getDeviceContainer(deviceId);
+    if (deviceContainer.device_type_id === 'db') {
+      const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
+      await databaseDevice.add(userId);
+    }
+
+    if (deviceInput.env_parameters) {
+      for (let i in deviceInput.env_parameters) {
+        const containerDeviceEnvId = uuidv4();
+        await DeviceModel.addEnvToContainer({
+          id: containerDeviceEnvId,
+          container_id: containerId,
+          device_id: deviceId,
+          device_option_name: deviceInput.env_parameters[i].key,
+          container_env_name: deviceInput.env_parameters[i].value,
+        });
+      }
+    }
+    if (deviceInput.parameters) {
+      for (let i in deviceInput.parameters) {
+        const containerDeviceEnvId = uuidv4();
+        await DeviceModel.addOptionToContainer({
+          id: containerDeviceEnvId,
+          container_id: containerId,
+          device_id: deviceId,
+          device_option_name: deviceInput.parameters[i].key,
+          container_option_value: deviceInput.parameters[i].value,
+        });
+      }
+    }
+  }
   
   static async createAppInstance(input: AppInstanceInput, isDevice = false) {
     const appInstanceId = uuidv4();
@@ -150,55 +191,12 @@ class AppInstanceAction {
       } catch {
         await docker.pull(image.repository);
       }
-      if (input.containers[image.id]) {
-        for (let deviceId in input.containers[image.id].devices) {
-          const containerDeviceId = uuidv4();
-          const deviceInput = input.containers[image.id].devices[deviceId];
-          await DeviceModel.addDeviceToContainer({
-            containerDeviceId,
-            containerId,
-            deviceId,
-          });
-  
-          const deviceContainer = await DeviceModel.getDeviceContainer(deviceId);
-          if (deviceContainer.device_type_id === 'db') {
-            const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
-            await databaseDevice.add(userId);
-          // const deviceOptions = await fetch(`http://localhost:${deviceContainer.outer_port}/app_options_env/get`, {
-          //   method: 'POST',
-          //   headers: {
-          //     'Content-Type': 'application/json',
-          //   },
-          //   body: JSON.stringify({
-          //     user_id: userId,
-          //   }),
-          // });
-          }
-  
-          if (deviceInput.env_parameters) {
-            for (let envId in deviceInput.env_parameters) {
-              const containerDeviceEnvId = uuidv4();
-              await DeviceModel.addEnvToContainer({
-                id: containerDeviceEnvId,
-                container_id: containerId,
-                device_id: deviceId,
-                device_option_name: envId,
-                container_env_name: deviceInput.env_parameters[envId],            
-              });
-            }
-          }
-          if (deviceInput.parameters) {
-            for (let optionName in deviceInput.parameters) {
-              const containerDeviceEnvId = uuidv4();
-              await DeviceModel.addOptionToContainer({
-                id: containerDeviceEnvId,
-                container_id: containerId,
-                device_id: deviceId,
-                device_option_name: optionName,
-                container_option_value: deviceInput.parameters[optionName],
-              });
-            }
-          }
+
+      const imageContainer = input.containers.find((container) => container.image_id === image.id);
+      if (imageContainer) {
+        for (let j in imageContainer.devices) {
+          const deviceInput = imageContainer.devices[j];
+          AppInstanceAction.addDeviceToContainer(containerId, deviceInput.id, userId, deviceInput);
         }
       }
   

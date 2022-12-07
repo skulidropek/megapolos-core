@@ -1,18 +1,19 @@
 import { Express } from 'express';
 import docker from '../../coreDocker';
-import { AppInput, AppInstanceInput } from '../../types';
+import { AppInput, AppInstanceInput, TypedRequestBody } from '../../types';
 import AppModel from '../models/app.model';
 import AppInstanceModel from '../models/appInstance.model';
 import { AppInstanceTable, AppTable, ContainerTable, ImageTable } from '../models/tables';
 import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
 import BaseController from './base.controller';
+import DeviceModel from '../models/device.model';
 
 class AppController extends BaseController {
   initializeRoutes(): void {
     const expressApp = this.expressApp;
 
-    expressApp.post('/apps/list', async (req, res) => {
+    expressApp.post('/apps/list', async (req:TypedRequestBody<void>, res) => {
       try {
         const results:(AppTable & { images?: ImageTable[] })[] = await AppModel.getApps();
         for (let i in results) {
@@ -28,12 +29,22 @@ class AppController extends BaseController {
       }
     });
   
-    expressApp.post('/apps/instances/list', async (req, res) => {
+    expressApp.post('/apps/instances/list', async (req:TypedRequestBody<void>, res) => {
       try {
         const results:(AppInstanceTable & { containers?: ContainerTable[] })[] = await AppInstanceModel.getAppInstances();
         for (let i in results) {
-          const containers = await AppInstanceModel.getAppInstanceContainers(results[i].id);
+          const containers: (ContainerTable & { devices?: any })[] = await AppInstanceModel.getAppInstanceContainers(results[i].id);
           results[i].containers = containers;
+          for (let j in containers) {
+            const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
+            containers[j].devices = devices;
+            for (let k in devices) {
+              const options = await DeviceModel.getDeviceOptionsOfContainer(devices[k].device_id, containers[j].id);
+              const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].device_id, containers[j].id);
+              (devices[k] as any).options = options;
+              (devices[k] as any).envs = envs;
+            }
+          }
         }
         res.send(results);
       } catch (e) {
@@ -44,9 +55,9 @@ class AppController extends BaseController {
       }
     });
   
-    expressApp.post('/apps/install', async (req, res) => {
+    expressApp.post('/apps/install', async (req:TypedRequestBody<AppInput>, res) => {
       try {
-        const input = req.body as AppInput;
+        const input = req.body;
         await AppAction.installApp(req.user.id, input);
         res.send({ 'result': 'ok' });
       } catch (e) {
@@ -57,9 +68,9 @@ class AppController extends BaseController {
       }
     });
   
-    expressApp.post('/apps/instances/create', async (req, res) => {
+    expressApp.post('/apps/instances/create', async (req:TypedRequestBody<AppInstanceInput>, res) => {
       try {
-        const input = req.body as AppInstanceInput;
+        const input = req.body;
         await AppInstanceAction.createAppInstance(input);
   
         res.send({ 'result': 'ok' });    
@@ -71,7 +82,7 @@ class AppController extends BaseController {
       }
     });
   
-    expressApp.post('/apps/instances/start', async (req, res) => {
+    expressApp.post('/apps/instances/start', async (req:TypedRequestBody<{ id: string }>, res) => {
       try {
         const appInstanceId = req.body.id;
         await AppInstanceAction.startAppInstance(appInstanceId);
@@ -85,7 +96,7 @@ class AppController extends BaseController {
       }
     });
   
-    expressApp.post('/apps/instances/stop', async (req, res) => {
+    expressApp.post('/apps/instances/stop', async (req:TypedRequestBody<{ id: string }>, res) => {
       try {
         const appInstanceId = req.body.id;
         AppInstanceAction.stopAppInstance(appInstanceId);
@@ -99,7 +110,7 @@ class AppController extends BaseController {
       }
     });
   
-    expressApp.post('/apps/instances/remove', async (req, res) => {
+    expressApp.post('/apps/instances/remove', async (req:TypedRequestBody<{ id: string }>, res) => {
       try {
         const appInstanceId = req.body.id;
         await AppInstanceAction.removeAppInstance(appInstanceId);
@@ -112,7 +123,7 @@ class AppController extends BaseController {
       }
     });
   
-    expressApp.post('/apps/containers/update', async (req, res) => {
+    expressApp.post('/apps/containers/update', async (req:TypedRequestBody<{ id: string }>, res) => {
       try {
         const containerId = req.body.id;
         const container = await AppInstanceModel.getContainer(containerId);
@@ -152,7 +163,7 @@ class AppController extends BaseController {
       }
     });
   
-    expressApp.post('/apps/uninstall', async (req, res) => {
+    expressApp.post('/apps/uninstall', async (req:TypedRequestBody<{ id: string }>, res) => {
       try {
         const appId = req.body.id;
         await AppAction.uninstallApp(appId);

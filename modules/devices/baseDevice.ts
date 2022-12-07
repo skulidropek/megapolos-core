@@ -1,7 +1,8 @@
 import fetch from 'cross-fetch';
 
-interface Manifest {
+export interface Manifest {
   name: string;
+  type: string;
   container_fields: [string];
   container_env_fields: [string];
 }

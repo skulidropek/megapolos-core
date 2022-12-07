@@ -2,19 +2,20 @@ import { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import fetch from 'cross-fetch';
 import coreRqlite from '../../coreRqlite';
-import { DeviceInput } from '../../types';
+import { ContainerDeviceInput, DeviceInput, TypedRequestBody } from '../../types';
 import DeviceModel from '../models/device.model';
 import AppInstanceModel from '../models/appInstance.model';
-import BaseDevice from '../devices/baseDevice';
+import BaseDevice, { Manifest } from '../devices/baseDevice';
 import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
 import BaseController from './base.controller';
+import { sleep } from '../..';
 
 class DeviceController extends BaseController {
   initializeRoutes(): void {
     const expressApp = this.expressApp;
 
-    expressApp.post('/devices/list', async (req, res) => {
+    expressApp.post('/devices/list', async (req:TypedRequestBody<void>, res) => {
       try {
         const results = await DeviceModel.getDevices();
         res.send(results);
@@ -26,9 +27,9 @@ class DeviceController extends BaseController {
       }
     });
         
-    expressApp.post('/devices/add', async (req, res) => {
+    expressApp.post('/devices/add', async (req:TypedRequestBody<DeviceInput>, res) => {
       try {
-        const input: DeviceInput = req.body;
+        const input = req.body;
         const deviceId = uuidv4();
         const driverId = uuidv4();
         const appId = await AppAction.installApp(req.user.id, {
@@ -42,7 +43,7 @@ class DeviceController extends BaseController {
         const appInstanceId = await AppInstanceAction.createAppInstance({
           app_id: appId,
           name: input.name,
-          containers: {},
+          containers: [],
         }, true);
         await AppInstanceAction.startAppInstance(appInstanceId);
         await DeviceModel.createDriver({
@@ -53,10 +54,24 @@ class DeviceController extends BaseController {
         await DeviceModel.createDevice({
           id: deviceId,
           name: input.name,
-          device_type_id: input.type,
+          device_type_id: '',
           node_id: '',
           driver_id: driverId,
         });
+        const container = (await AppInstanceModel.getAppInstanceContainers(appInstanceId))[0];
+        const device = new BaseDevice(container.outer_port);
+        let manifest: Manifest;
+        for (let i = 0; i < 10; i++) {
+          try {
+            manifest = await device.getManifest();
+            break;
+          } catch (e) {
+            await sleep(1000);
+          }
+        }
+        if (manifest.type) {
+          await DeviceModel.updateDeviceType(deviceId, manifest.type);
+        }
         res.send({ 'result': 'ok' });
       } catch (e) {
         console.error(e);
@@ -66,7 +81,7 @@ class DeviceController extends BaseController {
       }
     });
         
-    expressApp.post('/devices/remove', async (req, res) => {
+    expressApp.post('/devices/remove', async (req:TypedRequestBody<{ id: string }>, res) => {
       try {
         const deviceId = req.body.id;
         const device = await DeviceModel.getDevice(deviceId);
@@ -86,7 +101,7 @@ class DeviceController extends BaseController {
       }
     });
         
-    expressApp.post('/devices/app_options_env/get_fields', async (req, res) => {
+    expressApp.post('/devices/app_options_env/get_fields', async (req:TypedRequestBody<{ id: string }>, res) => {
       try {
         const deviceId = req.body.id;
         
@@ -103,7 +118,7 @@ class DeviceController extends BaseController {
       }
     });
         
-    expressApp.post('/devices/app_options/get_fields', async (req, res) => {
+    expressApp.post('/devices/app_options/get_fields', async (req:TypedRequestBody<{ id:string }>, res) => {
       try {
         const deviceId = req.body.id;
         
@@ -120,7 +135,7 @@ class DeviceController extends BaseController {
       }
     });
         
-    expressApp.post('/devices/get_options', async (req, res) => {
+    expressApp.post('/devices/get_options', async (req:TypedRequestBody<{ device_id: string, container_id: string }>, res) => {
       try {
         const options = await DeviceModel.getDeviceOptionsOfContainer(req.body.device_id, req.body.container_id);
         
@@ -135,6 +150,30 @@ class DeviceController extends BaseController {
           error: e,
         });
       }
+    });
+
+    expressApp.post('/devices/add_device_to_container', async (req:TypedRequestBody<{
+      container_id: string,
+      device_id: string,
+      device_input: ContainerDeviceInput
+    }>, res) => {
+      const container = await AppInstanceModel.getContainer(req.body.container_id);
+      const appInstance = await AppInstanceModel.getAppInstance(container.app_instance_id);
+      await AppInstanceAction.addDeviceToContainer(
+        req.body.container_id,
+        req.body.device_id,
+        appInstance.user_id,
+        req.body.device_input,
+      );
+    });
+
+    expressApp.post('/devices/remove_device_from_container', async (req:TypedRequestBody<
+    { container_id: string, device_id: string }
+    >, res) => {
+      await DeviceModel.removeDeviceFromContainer({
+        containerId: req.body.container_id,
+        deviceId: req.body.device_id,
+      });
     });
   }
 }

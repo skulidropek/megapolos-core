@@ -31,7 +31,7 @@ class DeviceModel {
     `, deviceId]])).toArray()[0];
   }
 
-  static async getDevices():Promise<DeviceModel[]> {
+  static async getDevices():Promise<DeviceTable[]> {
     return (await coreRqlite.query('SELECT * FROM device')).toArray();
   }
 
@@ -67,10 +67,22 @@ class DeviceModel {
   `, deviceId, containerId]])).toArray();
   }
 
-
-  static async getDevicesOfContainer(containerId: string):Promise<(ContainerTable & { device_type_id: string; device_id: string })[]> {
+  static async getDeviceEnvsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceEnvOptionTable[]> {
     return (await coreRqlite.query([[`
-    SELECT c.*, d.id AS device_id, d.device_type_id AS device_type_id FROM device d
+    SELECT * FROM container_device_env_option WHERE device_id = ? AND container_id = ?
+  `, deviceId, containerId]])).toArray();
+  }
+
+
+  static async getDevicesOfContainer(containerId: string):Promise<(ContainerTable & { 
+    device_type_id: string; 
+    device_id: string;
+    device_name: string;
+  })[]> {
+    return (await coreRqlite.query([[`
+    SELECT c.*, 
+    d.id AS device_id, d.device_type_id AS device_type_id, d.name AS device_name
+    FROM device d
     JOIN container_device cd ON d.id = cd.device_id
     LEFT JOIN driver dr ON d.driver_id = dr.id
     LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
@@ -96,6 +108,15 @@ class DeviceModel {
       `, input.containerDeviceId, input.containerId, input.deviceId]]);
   }  
 
+  static async removeDeviceFromContainer(input: { containerId: string, deviceId: string }) {
+    await coreRqlite.execute([['DELETE FROM container_device WHERE container_id = ? AND device_id = ?', 
+      input.containerId, input.deviceId]]);
+    await coreRqlite.execute([['DELETE FROM container_device_option WHERE container_id = ? AND device_id = ?',
+      input.containerId, input.deviceId]]);
+    await coreRqlite.execute([['DELETE FROM container_device_env_option WHERE container_id = ? AND device_id = ?',
+      input.containerId, input.deviceId]]);
+  }
+
   static async removeDevicesFromContainer(containerId: string) {
     await coreRqlite.execute([['DELETE FROM container_device WHERE container_id = ?', containerId]]);
   }
@@ -118,6 +139,12 @@ class DeviceModel {
     coreRqlite.execute([[`
       DELETE FROM driver WHERE id = ?
     `, driverId]]);
+  }
+
+  static async updateDeviceType(deviceId: string, deviceTypeId: string) {
+    await coreRqlite.execute([[`
+      UPDATE device SET device_type_id = ? WHERE id = ?
+    `, deviceTypeId, deviceId]]);
   }
 }
 
