@@ -35,20 +35,9 @@ class AppInstanceAction {
       containerId: string, imageId: string, imageName: string, imageRepository: string, userId: string,
       appId: string, appInstanceId: string, innerPort: number, outerPort: number
     },
-  ) {
-    const envParameters = await DeviceModel.getEnvOfContainer(data.containerId);
-    let deviceParameters:{key: string, value: string}[] = [];
-  
+  ):Promise<void> {
     const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
     console.log(devices);
-    for (let i in devices) {
-      const device = devices[i];
-      const deviceObject = new BaseDevice(device.outer_port);
-      const result = await deviceObject.getEnvFieldsValues(data.userId);
-      console.log(result);
-      deviceParameters = deviceParameters.concat(result);
-    }
-  
     const repositoryDevice = devices.find((device) => device.device_type_id === 'repository');
     const builderDevice = devices.find((device) => device.device_type_id === 'builder');
     if (builderDevice) {
@@ -56,8 +45,7 @@ class AppInstanceAction {
       if (repositoryDevice) {
         const repositoryDeviceObject = new RepositoryDevice(repositoryDevice.outer_port);
         const repository = await repositoryDeviceObject.cloneContainer(data.containerId);
-        const builderDeviceObject = new BuilderDevice(builderDevice.outer_port);
-        await builderDeviceObject.build(data.imageName, repository.path);
+        await builderDeviceObject.build(data.containerId, data.imageName, repository.path);
     
         if (repository.path.startsWith(megapolosPath + '/data/') &&
           fsSync.existsSync(repository.path)
@@ -67,6 +55,37 @@ class AppInstanceAction {
       } else {
         await builderDeviceObject.buildLocal(data.containerId, data.imageName);
       }
+      await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'building');
+    } else {
+      await EventsObserver.listener({
+        type: 'buildEnded',
+        data: {
+          containerId: data.containerId,
+        },
+      })
+    }
+  }
+
+  static async createContainerAfterBuild(
+    data: {
+      containerId: string, imageId: string, imageName: string, imageRepository: string, userId: string,
+      appId: string, appInstanceId: string, innerPort: number, outerPort: number
+    },
+  ) {
+    await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'stopped');
+
+    const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
+    console.log(devices);
+
+    const envParameters = await DeviceModel.getEnvOfContainer(data.containerId);
+    let deviceParameters:{ key: string, value: string }[] = [];
+  
+    for (let i in devices) {
+      const device = devices[i];
+      const deviceObject = new BaseDevice(device.outer_port);
+      const result = await deviceObject.getEnvFieldsValues(data.userId);
+      console.log(result);
+      deviceParameters = deviceParameters.concat(result);
     }
   
     const containerDevice = await DeviceModel.getDeviceFromContainer(data.containerId);
@@ -203,19 +222,21 @@ class AppInstanceAction {
         }
       }
   
-      const dockerRuntimeId = (await AppInstanceAction.createContainer({
-        containerId, imageId: image.id, imageName: image.name,
-        imageRepository: image.repository,
-        userId, appId: input.app_id, appInstanceId, innerPort: image.inner_port, outerPort })).id;
       await AppInstanceModel.createContainer({
         id: containerId,
-        docker_runtime_id: dockerRuntimeId,
+        docker_runtime_id: '',
         name: app.name + '_' + input.name + '_' + image.name,
         image_id: image.id,
         node_id: '',
         outer_port: outerPort,
         app_instance_id: appInstanceId,
       });
+
+      await AppInstanceAction.createContainer({
+        containerId, imageId: image.id, imageName: image.name,
+        imageRepository: image.repository,
+        userId, appId: input.app_id, appInstanceId, innerPort: image.inner_port, outerPort });
+      // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerRuntimeId);
     }
   
     return appInstanceId;
@@ -292,7 +313,7 @@ class AppInstanceAction {
     if (isDevice) {
       try {
         await exec(`userdel -r ${instance.user_id.replace(/-/g, '')}`);
-      } catch(e) {
+      } catch (e) {
         console.error(e);
       }
     }
@@ -318,6 +339,9 @@ class AppInstanceAction {
     for (let i in containers) {
       const container = containers[i];
       try {
+        if (!container.docker_runtime_id) {
+          continue;
+        }
         const containerInfo = await docker.getContainer(container.docker_runtime_id).inspect();
         if (container.life_status === 'running' && !containerInfo.State.Running) {
           try {

@@ -8,11 +8,12 @@ import userModule from './modules/resolvers/user.resolver';
 import nodeModule from './modules/resolvers/node.resolver';
 import appModule from './modules/resolvers/app.resolver';
 import deviceModule from './modules/resolvers/device.resolver';
+import eventModule from './modules/resolvers/event.resolver';
 
 const graphqlServer = async () => {
   try {
     const application = createApplication({
-      modules: [userModule, nodeModule, appModule, deviceModule],
+      modules: [userModule, nodeModule, appModule, deviceModule, eventModule],
     });
    
     const executor = application.createApolloExecutor();
@@ -39,7 +40,9 @@ const graphqlServer = async () => {
 
     const port = 5100;
  
-    server.listen({ port }).then(({ url }) => {
+    server.listen({ port,
+      host: '0.0.0.0',
+    }).then(({ url }) => {
       console.log(`Apollo server ready at ${port}`);
     });
 

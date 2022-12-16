@@ -61,6 +61,7 @@ const appModule = createModule({
         create_date: String
         update_date: String
         remove_date: String
+        devices: [ContainerDevice]
       }
 
       input AppInput {
@@ -83,6 +84,17 @@ const appModule = createModule({
         id: String
         parameters: [ContainerDeviceParameterInput]
         env_parameters: [ContainerDeviceParameterInput]
+      }
+
+      type ContainerDeviceParameter {
+        key: String
+        value: String
+      }
+
+      type ContainerDevice {
+        device: Device
+        parameters: [ContainerDeviceParameter]
+        env_parameters: [ContainerDeviceParameter]
       }
 
       input ContainerVolumeInput {
@@ -135,12 +147,15 @@ const appModule = createModule({
           results[i].containers = containers;
           for (let j in containers) {
             const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
-            containers[j].devices = devices;
             for (let k in devices) {
               const options = await DeviceModel.getDeviceOptionsOfContainer(devices[k].device_id, containers[j].id);
               const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].device_id, containers[j].id);
-              (devices[k] as any).options = options;
-              (devices[k] as any).envs = envs;
+              containers[j].devices = [];
+              containers[j].devices.push({
+                device: devices[k],
+                parameters: options.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
+                env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
+              });
             }
           }
         }
@@ -178,17 +193,19 @@ const appModule = createModule({
         const appInstance = await AppInstanceModel.getAppInstance(container.app_instance_id);
         const image = await AppModel.getImage(container.image_id);
         const dockerRuntimeId = container.docker_runtime_id;
-        try {
-          await docker.getContainer(dockerRuntimeId).stop();
-        } catch (e) {
-          console.error(e);
+        if (dockerRuntimeId) {
+          try {
+            await docker.getContainer(dockerRuntimeId).stop();
+          } catch (e) {
+            console.error(e);
+          }
+          try {
+            await docker.getContainer(dockerRuntimeId).remove();
+          } catch (e) {
+            console.error(e);
+          }
         }
-        try {
-          await docker.getContainer(dockerRuntimeId).remove();
-        } catch (e) {
-          console.error(e);
-        }
-        const dockerContainer = await AppInstanceAction.createContainer({
+        await AppInstanceAction.createContainer({
           appId: appInstance.app_id,
           appInstanceId: appInstance.id,
           containerId: container.id,
@@ -199,9 +216,9 @@ const appModule = createModule({
           outerPort: container.outer_port,
           userId: appInstance.user_id,
         });
-        await dockerContainer.start();
+        // await dockerContainer.start();
   
-        await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerContainer.id);
+        // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerContainer.id);
         return true;
       }),
     },
