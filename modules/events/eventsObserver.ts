@@ -1,3 +1,4 @@
+import pubsub from '../../pubsub';
 import AppInstanceAction from '../actions/appInstance.action';
 import AppModel from '../models/app.model';
 import AppInstanceModel from '../models/appInstance.model';
@@ -7,6 +8,7 @@ import { MegapolosEvent } from './event';
 
 class EventsObserver {
   static async listener<T = MegapolosEvent>(event: T) {
+    pubsub.publish('EVENT', { event });
     switch ((event as MegapolosEvent).type) {
       case 'buildEnded': {
         const buildEndedEvent = event as BuildEndedEvent;

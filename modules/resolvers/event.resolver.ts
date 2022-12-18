@@ -1,6 +1,9 @@
 import { createModule, gql } from 'graphql-modules';
+import pubsub from '../../pubsub';
 import { resolver } from '../../types';
 import EventsObserver from '../events/eventsObserver';
+import { JSONResolver } from 'graphql-scalars';
+
 
 interface BuildEventInput {
   container_id: string;
@@ -11,6 +14,8 @@ const eventModule = createModule({
   dirname: __dirname,
   typeDefs: [
     gql`
+      scalar JSON
+
       input BuildEventInput {
         container_id: String
       }
@@ -18,9 +23,19 @@ const eventModule = createModule({
       type Mutation {
         eventBuildEnded(input: BuildEventInput): Boolean
       }
+
+      type Event {
+        type: String
+        data: JSON
+      }
+
+      type Subscription {
+        event: Event
+      }
     `,
   ],
   resolvers: {
+    JSON: JSONResolver,
     Query: {
     },
     Mutation: {
@@ -33,6 +48,13 @@ const eventModule = createModule({
         });
         return true;
       }),
+    },
+    Subscription: {
+      event: {
+        subscribe() {
+          return pubsub.asyncIterator(['EVENT']);
+        },
+      },
     },
   },
 });

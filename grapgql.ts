@@ -1,5 +1,8 @@
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { ApolloServer } from 'apollo-server';
+import { createServer } from 'http';
+import { SubscriptionServer } from 'subscriptions-transport-ws';
+import express from 'express';
+import { ApolloServer } from 'apollo-server-express';
 import { createApplication } from 'graphql-modules';
 import config from './config/config.json';
 import UserModel from './modules/models/user.model';
@@ -16,10 +19,17 @@ const graphqlServer = async () => {
       modules: [userModule, nodeModule, appModule, deviceModule, eventModule],
     });
    
-    const executor = application.createApolloExecutor();
-    const schema = application.schema;
+    const { schema, createExecution, createSubscription, createApolloExecutor } = application;
+    const execute = createExecution();
+    const subscribe = createSubscription();
+
+    const app = express();
  
-    const server = new ApolloServer({ schema, executor,
+    const httpServer = createServer(app);
+ 
+    let subscriptionServer;
+    const server = new ApolloServer({ schema,
+      executor: createApolloExecutor(),
       context: async ({ req }):Promise<Context> => {
         const token = req.headers.token || '';
         let decoded: JwtPayload & { id: string };
@@ -38,11 +48,27 @@ const graphqlServer = async () => {
       },
     });
 
+
+    subscriptionServer = SubscriptionServer.create(
+      {
+        schema,
+        execute,
+        subscribe,
+      },
+      {
+        server: httpServer,
+        path: '/',
+      },
+    );
+
+    await server.start();
+    server.applyMiddleware({ app, path: '/' });
+
     const port = 5100;
  
-    server.listen({ port,
+    httpServer.listen({ port,
       host: '0.0.0.0',
-    }).then(({ url }) => {
+    }, () => {
       console.log(`Apollo server ready at ${port}`);
     });
 

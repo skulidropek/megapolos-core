@@ -1,3 +1,4 @@
+import { PubSub } from 'graphql-subscriptions';
 import { UserTable } from './modules/models/tables';
 
 export interface AppInput {
@@ -58,6 +59,7 @@ export interface TypedRequestBody<T> extends Express.Request {
 
 export type Context = {
   user: UserTable,
+  // pubsub: PubSub,
 };
 
 export type Resolver<TArguments, TResult> = (parent, args:TArguments, contextValue: Context, info) => TResult | Promise<TResult>;
