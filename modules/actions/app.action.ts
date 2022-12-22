@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AppInput } from '../../types';
 import AppModel from '../models/app.model';
+import EventsObserver from '../events/eventsObserver';
 
 class AppAction {
   static async installApp(userId, input: AppInput) {
@@ -23,6 +24,7 @@ class AppAction {
         innerPort: image.inner_port,
       });
     }
+    EventsObserver.listener({ 'type': 'installApp', data: { userId, input } });
     return appId;
   }  
 
@@ -35,6 +37,7 @@ class AppAction {
     }
   
     await AppModel.removeApp(appId);
+    EventsObserver.listener({ 'type': 'uninstallApp', data: { appId } });
   }
 }
 

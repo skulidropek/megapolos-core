@@ -37,7 +37,6 @@ class AppInstanceAction {
     },
   ):Promise<void> {
     const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
-    console.log(devices);
     const repositoryDevice = devices.find((device) => device.device_type_id === 'repository');
     const builderDevice = devices.find((device) => device.device_type_id === 'builder');
     if (builderDevice) {
@@ -64,6 +63,8 @@ class AppInstanceAction {
         },
       })
     }
+
+    EventsObserver.listener({ 'type': 'createContainer', data });
   }
 
   static async createContainerAfterBuild(
@@ -75,7 +76,6 @@ class AppInstanceAction {
     await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'stopped');
 
     const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
-    console.log(devices);
 
     const envParameters = await DeviceModel.getEnvOfContainer(data.containerId);
     let deviceParameters:{ key: string, value: string }[] = [];
@@ -84,7 +84,6 @@ class AppInstanceAction {
       const device = devices[i];
       const deviceObject = new BaseDevice(device.outer_port);
       const result = await deviceObject.getEnvFieldsValues(data.userId);
-      console.log(result);
       deviceParameters = deviceParameters.concat(result);
     }
   
@@ -95,6 +94,7 @@ class AppInstanceAction {
     if (!fsSync.existsSync(megapolosVolume)) {
       await fs.mkdir(megapolosVolume);
     }
+    EventsObserver.listener({ 'type': 'createContainerAfterBuild', data });
     return (docker.createContainer({
       name: data.containerId + '_' + data.imageName,
       Image: data.imageRepository,
@@ -165,6 +165,52 @@ class AppInstanceAction {
         });
       }
     }
+
+    EventsObserver.listener({ 'type': 'addDeviceToContainer', data: {containerId, deviceId} });
+  }
+
+  static async updateDeviceToContainer(containerId: string, deviceId: string, deviceInput: ContainerDeviceInput) {
+    await DeviceModel.removeOptionsOfDeviceFromContainer({ containerId, deviceId });
+    if (deviceInput.env_parameters) {
+      for (let i in deviceInput.env_parameters) {
+        const containerDeviceEnvId = uuidv4();
+        await DeviceModel.addEnvToContainer({
+          id: containerDeviceEnvId,
+          container_id: containerId,
+          device_id: deviceId,
+          device_option_name: deviceInput.env_parameters[i].key,
+          container_env_name: deviceInput.env_parameters[i].value,
+        });
+      }
+    }
+    if (deviceInput.parameters) {
+      for (let i in deviceInput.parameters) {
+        const containerDeviceEnvId = uuidv4();
+        await DeviceModel.addOptionToContainer({
+          id: containerDeviceEnvId,
+          container_id: containerId,
+          device_id: deviceId,
+          device_option_name: deviceInput.parameters[i].key,
+          container_option_value: deviceInput.parameters[i].value,
+        });
+      }
+    }
+
+    EventsObserver.listener({ 'type': 'updateDeviceToContainer', data: {containerId, deviceId} });
+  }
+
+  static async removeDeviceFromContainer(containerId: string, deviceId: string) {
+    const deviceContainer = await DeviceModel.getDeviceContainer(deviceId);
+    const container = await AppInstanceModel.getContainer(containerId);
+    const instance = await AppInstanceModel.getAppInstance(container.app_instance_id);
+    if (deviceContainer.device_type_id === 'db') {
+      const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
+      await databaseDevice.remove(instance.user_id);
+    }
+    await DeviceModel.removeDeviceFromContainer({
+      containerId: containerId,
+      deviceId: deviceId,
+    });
   }
   
   static async createAppInstance(input: AppInstanceInput, isDevice = false) {
@@ -214,7 +260,6 @@ class AppInstanceAction {
       }
 
       const imageContainer = input.containers.find((container) => container.image_id === image.id);
-      console.log(imageContainer);
       if (imageContainer) {
         for (let j in imageContainer.devices) {
           const deviceInput = imageContainer.devices[j];
@@ -238,6 +283,8 @@ class AppInstanceAction {
         userId, appId: input.app_id, appInstanceId, innerPort: image.inner_port, outerPort });
       // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerRuntimeId);
     }
+
+    EventsObserver.listener({ 'type': 'createAppInstance', data: {appInstanceId} });
   
     return appInstanceId;
   }
@@ -256,6 +303,8 @@ class AppInstanceAction {
       await AppInstanceModel.updateContainerLifeStatus(container.id, 'running');
     }
     await AppInstanceModel.updateAppInstanceLifeStatus(appInstanceId, 'running');
+
+    EventsObserver.listener({ 'type': 'startAppInstance', data:{appInstanceId} });
   }
   
   static async stopAppInstance(appInstanceId) {
@@ -272,6 +321,8 @@ class AppInstanceAction {
       await AppInstanceModel.updateContainerLifeStatus(container.id, 'stopped');
     }
     await AppInstanceModel.updateAppInstanceLifeStatus(appInstanceId, 'stopped');
+
+    EventsObserver.listener({ 'type': 'stopAppInstance', data:{appInstanceId} });
   }
   
   static async removeAppInstance(appInstanceId, isDevice = false) {
@@ -294,18 +345,12 @@ class AppInstanceAction {
         await fs.rmdir(megapolosVolume, { recursive: true });
       }
     
-      await AppInstanceModel.deleteContainer(container.id);
       const devices = await DeviceModel.getDevicesOfContainer(container.id);
       for (let i in devices) {
         const device = devices[i];
-        if (device.device_type_id === 'db') {
-          const databaseDevice = new DatabaseDevice(device.outer_port);
-          await databaseDevice.remove(instance.user_id);
-        }
+        AppInstanceAction.removeDeviceFromContainer(container.id, device.device_id);
       }
-      await DeviceModel.removeDevicesFromContainer(container.id);
-      await DeviceModel.removeEnvsFromContainer(container.id);
-      await DeviceModel.removeOptionsFromContainer(container.id);
+      await AppInstanceModel.deleteContainer(container.id);
     }
     await AppInstanceModel.removeAppInstance(appInstanceId);
     await UserModel.removeUser(instance.user_id);
@@ -317,6 +362,8 @@ class AppInstanceAction {
         console.error(e);
       }
     }
+
+    EventsObserver.listener({ 'type': 'removeAppInstance', data:{appInstanceId} });
   }
 
   static async dockerEvents() {
@@ -332,6 +379,8 @@ class AppInstanceAction {
         });
       } 
     });
+
+    EventsObserver.listener({ 'type': 'dockerEvents' });
   }
 
   static async restoreContainers() {
@@ -361,6 +410,8 @@ class AppInstanceAction {
         console.error(e);
       }
     }
+
+    EventsObserver.listener({ 'type': 'restoreContainers' });
   }
 }
 

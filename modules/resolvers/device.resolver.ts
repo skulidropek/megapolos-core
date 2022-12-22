@@ -8,6 +8,7 @@ import AppInstanceAction from '../actions/appInstance.action';
 import { sleep } from '../..';
 import { createModule, gql } from 'graphql-modules';
 import { ContainerDeviceOptionTable, DeviceTable } from '../models/tables';
+import EventsObserver from '../events/eventsObserver';
 
 const deviceModule = createModule({
   id: 'device-module',
@@ -23,6 +24,8 @@ const deviceModule = createModule({
     type Device {
       id: String
       name: String
+      device_id: String
+      device_name: String
       device_type_id: String
       node_id: String
       driver_id: String
@@ -54,6 +57,7 @@ const deviceModule = createModule({
         addDevice(input: DeviceInput): Boolean
         removeDevice(id: String): Boolean
         addDeviceToContainer(container_id: String, input: ContainerDeviceInput): Boolean
+        editDeviceOfContainer(container_id: String, input: ContainerDeviceInput): Boolean
         removeDeviceFromContainer(container_id: String, device_id: String): Boolean        
       }
     `,
@@ -125,6 +129,7 @@ const deviceModule = createModule({
         if (manifest.type) {
           await DeviceModel.updateDeviceType(deviceId, manifest.type);
         }
+        EventsObserver.listener({ type: 'addDevice', data: args });
         return true;
       }),
       removeDevice: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
@@ -136,6 +141,7 @@ const deviceModule = createModule({
         await AppAction.uninstallApp(driver.app_id);
         await DeviceModel.removeDevice(deviceId);
         await DeviceModel.removeDriver(device.driver_id);
+        EventsObserver.listener({ type: 'removeDevice', data: args });
         return true;
       }),
       addDeviceToContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
@@ -147,13 +153,18 @@ const deviceModule = createModule({
           appInstance.user_id,
           args.input,
         );
+        EventsObserver.listener({ type: 'addDeviceToContainer', data: args });
+        return true;
+      }),
+      editDeviceOfContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
+        AppInstanceAction.updateDeviceToContainer(args.container_id, args.input.id, args.input);
+        EventsObserver.listener({ type: 'editDeviceOfContainer', data: args });
         return true;
       }),
       removeDeviceFromContainer: resolver<{ container_id: string, device_id: string }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.removeDeviceFromContainer({
-          containerId: args.container_id,
-          deviceId: args.device_id,
-        });
+        await AppInstanceAction.removeDeviceFromContainer(args.container_id, args.device_id);
+        EventsObserver.listener({ type: 'removeDeviceFromContainer', data: args });
+        console.log(args);
         return true;
       }),
     },

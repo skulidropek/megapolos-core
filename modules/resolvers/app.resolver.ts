@@ -7,6 +7,7 @@ import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
 import DeviceModel from '../models/device.model';
 import { createModule, gql } from 'graphql-modules';
+import EventsObserver from '../events/eventsObserver';
 
 const appModule = createModule({
   id: 'app-module',
@@ -147,10 +148,10 @@ const appModule = createModule({
           results[i].containers = containers;
           for (let j in containers) {
             const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
+            containers[j].devices = [];
             for (let k in devices) {
               const options = await DeviceModel.getDeviceOptionsOfContainer(devices[k].device_id, containers[j].id);
               const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].device_id, containers[j].id);
-              containers[j].devices = [];
               containers[j].devices.push({
                 device: devices[k],
                 parameters: options.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
@@ -165,26 +166,32 @@ const appModule = createModule({
     Mutation: {
       installApp: resolver<{ input: AppInput }, boolean>(async (parent, args, context, info) => {
         await AppAction.installApp(context.user.id, args.input);
+        EventsObserver.listener({ type: 'installApp', data: args });
         return true;
       }),
       uninstallApp: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         await AppAction.uninstallApp(args.id);
+        EventsObserver.listener({ type: 'uninstallApp', data: args });
         return true;
       }),
       createAppInstance: resolver<{ input: AppInstanceInput }, boolean>(async (parent, args, context, info) => {
         await AppInstanceAction.createAppInstance(args.input);
+        EventsObserver.listener({ type: 'createAppInstance', data: args });
         return true;
       }),
       startAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         await AppInstanceAction.startAppInstance(args.id);
+        EventsObserver.listener({ type: 'startAppInstance', data: args });
         return true;
       }),
       stopAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         await AppInstanceAction.stopAppInstance(args.id);
+        EventsObserver.listener({ type: 'stopAppInstance', data: args });
         return true;
       }),
       removeAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         await AppInstanceAction.removeAppInstance(args.id);
+        EventsObserver.listener({ type: 'removeAppInstance', data: args });
         return true;
       }),
       updateContainer: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
@@ -219,6 +226,7 @@ const appModule = createModule({
         // await dockerContainer.start();
   
         // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerContainer.id);
+        EventsObserver.listener({ type: 'updateContainer', data: args });
         return true;
       }),
     },

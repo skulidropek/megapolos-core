@@ -117,6 +117,13 @@ class DeviceModel {
       input.containerId, input.deviceId]]);
   }
 
+  static async removeOptionsOfDeviceFromContainer(input: { containerId: string, deviceId: string }) {
+    await coreRqlite.execute([['DELETE FROM container_device_option WHERE container_id = ? AND device_id = ?',
+      input.containerId, input.deviceId]]);
+    await coreRqlite.execute([['DELETE FROM container_device_env_option WHERE container_id = ? AND device_id = ?',
+      input.containerId, input.deviceId]]);
+  }
+
   static async removeDevicesFromContainer(containerId: string) {
     await coreRqlite.execute([['DELETE FROM container_device WHERE container_id = ?', containerId]]);
   }

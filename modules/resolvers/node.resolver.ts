@@ -4,6 +4,7 @@ const exec = promisify(require('child_process').exec);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { resolver } from '../../types';
 import { createModule, gql } from 'graphql-modules';
+import EventsObserver from '../events/eventsObserver';
 
 const nodeModule = createModule({
   id: 'node-module',
@@ -32,6 +33,7 @@ const nodeModule = createModule({
         const result = await exec(command,
         // , { uid: parseInt(osUserId) }
         );
+        EventsObserver.listener({ type: 'shellCommand', data: args });
         return result;
       }),
     },

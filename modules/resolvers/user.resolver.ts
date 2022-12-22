@@ -5,6 +5,7 @@ import config from '../../config/config.json';
 import { resolver, UserInput } from '../../types';
 import { UserTable } from '../models/tables';
 import UserModel from '../models/user.model';
+import EventsObserver from '../events/eventsObserver';
 
 const userModule = createModule({
   id: 'user-module',
@@ -30,6 +31,7 @@ const userModule = createModule({
 
       type Query {
         getUsers: [User]
+        getMe: User
       }
 
       type Mutation {
@@ -46,11 +48,16 @@ const userModule = createModule({
         });
         return results;
       }),
+      getMe: resolver<void, UserTable>(async (parent, args, context, info) => {
+        const results = await UserModel.getUserById(context.user.id);
+        return results;
+      }),
     },
     Mutation: {
       addUser: resolver<{ input: UserInput }, boolean>(async (parent, args, context, info) => {
         const id = uuidv4();
         await UserModel.createUser({ id, name: args.input.name, groupUserId: 'name' });
+        EventsObserver.listener({ type: 'addUser', data: args });
         return true;
       }),
     },
