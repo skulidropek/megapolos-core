@@ -254,6 +254,7 @@ container_device_option (
 CREATE TABLE IF NOT EXISTS
 volume (
     id text not null primary key,
+    name text not null,
     type text not null default 'auto', -- 'auto', 'path', 'dynamic_auto', 'dynamic_path'
     outer_path text,
     node_id text,
@@ -265,6 +266,7 @@ volume (
 CREATE TABLE IF NOT EXISTS
 container_volume (
     id text not null primary key,
+    name text not null,
     container_id text not null,
     volume_id text not null,
     inner_path text not null,
