@@ -254,8 +254,9 @@ container_device_option (
 CREATE TABLE IF NOT EXISTS
 volume (
     id text not null primary key,
-    type text not null default 'auto', -- 'auto', 'path'
-    path text,
+    type text not null default 'auto', -- 'auto', 'path', 'dynamic_auto', 'dynamic_path'
+    outer_path text,
+    node_id text,
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')),
     remove_date date
@@ -266,6 +267,7 @@ container_volume (
     id text not null primary key,
     container_id text not null,
     volume_id text not null,
+    inner_path text not null,
     FOREIGN KEY (volume_id) REFERENCES volume(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
 )
