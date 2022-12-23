@@ -273,3 +273,12 @@ container_volume (
     FOREIGN KEY (volume_id) REFERENCES volume(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
 )
+
+CREATE TABLE IF NOT EXISTS
+container_env_option (
+    id text not null primary key,
+    container_id text not null,
+    container_env_name text not null,
+    container_env_value text not null,
+    FOREIGN KEY (container_id) REFERENCES container(id)
+)
