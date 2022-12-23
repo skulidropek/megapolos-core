@@ -140,3 +140,28 @@ export interface ContainerDeviceOptionTable {
   device_option_name: string;
   container_option_value: string;
 }
+export interface VolumeTable {
+  id: string;
+  name: string;
+  type: 'auto' | 'path' | 'dynamic_auto' | 'dynamic_path';
+  outer_path: string;
+  node_id: string;
+  create_date: string;
+  update_date: string;
+  remove_date: string;
+}
+
+export interface ContainerVolumeTable {
+  id: string,
+  name: string,
+  container_id: string,
+  volume_id: string,
+  inner_path: string,
+}
+
+export interface ContainerEnvOptionTable {
+  id: string,
+  container_id: string,
+  container_env_name: string,
+  container_env_value: string,
+}

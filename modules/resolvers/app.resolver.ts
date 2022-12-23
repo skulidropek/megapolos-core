@@ -8,6 +8,7 @@ import AppInstanceAction from '../actions/appInstance.action';
 import DeviceModel from '../models/device.model';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
+import VolumeModel from '../models/volume.model';
 
 const appModule = createModule({
   id: 'app-module',
@@ -63,6 +64,8 @@ const appModule = createModule({
         update_date: String
         remove_date: String
         devices: [ContainerDevice]
+        volumes: [ContainerVolume]
+        envs: [ContainerParameter]
       }
 
       input AppInput {
@@ -77,6 +80,16 @@ const appModule = createModule({
       }
 
       input ContainerDeviceParameterInput {
+        key: String
+        value: String
+      }
+
+      input ContainerParameterInput {
+        key: String
+        value: String
+      }
+
+      type ContainerParameter {
         key: String
         value: String
       }
@@ -98,15 +111,26 @@ const appModule = createModule({
         env_parameters: [ContainerDeviceParameter]
       }
 
+      type ContainerVolume {
+        id: String
+        name: String
+        container_id: String
+        volume_id: String
+        inner_path: String
+      }
+
       input ContainerVolumeInput {
-        type: String
-        path: String
+        name: String
+        volume: String
+        inner_path: String
       }
 
       input ContainerInput {
         image_id: String
+        fixed_outer_port: Int
         devices: [ContainerDeviceInput]
         volumes: [ContainerVolumeInput]
+        envs: [ContainerParameterInput]
       }
       
       input AppInstanceInput {
@@ -144,7 +168,7 @@ const appModule = createModule({
       getAppInstances: resolver<void, (AppInstanceTable & { containers?: ContainerTable[] })[]>(async (parent, args, context, info) => {
         const results:(AppInstanceTable & { containers?: ContainerTable[] })[] = await AppInstanceModel.getAppInstances();
         for (let i in results) {
-          const containers: (ContainerTable & { devices?: any })[] = await AppInstanceModel.getAppInstanceContainers(results[i].id);
+          const containers: (ContainerTable & { devices?: any, volumes?: any, envs?: any })[] = await AppInstanceModel.getAppInstanceContainers(results[i].id);
           results[i].containers = containers;
           for (let j in containers) {
             const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
@@ -158,6 +182,10 @@ const appModule = createModule({
                 env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
               });
             }
+            const volumes = await VolumeModel.getVolumesOfContainer(containers[j].id);
+            containers[j].volumes = volumes;
+            const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
+            containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
           }
         }
         return results;

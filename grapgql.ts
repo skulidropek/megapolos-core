@@ -12,11 +12,12 @@ import nodeModule from './modules/resolvers/node.resolver';
 import appModule from './modules/resolvers/app.resolver';
 import deviceModule from './modules/resolvers/device.resolver';
 import eventModule from './modules/resolvers/event.resolver';
+import volumeModule from './modules/resolvers/volume.resolver';
 
 const graphqlServer = async () => {
   try {
     const application = createApplication({
-      modules: [userModule, nodeModule, appModule, deviceModule, eventModule],
+      modules: [userModule, nodeModule, appModule, deviceModule, eventModule, volumeModule],
     });
    
     const { schema, createExecution, createSubscription, createApolloExecutor } = application;

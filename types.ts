@@ -27,10 +27,16 @@ export interface AppInstanceInput {
   name: string,
   containers: {
     image_id: string,
+    fixed_outer_port: number,
     devices: ContainerDeviceInput[]
+    envs: {
+      key: string,
+      value: string,
+    }[],
     volumes: { 
-      type: 'auto' | 'path',
-      path: string,
+      name: string,
+      inner_path: string,
+      volume: string,
     }[],
   }[]
 }

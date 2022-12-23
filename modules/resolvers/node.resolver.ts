@@ -5,6 +5,7 @@ const exec = promisify(require('child_process').exec);
 import { resolver } from '../../types';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
+import packageFile from '../../package.json';
 
 const nodeModule = createModule({
   id: 'node-module',
@@ -16,12 +17,20 @@ const nodeModule = createModule({
         stderr: String
       }
 
+      type Query {
+        version: String
+      }
       type Mutation {
         shellCommand(command: String!): ShellCommandResult
       }
     `,
   ],
   resolvers: {
+    Query: {
+      version: resolver<void, string>(async (parent, args, context, info) => {
+        return packageFile.version;
+      }),
+    },
     Mutation: {
       shellCommand: 
       resolver<{ command: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {

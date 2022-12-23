@@ -16,6 +16,7 @@ import BuilderDevice from '../devices/builderDevice';
 import UserAction from './user.action';
 import EventsObserver from '../events/eventsObserver';
 import DockerEvent from '../events/docker.event';
+import VolumeModel from '../models/volume.model';
 
 const exec =   promisify(require('child_process').exec);
 
@@ -28,6 +29,14 @@ class AppInstanceAction {
       }
     }
     throw new Error('No available port');
+  }
+
+  static async checkPort(port: number) {
+    const usedPorts = (await AppInstanceModel.getUsedPorts()).map((app) => app.outer_port);
+    if (usedPorts.includes(port)) {
+      throw new Error('No available port');
+    }
+    return true; 
   }
   
   static async createContainer(
@@ -94,6 +103,12 @@ class AppInstanceAction {
     if (!fsSync.existsSync(megapolosVolume)) {
       await fs.mkdir(megapolosVolume);
     }
+
+    const containerVolumes = await VolumeModel.getVolumesOfContainer(data.containerId);
+    const volumes = await VolumeModel.getVolumes();
+
+    const envs = await AppInstanceModel.getContainerEnvOptions(data.containerId);
+
     EventsObserver.listener({ 'type': 'createContainerAfterBuild', data });
     return (docker.createContainer({
       name: data.containerId + '_' + data.imageName,
@@ -110,6 +125,7 @@ class AppInstanceAction {
         'MEGAPOLOS_IMAGE_ID=' + data.imageId,
         'MEGAPOLOS_PATH_DATA=' + megapolosPath + '/data',
         ...envParameters.map((env) => env.container_env_name + '=' + deviceParameters.find(option => option.key === env.device_option_name).value),
+        ...envs.map((env) => env.container_env_name + '=' + env.container_env_value),
       ],
       ExposedPorts: {
         [`${data.innerPort}/tcp`]: {},
@@ -121,7 +137,9 @@ class AppInstanceAction {
             HostPort: data.outerPort.toString(),
           }],
         },
-        Binds: [megapolosVolume + ':/megapolos'],
+        Binds: [megapolosVolume + ':/megapolos',
+        ...containerVolumes.map((volume) => volumes.find((v) => v.id === volume.volume_id).outer_path + ':' + volume.inner_path),
+      ],
       },
     }));
   }
@@ -252,7 +270,7 @@ class AppInstanceAction {
     for (let i in images) {
       const image = images[i];
       const containerId = uuidv4();
-      const outerPort = await AppInstanceAction.getPort();
+      let outerPort = await AppInstanceAction.getPort();
       try {
         docker.getImage(image.repository);
       } catch {
@@ -260,6 +278,10 @@ class AppInstanceAction {
       }
 
       const imageContainer = input.containers.find((container) => container.image_id === image.id);
+      if (imageContainer.fixed_outer_port) {
+        AppInstanceAction.checkPort(imageContainer.fixed_outer_port);
+        outerPort = imageContainer.fixed_outer_port;
+      }
       if (imageContainer) {
         for (let j in imageContainer.devices) {
           const deviceInput = imageContainer.devices[j];
@@ -276,6 +298,29 @@ class AppInstanceAction {
         outer_port: outerPort,
         app_instance_id: appInstanceId,
       });
+
+      for (let i in imageContainer.volumes) {
+        const volume = imageContainer.volumes[i];
+        const volumeId = uuidv4();
+        await VolumeModel.addVolumeToContainer({
+          id: volumeId,
+          container_id: containerId,
+          volume_id: volume.volume,
+          name: volume.name,
+          inner_path: volume.inner_path,
+        })
+      }
+
+      for (let i in imageContainer.envs) {
+        const env = imageContainer.envs[i];
+        const envId = uuidv4();
+        await AppInstanceModel.addContainerEnvOption({
+          id: envId,
+          container_id: containerId,
+          container_env_name: env.key,
+          container_env_value: env.value,
+        })
+      }
 
       await AppInstanceAction.createContainer({
         containerId, imageId: image.id, imageName: image.name,

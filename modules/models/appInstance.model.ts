@@ -1,5 +1,5 @@
 import coreRqlite from '../../coreRqlite';
-import { AppInstanceTable, AppTable, ContainerDeviceEnvOptionTable, ContainerTable, ImageTable } from './tables';
+import { AppInstanceTable, AppTable, ContainerDeviceEnvOptionTable, ContainerEnvOptionTable, ContainerTable, ImageTable } from './tables';
 
 class AppInstanceModel {
   static async createAppInstance(input: Partial<AppInstanceTable>) {
@@ -41,6 +41,21 @@ class AppInstanceModel {
     await coreRqlite.execute([[
       'UPDATE app_instance SET life_status = ? WHERE id = ?', lifeStatus, appInstanceId
     ]]);
+  }
+
+  static async getContainerEnvOptions(containerId: string):Promise<ContainerEnvOptionTable[]> {
+    return (await coreRqlite.query([['SELECT * FROM container_env_option WHERE container_id = ?', containerId]])).toArray();
+  }
+
+  static async addContainerEnvOption(input: Partial<ContainerEnvOptionTable>) {
+    await coreRqlite.execute([[`
+      INSERT INTO container_env_option (id, container_id, container_env_name, container_env_value)
+      VALUES (?, ?, ?, ?)
+    `, input.id, input.container_id, input.container_env_name, input.container_env_value]]);
+  }
+
+  static async removeContainerEnvOptions(containerId: string) {
+    await coreRqlite.execute([['DELETE FROM container_env_option WHERE container_id = ?', containerId]]);
   }
 
   static async createContainer(input: Partial<ContainerTable>) {
