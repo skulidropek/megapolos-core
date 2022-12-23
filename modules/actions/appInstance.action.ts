@@ -73,6 +73,9 @@ class AppInstanceAction {
       }
       await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'building');
     } else {
+      if (!docker.getImage(data.imageRepository).id) {
+        await docker.pull(data.imageRepository);
+      }
       await EventsObserver.listener({
         type: 'buildEnded',
         data: {
