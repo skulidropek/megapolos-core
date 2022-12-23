@@ -45,6 +45,14 @@ class AppInstanceAction {
       appId: string, appInstanceId: string, innerPort: number, outerPort: number
     },
   ):Promise<void> {
+    const allEnvs = await AppInstanceAction.getContainerEnvs({
+      containerId: data.containerId,
+      userId: data.userId,
+      appId: data.appId,
+      appInstanceId: data.appInstanceId,
+      imageId: data.imageId,
+    });
+
     const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
     const repositoryDevice = devices.find((device) => device.device_type_id === 'repository');
     const builderDevice = devices.find((device) => device.device_type_id === 'builder');
@@ -53,7 +61,7 @@ class AppInstanceAction {
       if (repositoryDevice) {
         const repositoryDeviceObject = new RepositoryDevice(repositoryDevice.outer_port);
         const repository = await repositoryDeviceObject.cloneContainer(data.containerId);
-        await builderDeviceObject.build(data.containerId, data.imageName, repository.path);
+        await builderDeviceObject.build(data.containerId, data.imageName, repository.path, allEnvs);
     
         if (repository.path.startsWith(megapolosPath + '/data/') &&
           fsSync.existsSync(repository.path)
@@ -61,7 +69,7 @@ class AppInstanceAction {
           fs.rmdir(repository.path, { recursive: true });
         }
       } else {
-        await builderDeviceObject.buildLocal(data.containerId, data.imageName);
+        await builderDeviceObject.buildLocal(data.containerId, data.imageName, allEnvs);
       }
       await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'building');
     } else {
@@ -76,14 +84,7 @@ class AppInstanceAction {
     EventsObserver.listener({ 'type': 'createContainer', data });
   }
 
-  static async createContainerAfterBuild(
-    data: {
-      containerId: string, imageId: string, imageName: string, imageRepository: string, userId: string,
-      appId: string, appInstanceId: string, innerPort: number, outerPort: number
-    },
-  ) {
-    await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'stopped');
-
+  static async getContainerEnvs(data: {containerId: string, userId: string, appId: string, appInstanceId: string, imageId: string}) {
     const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
 
     const envParameters = await DeviceModel.getEnvOfContainer(data.containerId);
@@ -95,9 +96,36 @@ class AppInstanceAction {
       const result = await deviceObject.getEnvFieldsValues(data.userId);
       deviceParameters = deviceParameters.concat(result);
     }
-  
+
     const containerDevice = await DeviceModel.getDeviceFromContainer(data.containerId);
   
+    const envs = await AppInstanceModel.getContainerEnvOptions(data.containerId);
+
+    return [
+      {key: 'MEGAPOLOS', value: '1'},
+      {key: 'MEGAPOLOS_TOKEN', value: UserAction.createToken(data.userId)},
+      {key: 'MEGAPOLOS_APP_ID', value: data.appId},
+      {key: 'MEGAPOLOS_DRIVER_ID', value: containerDevice?.driver_id || ''},
+      {key: 'MEGAPOLOS_DEVICE_ID', value: containerDevice?.device_id || ''},
+      {key: 'MEGAPOLOS_DEVICE_TYPE_ID', value: containerDevice?.device_type_id || ''},
+      {key: 'MEGAPOLOS_APP_INSTANCE_ID', value: data.appInstanceId},
+      {key: 'MEGAPOLOS_CONTAINER_ID', value: data.containerId},
+      {key: 'MEGAPOLOS_IMAGE_ID', value: data.imageId},
+      {key: 'MEGAPOLOS_PATH_DATA', value: megapolosPath + '/data'},
+      ...envParameters.map((env) => ({key: env.container_env_name, value: deviceParameters.find(option => option.key === env.device_option_name).value})),
+      ...envs.map((env) => ({key: env.container_env_name, value: env.container_env_value})),
+    ];
+  }
+
+
+  static async createContainerAfterBuild(
+    data: {
+      containerId: string, imageId: string, imageName: string, imageRepository: string, userId: string,
+      appId: string, appInstanceId: string, innerPort: number, outerPort: number
+    },
+  ) {
+    await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'stopped');
+
     const megapolosVolume = megapolosPath + '/volumes/' + data.containerId;
 
     if (!fsSync.existsSync(megapolosVolume)) {
@@ -107,26 +135,19 @@ class AppInstanceAction {
     const containerVolumes = await VolumeModel.getVolumesOfContainer(data.containerId);
     const volumes = await VolumeModel.getVolumes();
 
-    const envs = await AppInstanceModel.getContainerEnvOptions(data.containerId);
+    const allEnvs = await AppInstanceAction.getContainerEnvs({
+      containerId: data.containerId,
+      userId: data.userId,
+      appId: data.appId,
+      appInstanceId: data.appInstanceId,
+      imageId: data.imageId,
+    });
 
     EventsObserver.listener({ 'type': 'createContainerAfterBuild', data });
     return (docker.createContainer({
       name: data.containerId + '_' + data.imageName,
       Image: data.imageRepository,
-      Env: [
-        'MEGAPOLOS=1',
-        'MEGAPOLOS_TOKEN=' + UserAction.createToken(data.userId),
-        'MEGAPOLOS_APP_ID=' + data.appId,
-        'MEGAPOLOS_DRIVER_ID=' + containerDevice?.driver_id || '',
-        'MEGAPOLOS_DEVICE_ID=' + containerDevice?.device_id || '',
-        'MEGAPOLOS_DEVICE_TYPE_ID=' + containerDevice?.device_type_id || '',
-        'MEGAPOLOS_APP_INSTANCE_ID=' + data.appInstanceId,
-        'MEGAPOLOS_CONTAINER_ID=' + data.containerId,
-        'MEGAPOLOS_IMAGE_ID=' + data.imageId,
-        'MEGAPOLOS_PATH_DATA=' + megapolosPath + '/data',
-        ...envParameters.map((env) => env.container_env_name + '=' + deviceParameters.find(option => option.key === env.device_option_name).value),
-        ...envs.map((env) => env.container_env_name + '=' + env.container_env_value),
-      ],
+      Env: allEnvs.map((env) => env.key + '=' + env.value),
       ExposedPorts: {
         [`${data.innerPort}/tcp`]: {},
       },
@@ -323,7 +344,7 @@ class AppInstanceAction {
       }
 
       await AppInstanceAction.createContainer({
-        containerId, imageId: image.id, imageName: image.name,
+        containerId, imageId: image.id, imageName: image.repository,
         imageRepository: image.repository,
         userId, appId: input.app_id, appInstanceId, innerPort: image.inner_port, outerPort });
       // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerRuntimeId);

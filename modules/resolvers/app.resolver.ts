@@ -66,6 +66,7 @@ const appModule = createModule({
         devices: [ContainerDevice]
         volumes: [ContainerVolume]
         envs: [ContainerParameter]
+        docker_status: String
       }
 
       input AppInput {
@@ -168,7 +169,7 @@ const appModule = createModule({
       getAppInstances: resolver<void, (AppInstanceTable & { containers?: ContainerTable[] })[]>(async (parent, args, context, info) => {
         const results:(AppInstanceTable & { containers?: ContainerTable[] })[] = await AppInstanceModel.getAppInstances();
         for (let i in results) {
-          const containers: (ContainerTable & { devices?: any, volumes?: any, envs?: any })[] = await AppInstanceModel.getAppInstanceContainers(results[i].id);
+          const containers: (ContainerTable & { devices?: any, volumes?: any, envs?: any, docker_status?: string })[] = await AppInstanceModel.getAppInstanceContainers(results[i].id);
           results[i].containers = containers;
           for (let j in containers) {
             const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
@@ -186,6 +187,14 @@ const appModule = createModule({
             containers[j].volumes = volumes;
             const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
             containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
+            if (containers[j].docker_runtime_id) {
+              try {
+                const dockerStatus = (await docker.getContainer(containers[j].docker_runtime_id).inspect()).State.Status;
+                containers[j].docker_status = dockerStatus;
+              } catch (e) {
+                containers[j].docker_status = 'not exist';
+              }
+            }
           }
         }
         return results;
@@ -245,7 +254,7 @@ const appModule = createModule({
           appInstanceId: appInstance.id,
           containerId: container.id,
           imageId: container.image_id,
-          imageName: image.name,
+          imageName: image.repository,
           imageRepository: image.repository,
           innerPort: image.inner_port,
           outerPort: container.outer_port,

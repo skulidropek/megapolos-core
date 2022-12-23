@@ -1,20 +1,21 @@
 import { gql } from 'graphql-request';
 import BaseDevice from './baseDevice';
+import { EnvironmentVariable } from '../../types';
 
 class BuilderDevice extends BaseDevice {
-  async build(containerId: string, image:string, path:string) {
+  async build(containerId: string, image:string, path:string, envs:EnvironmentVariable[]) {
     return this.client.request(gql`
-      mutation($containerId: String, $image: String, $path: String) {
-        build($container_id: String, image: $image, path: $path)
+      mutation($containerId: String, $image: String, $path: String, $envs: [EnvironmentVariableInput]) {
+        build($container_id: String, image: $image, path: $path, envs: $envs)
       }
     `, { image, path, containerId });
   }
-  async buildLocal(containerId: string, image: string) {
+  async buildLocal(containerId: string, image: string, envs:EnvironmentVariable[]) {
     return this.client.request(gql`
-      mutation($containerId: String, $image: String) {
-        buildLocal (container_id: $containerId, image: $image)
+      mutation($containerId: String, $image: String, $envs: [EnvironmentVariableInput]) {
+        buildLocal (container_id: $containerId, image: $image, envs: $envs)
       }
-    `, { containerId, image });
+    `, { containerId, image, envs });
   }
 }
 

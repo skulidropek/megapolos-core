@@ -72,4 +72,9 @@ export type Resolver<TArguments, TResult> = (parent, args:TArguments, contextVal
 
 export const resolver = <TArguments, TResult>(func:Resolver<TArguments, TResult>) => func;
 
+export interface EnvironmentVariable {
+  key: string;
+  value: string;
+}
+
 export default {};
