@@ -9,6 +9,8 @@ import { sleep } from '../..';
 import { createModule, gql } from 'graphql-modules';
 import { ContainerDeviceOptionTable, DeviceTable } from '../models/tables';
 import EventsObserver from '../events/eventsObserver';
+import AppModel from '../models/app.model';
+import DeviceAction from '../actions/device.action';
 
 const deviceModule = createModule({
   id: 'device-module',
@@ -59,6 +61,7 @@ const deviceModule = createModule({
         addDeviceToContainer(container_id: String, input: ContainerDeviceInput): Boolean
         editDeviceOfContainer(container_id: String, input: ContainerDeviceInput): Boolean
         removeDeviceFromContainer(container_id: String, device_id: String): Boolean        
+        createDeviceFromApp(app_id: String): Boolean
       }
     `,
   ],
@@ -84,8 +87,6 @@ const deviceModule = createModule({
     Mutation: {
       addDevice: resolver<{ input: DeviceInput }, boolean>(async (parent, args, context, info) => {
         const input = args.input;
-        const deviceId = uuidv4();
-        const driverId = uuidv4();
         const appId = await AppAction.installApp(context.user.id, {
           name: input.name,
           images: [{
@@ -94,41 +95,21 @@ const deviceModule = createModule({
             inner_port: input.inner_port,
           }],
         });
+        const images = await AppModel.getImagesOfApp(appId);
         const appInstanceId = await AppInstanceAction.createAppInstance({
           app_id: appId,
           name: input.name,
-          containers: [],
+          containers: [{
+            devices: [],
+            envs: [],
+            volumes: [],
+            fixed_outer_port: 0,
+            image_id: images[0].id,
+          }],
         }, true);
         await AppInstanceAction.startAppInstance(appInstanceId);
-        await DeviceModel.createDriver({
-          id: driverId,
-          name: input.name,
-          app_id: appId,
-        });
-        await DeviceModel.createDevice({
-          id: deviceId,
-          name: input.name,
-          device_type_id: '',
-          node_id: '',
-          driver_id: driverId,
-        });
-        const container = (await AppInstanceModel.getAppInstanceContainers(appInstanceId))[0];
-        const device = new BaseDevice(container.outer_port);
-        let manifest: Manifest | undefined;
-        for (let i = 0; i < 10; i++) {
-          try {
-            manifest = await device.getManifest();
-            break;
-          } catch (e) {
-            await sleep(1000);
-          }
-        }
-        if (!manifest) {
-          throw new Error('Failed to get manifest');
-        }
-        if (manifest.type) {
-          await DeviceModel.updateDeviceType(deviceId, manifest.type);
-        }
+
+        await DeviceAction.createDevice(appId);
         EventsObserver.listener({ type: 'addDevice', data: args });
         return true;
       }),
@@ -165,6 +146,11 @@ const deviceModule = createModule({
         await AppInstanceAction.removeDeviceFromContainer(args.container_id, args.device_id);
         EventsObserver.listener({ type: 'removeDeviceFromContainer', data: args });
         console.log(args);
+        return true;
+      }),
+      createDeviceFromApp: resolver<{ app_id: string }, boolean>(async (parent, args, context, info) => {
+        await DeviceAction.createDevice(args.app_id);
+        EventsObserver.listener({ type: 'createDeviceFromApp', data: args });
         return true;
       }),
     },

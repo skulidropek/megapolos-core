@@ -13,6 +13,7 @@ import BaseDevice from '../devices/baseDevice';
 import DatabaseDevice from '../devices/databaseDevice';
 import RepositoryDevice from '../devices/repositoryDevice';
 import BuilderDevice from '../devices/builderDevice';
+import DomainDevice from '../devices/domainDevice';
 import UserAction from './user.action';
 import EventsObserver from '../events/eventsObserver';
 import DockerEvent from '../events/docker.event';
@@ -73,7 +74,9 @@ class AppInstanceAction {
       }
       await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'building');
     } else {
-      if (!docker.getImage(data.imageRepository).id) {
+      try {
+        await docker.getImage(data.imageRepository).inspect()
+      } catch {
         await docker.pull(data.imageRepository);
       }
       await EventsObserver.listener({
@@ -208,6 +211,14 @@ class AppInstanceAction {
       }
     }
 
+    console.log(await DeviceModel.getDeviceOptionsOfContainer(deviceId, containerId));
+
+    if (deviceContainer.device_type_id === 'domain') {
+      const container = await AppInstanceModel.getContainer(containerId);
+      const domainDevice = new DomainDevice(deviceContainer.outer_port);
+      await domainDevice.add(containerId, container.outer_port);
+    }
+
     EventsObserver.listener({ 'type': 'addDeviceToContainer', data: {containerId, deviceId} });
   }
 
@@ -248,6 +259,10 @@ class AppInstanceAction {
     if (deviceContainer.device_type_id === 'db') {
       const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
       await databaseDevice.remove(instance.user_id);
+    }
+    if (deviceContainer.device_type_id === 'domain') {
+      const domainDevice = new DomainDevice(deviceContainer.outer_port);
+      await domainDevice.remove(containerId);
     }
     await DeviceModel.removeDeviceFromContainer({
       containerId: containerId,
@@ -302,11 +317,11 @@ class AppInstanceAction {
       }
 
       const imageContainer = input.containers.find((container) => container.image_id === image.id);
-      if (imageContainer.fixed_outer_port) {
-        AppInstanceAction.checkPort(imageContainer.fixed_outer_port);
-        outerPort = imageContainer.fixed_outer_port;
-      }
       if (imageContainer) {
+        if (imageContainer.fixed_outer_port) {
+          AppInstanceAction.checkPort(imageContainer.fixed_outer_port);
+          outerPort = imageContainer.fixed_outer_port;
+        }
         for (let j in imageContainer.devices) {
           const deviceInput = imageContainer.devices[j];
           await AppInstanceAction.addDeviceToContainer(containerId, deviceInput.id, userId, deviceInput);
