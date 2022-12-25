@@ -1,3 +1,4 @@
+import { spawn } from 'child_process';
 import { promisify } from 'util';
 const exec = promisify(require('child_process').exec);
 
@@ -6,6 +7,39 @@ import { resolver } from '../../types';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import packageFile from '../../package.json';
+
+function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, {
+      shell: true,
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+      onoutput(data.toString());
+    });
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+      onerror(data.toString());
+    });
+    child.on('close', (code) => {
+      if (code) {
+        reject({
+          stdout,
+          stderr,
+          code,
+        });
+      } else {
+        resolve({
+          stdout,
+          stderr,
+          code });
+      }
+    });
+  });
+}
+
 
 const nodeModule = createModule({
   id: 'node-module',
@@ -39,9 +73,16 @@ const nodeModule = createModule({
           throw new Error('No os user id');
         }
         const command = args.command;
-        const result = await exec(command,
-        // , { uid: parseInt(osUserId) }
-        );
+        EventsObserver.listener({ type: 'shellCommandStarted', data: args });
+        const result = await asyncSpawn(command, (data) => {
+          EventsObserver.listener({ type: 'shellCommandOutput', data: data });
+        }, (data) => {
+          EventsObserver.listener({ type: 'shellCommandError', data: data });
+        });
+
+        // const result = await exec(command,
+        // // , { uid: parseInt(osUserId) }
+        // );
         EventsObserver.listener({ type: 'shellCommand', data: args });
         return result;
       }),
