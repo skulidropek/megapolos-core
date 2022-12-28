@@ -7,6 +7,9 @@ import { resolver } from '../../types';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import packageFile from '../../package.json';
+import docker from '../../coreDocker';
+import AppInstanceAction from '../actions/appInstance.action';
+import AppInstanceModel from '../models/appInstance.model';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -40,7 +43,43 @@ function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string
   });
 }
 
-
+function asyncContainerSpawn(command: string, dockerRuntimeId: string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
+  return new Promise((resolve, reject) => {
+    let stdout = '';
+    let stderr = '';
+    docker.getContainer(dockerRuntimeId).exec({
+      Cmd: command.split(' '),
+      AttachStdout: true,
+      AttachStderr: true,
+    }, (err, exec) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      exec.start({}, (err, stream) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        stream.on('data', (data) => {
+          stdout += data.toString();
+          onoutput(data.toString());
+        });
+        stream.on('error', (data) => {
+          stderr += data.toString();
+          onerror(data.toString());
+        });
+        stream.on('end', (data) => {
+          console.log(data);
+          resolve({
+            stdout,
+            stderr,
+            code: 0 });
+        });
+      });
+    });
+  });
+}
 const nodeModule = createModule({
   id: 'node-module',
   dirname: __dirname,
@@ -55,7 +94,7 @@ const nodeModule = createModule({
         version: String
       }
       type Mutation {
-        shellCommand(command: String!): ShellCommandResult
+        shellCommand(command: String! containerId: String): ShellCommandResult
       }
     `,
   ],
@@ -67,24 +106,34 @@ const nodeModule = createModule({
     },
     Mutation: {
       shellCommand: 
-      resolver<{ command: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
-        const osUserId = context.user.os_user_id;
-        if (!osUserId) {
-          throw new Error('No os user id');
-        }
-        const command = args.command;
-        EventsObserver.listener({ type: 'shellCommandStarted', data: args });
-        const result = await asyncSpawn(command, (data) => {
-          EventsObserver.listener({ type: 'shellCommandOutput', data: data });
-        }, (data) => {
-          EventsObserver.listener({ type: 'shellCommandError', data: data });
-        });
+      resolver<{ command: string, containerId: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
+        if (!args.containerId) {
+          const osUserId = context.user.os_user_id;
+          if (!osUserId) {
+            throw new Error('No os user id');
+          }
+          const command = args.command;
+          EventsObserver.listener({ type: 'shellCommandStarted', data: args });
+          const result = await asyncSpawn(command, (data) => {
+            EventsObserver.listener({ type: 'shellCommandOutput', data: data });
+          }, (data) => {
+            EventsObserver.listener({ type: 'shellCommandError', data: data });
+          });
 
-        // const result = await exec(command,
-        // // , { uid: parseInt(osUserId) }
-        // );
-        EventsObserver.listener({ type: 'shellCommand', data: args });
-        return result;
+          // const result = await exec(command,
+          // // , { uid: parseInt(osUserId) }
+          // );
+          EventsObserver.listener({ type: 'shellCommand', data: args });
+          return result;
+        } else {
+          const container = await AppInstanceModel.getContainer(args.containerId);
+          const result = await asyncContainerSpawn(args.command, container.docker_runtime_id, (data) => {
+            EventsObserver.listener({ type: 'shellCommandOutput', data: data });
+          }, (data) => {
+            EventsObserver.listener({ type: 'shellCommandError', data: data });
+          });
+          return result;
+        }
       }),
     },
   },
