@@ -282,3 +282,12 @@ container_env_option (
     container_env_value text not null,
     FOREIGN KEY (container_id) REFERENCES container(id)
 )
+
+CREATE TABLE IF NOT EXISTS
+device_option (
+    id text not null primary key,
+    device_id text not null,
+    device_option_name text not null,
+    device_option_value text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+)
