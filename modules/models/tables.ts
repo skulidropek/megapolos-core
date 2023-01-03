@@ -165,3 +165,10 @@ export interface ContainerEnvOptionTable {
   container_env_name: string,
   container_env_value: string,
 }
+
+export interface DeviceOptionTable {
+  id: string,
+  device_id: string,
+  device_option_name: string,
+  device_option_value: string,
+}

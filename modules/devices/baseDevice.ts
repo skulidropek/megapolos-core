@@ -3,6 +3,7 @@ import { gql, GraphQLClient } from 'graphql-request';
 export interface Manifest {
   name: string;
   type: string;
+  fields: [string];
   container_fields: [string];
   container_env_fields: [string];
 }
@@ -23,6 +24,7 @@ class BaseDevice {
         getManifest {
           name
           type
+          fields
           container_fields
           container_env_fields
         }

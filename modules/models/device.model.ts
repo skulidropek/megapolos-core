@@ -1,5 +1,6 @@
 import coreRqlite from '../../coreRqlite';
-import { AppInstanceTable, AppTable, ContainerDeviceEnvOptionTable, ContainerDeviceOptionTable, ContainerTable, DeviceTable, DriverTable, ImageTable } from './tables';
+import { AppInstanceTable, AppTable, ContainerDeviceEnvOptionTable, ContainerDeviceOptionTable, ContainerTable, DeviceOptionTable, DeviceTable, DriverTable, ImageTable } from './tables';
+import { v4 as uuidv4 } from 'uuid';
 
 class DeviceModel {
   static async createDevice(input: Partial<DeviceTable>) {
@@ -53,6 +54,21 @@ class DeviceModel {
           INSERT INTO container_device_option (id, container_id, device_id, device_option_name, container_option_value)
           VALUES (?, ?, ?, ?, ?)
         `, input.id, input.container_id, input.device_id, input.device_option_name, input.container_option_value]]);
+  }
+
+  static async getDeviceOptions(deviceId: string):Promise<DeviceOptionTable[]> {
+    return (await coreRqlite.query([[`
+      SELECT * FROM device_option WHERE device_id = ?
+    `, deviceId]])).toArray();
+  }
+
+  static async setDeviceOptions(deviceId: string, options: { key: string, value: string }[]) {
+    await coreRqlite.execute([[`
+      DELETE FROM device_option WHERE device_id = ?
+    `, deviceId]]);
+    await coreRqlite.execute(options.map(option => [`
+        INSERT INTO device_option (id, device_id, device_option_name, device_option_value) VALUES (?, ?, ?, ?)
+      `, uuidv4(), deviceId, option.key, option.value]));
   }
 
   static async getEnvOfContainer(containerId: string):Promise<ContainerDeviceEnvOptionTable[]> {
