@@ -291,3 +291,18 @@ device_option (
     device_option_value text not null,
     FOREIGN KEY (device_id) REFERENCES device(id)
 )
+
+CREATE TABLE IF NOT EXISTS
+device_backup (
+    id text not null primary key,
+    name text null,
+    device_id text not null,
+    container_id text null,
+    image_id text null,
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')),
+    remove_date date,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id),
+    FOREIGN KEY (image_id) REFERENCES image(id)
+)
