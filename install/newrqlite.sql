@@ -174,12 +174,14 @@ device (
     driver_id text not null,
     url text,
     life_status text not null default 'running', 
+    backup_volume_id text null,
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')),
     remove_date date,
     FOREIGN KEY (device_type_id) REFERENCES device_type(id)
     FOREIGN KEY (node_id) REFERENCES node(id)
-    FOREIGN KEY (driver_id) REFERENCES driver(id)
+    FOREIGN KEY (driver_id) REFERENCES driver(id),
+    FOREIGN KEY (backup_volume_id) REFERENCES volume(id)
 )
 
 -- git, runner, proxy other type
