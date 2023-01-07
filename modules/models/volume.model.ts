@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import coreRqlite from '../../coreRqlite';
-import { ContainerVolumeTable, VolumeTable } from './tables';
+import { ContainerVolumeTable, DeviceBackupTable, VolumeTable } from './tables';
 
 class VolumeModel {
   static async getVolumes(): Promise<VolumeTable[]> {
@@ -35,16 +35,62 @@ class VolumeModel {
     `, containerId]])).toArray();
   }
 
+  static async getVolumeOfContainer(containerId: string, volumeId: string): Promise<ContainerVolumeTable> {
+    return (await coreRqlite.query([[`
+        SELECT * FROM container_volume WHERE container_id = ? AND volume_id = ?
+    `, containerId, volumeId]])).toArray()[0];
+  }
+
   static async addVolumeToContainer(input: Partial<ContainerVolumeTable>): Promise<boolean> {
     await coreRqlite.execute([[`
-        INSERT INTO container_volume (id, name, container_id, volume_id, inner_path) VALUES (?, ?, ?, ?, ?)
-    `, input.id, input.name, input.container_id, input.volume_id, input.inner_path]]);
+        INSERT INTO container_volume (id, name, container_id, volume_id, inner_path, is_dynamic) VALUES (?, ?, ?, ?, ?, ?)
+    `, input.id, input.name, input.container_id, input.volume_id, input.inner_path, input.is_dynamic.toString()]]);
     return true;
   }
 
-  static async deleteVolumeFromContainer(id: string): Promise<boolean> {
+  static async removeVolumeFromContainer(containerId: string, volumeId: string): Promise<boolean> {
     await coreRqlite.execute([[`
-        DELETE FROM container_volume WHERE id = ?
+        DELETE FROM container_volume WHERE container_id = ? AND volume_id = ?
+    `, containerId, volumeId]]);
+    return true;
+  }
+
+  static async getDeviceBackups(deviceId: string): Promise<DeviceBackupTable[]> {
+    return (await coreRqlite.query([[`
+        SELECT * FROM device_backup WHERE device_id = ?
+    `, deviceId]])).toArray();
+  }
+
+  static async getDeviceBackup(id: string): Promise<DeviceBackupTable> {
+    return (await coreRqlite.query([[`
+        SELECT * FROM device_backup WHERE id = ?
+    `, id]])).toArray()[0];
+  }
+
+  static async setDeviceBackupVolume(deviceId: string, volumeId: string): Promise<boolean> {
+    await coreRqlite.execute([[`
+        UPDATE device SET backup_volume_id = ? WHERE id = ?
+    `, volumeId, deviceId]]);
+    return true;
+  }
+
+  static async removeDeviceBackupVolume(deviceId: string): Promise<boolean> {
+    await coreRqlite.execute([[`
+        UPDATE device SET backup_volume_id = NULL WHERE id = ?
+    `, deviceId]]);
+    return true;
+  }
+
+  static async addDeviceBackup(input: Partial<DeviceBackupTable>): Promise<string> {
+    await coreRqlite.execute([[`
+        INSERT INTO device_backup (id, name, device_id, container_id, image_id) VALUES (?, ?, ?, ?, ?)
+    `, input.id, input.name, input.device_id, input.container_id, input.image_id]]);
+    return input.id;
+  }
+
+  static async deleteDeviceBackup(id: string): Promise<boolean> {
+    await coreRqlite.execute([[`
+        DELETE FROM device_backup WHERE id = ?
     `, id]]);
     return true;
   }

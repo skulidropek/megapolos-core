@@ -1,18 +1,26 @@
+import decompress from 'decompress';
 import { createModule, gql } from 'graphql-modules';
 import { v4 as uuidv4 } from 'uuid';
-import { resolver } from '../../types';
+import { ContainerVolumeInput, resolver } from '../../types';
 import EventsObserver from '../events/eventsObserver';
 import VolumeModel from '../models/volume.model';
-import { VolumeTable } from '../models/tables';
+import { DeviceBackupTable, VolumeTable } from '../models/tables';
 import { megapolosPath } from '../..';
 import { promises as fs } from 'fs';
 import fsSync from 'fs';
+import AppInstanceAction from '../actions/appInstance.action';
+import DeviceModel from '../models/device.model';
 
 const volumeModule = createModule({
   id: 'volume-module',
   dirname: __dirname,
   typeDefs: [
     gql`
+      input Upload {
+        filename: String!
+        data: String!
+      }
+      
       type Volume {
         id: String
         name: String
@@ -23,6 +31,17 @@ const volumeModule = createModule({
         update_date: String
       }
 
+      type DeviceBackup {
+        id: String
+        name: String
+        device_id: String
+        container_id: String
+        image_id: String
+        create_date: String
+        update_date: String
+        remove_date: String
+      }
+
       input VolumeInput {
         name: String
         type: String
@@ -31,11 +50,19 @@ const volumeModule = createModule({
 
       type Query {
         getVolumes: [Volume]
+        getDeviceBackups(device_id: String): [DeviceBackup]
       }
 
       type Mutation {
         addVolume(input: VolumeInput): Boolean
         deleteVolume(id: String): Boolean
+        addVolumeToContainer(container_id: String, input: ContainerVolumeInput): Boolean
+        removeVolumeFromContainer(container_id: String, volume_id: String): Boolean
+        uploadFileToVolume(volume_id: String, file: Upload!): Boolean
+        setDeviceBackupVolume(device_id: String, volume_id: String): Boolean
+        removeDeviceBackupVolume(device_id: String): Boolean
+        uploadDeviceBackup(device_id: String, name: String, file: Upload!): Boolean
+        removeDeviceBackup(id: String): Boolean
       }
     `,
   ],
@@ -44,6 +71,10 @@ const volumeModule = createModule({
       getVolumes: resolver<void, VolumeTable[]>(async (parent, args, context, info) => {
         const volumes = await VolumeModel.getVolumes();
         return volumes;
+      }),
+      getDeviceBackups: resolver<{ device_id: string }, DeviceBackupTable[]>(async (parent, args, context, info) => {
+        const backups = await VolumeModel.getDeviceBackups(args.device_id);
+        return backups;
       }),
     },
     Mutation: {
@@ -73,6 +104,70 @@ const volumeModule = createModule({
         }
         await VolumeModel.deleteVolume(id);
         EventsObserver.listener({ type: 'deleteVolume', data: args });
+        return true;
+      }),
+      addVolumeToContainer: resolver<{ container_id: string, input: ContainerVolumeInput }, boolean>(async (parent, args, context, info) => {
+        await AppInstanceAction.addVolumeToContainer(args.container_id, args.input);
+        EventsObserver.listener({ type: 'addVolumeToContainer', data: args });
+        return true;
+      }),
+      removeVolumeFromContainer: resolver<{ container_id: string, volume_id: string }, boolean>(async (parent, args, context, info) => {
+        await AppInstanceAction.removeVolumeFromContainer(args.container_id, args.volume_id);
+        EventsObserver.listener({ type: 'removeVolumeFromContainer', data: args });
+        return true;
+      }),
+      uploadFileToVolume: resolver<{ volume_id: string, file: { filename: string, data: string } }, boolean>(async (parent, args, context, info) => {
+        console.log(args.file.filename, args.file.data.slice(0, 100));
+        const volume = await VolumeModel.getVolume(args.volume_id);
+        if (!volume) {
+          throw new Error('Volume not found');
+        }
+        await fs.writeFile(volume.outer_path + '/' + args.file.filename, args.file.data, 'base64');
+        return true;
+      }),
+      uploadDeviceBackup: resolver<{ device_id: string, name: string, file: { filename: string, data: string } }, boolean>(async (parent, args, context, info) => {
+        const device = await DeviceModel.getDevice(args.device_id);
+        const volume = await VolumeModel.getVolume(device.backup_volume_id);
+        if (!volume) {
+          throw new Error('Volume not found');
+        }
+        const backupId = uuidv4();
+        const backupArchivePath = volume.outer_path + '/' + backupId + '.zip';
+        const backupPath = volume.outer_path + '/' + backupId;
+        await fs.writeFile(backupArchivePath, args.file.data, 'base64');
+        await fs.mkdir(backupPath);
+        await decompress(backupArchivePath, backupPath);
+        await fs.unlink(backupArchivePath);
+        await VolumeModel.addDeviceBackup({
+          id: backupId,
+          device_id: args.device_id,
+          name: args.name,
+        });
+        return true;
+      }),
+      removeDeviceBackup: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        const backup = await VolumeModel.getDeviceBackup(args.id);
+        const device = await DeviceModel.getDevice(backup.device_id);
+        const volume = await VolumeModel.getVolume(device.backup_volume_id);
+        if (!volume) {
+          throw new Error('Volume not found');
+        }
+        const backupPath = volume.outer_path + '/' + backup.id;
+        if (!backupPath.startsWith(megapolosPath)) {
+          throw new Error('Invalid backup path');
+        }
+        await fs.rmdir(backupPath, { recursive: true });
+        await VolumeModel.deleteDeviceBackup(args.id);
+        return true;
+      }),
+      setDeviceBackupVolume: resolver<{ device_id: string, volume_id: string }, boolean>(async (parent, args, context, info) => {
+        await VolumeModel.setDeviceBackupVolume(args.device_id, args.volume_id);
+        EventsObserver.listener({ type: 'setDeviceBackupVolume', data: args });
+        return true;
+      }),
+      removeDeviceBackupVolume: resolver<{ device_id: string }, boolean>(async (parent, args, context, info) => {
+        await VolumeModel.removeDeviceBackupVolume(args.device_id);
+        EventsObserver.listener({ type: 'removeDeviceBackupVolume', data: args });
         return true;
       }),
     },

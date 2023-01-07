@@ -22,6 +22,13 @@ export interface ContainerDeviceInput {
   }[],
 }
 
+export interface ContainerVolumeInput {
+  name: string,
+  inner_path: string,
+  volume: string,
+  is_dynamic: boolean,
+}
+
 export interface AppInstanceInput {
   app_id: string,
   name: string,
@@ -33,11 +40,7 @@ export interface AppInstanceInput {
       key: string,
       value: string,
     }[],
-    volumes: { 
-      name: string,
-      inner_path: string,
-      volume: string,
-    }[],
+    volumes: ContainerVolumeInput[],
   }[]
 }
 

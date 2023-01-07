@@ -55,6 +55,7 @@ export interface DeviceTable {
   driver_id: string;
   url: string;
   life_status: string;
+  backup_volume_id: string;
   create_date: string;
   update_date: string;
   remove_date: string;
@@ -157,6 +158,7 @@ export interface ContainerVolumeTable {
   container_id: string,
   volume_id: string,
   inner_path: string,
+  is_dynamic: number,
 }
 
 export interface ContainerEnvOptionTable {
@@ -171,4 +173,15 @@ export interface DeviceOptionTable {
   device_id: string,
   device_option_name: string,
   device_option_value: string,
+}
+
+export interface DeviceBackupTable {
+  id: string,
+  name: string,
+  device_id: string,
+  container_id: string,
+  image_id: string,
+  create_date: string,
+  update_date: string,
+  remove_date: string,
 }

@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import fsSync from 'fs';
 import docker from '../../coreDocker';
-import { AppInstanceInput, ContainerDeviceInput } from '../../types';
+import { AppInstanceInput, ContainerDeviceInput, ContainerVolumeInput } from '../../types';
 import { megapolosPath } from '../../index';
 import AppModel from '../models/app.model';
 import AppInstanceModel from '../models/appInstance.model';
@@ -75,7 +75,7 @@ class AppInstanceAction {
       await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'building');
     } else {
       try {
-        await docker.getImage(data.imageRepository).inspect()
+        await docker.getImage(data.imageRepository).inspect();
       } catch {
         await docker.pull(data.imageRepository);
       }
@@ -84,13 +84,13 @@ class AppInstanceAction {
         data: {
           containerId: data.containerId,
         },
-      })
+      });
     }
 
     EventsObserver.listener({ 'type': 'createContainer', data });
   }
 
-  static async getContainerEnvs(data: {containerId: string, userId: string, appId: string, appInstanceId: string, imageId: string}) {
+  static async getContainerEnvs(data: { containerId: string, userId: string, appId: string, appInstanceId: string, imageId: string }) {
     const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
 
     const envParameters = await DeviceModel.getEnvOfContainer(data.containerId);
@@ -108,18 +108,18 @@ class AppInstanceAction {
     const envs = await AppInstanceModel.getContainerEnvOptions(data.containerId);
 
     return [
-      {key: 'MEGAPOLOS', value: '1'},
-      {key: 'MEGAPOLOS_TOKEN', value: UserAction.createToken(data.userId)},
-      {key: 'MEGAPOLOS_APP_ID', value: data.appId},
-      {key: 'MEGAPOLOS_DRIVER_ID', value: containerDevice?.driver_id || ''},
-      {key: 'MEGAPOLOS_DEVICE_ID', value: containerDevice?.device_id || ''},
-      {key: 'MEGAPOLOS_DEVICE_TYPE_ID', value: containerDevice?.device_type_id || ''},
-      {key: 'MEGAPOLOS_APP_INSTANCE_ID', value: data.appInstanceId},
-      {key: 'MEGAPOLOS_CONTAINER_ID', value: data.containerId},
-      {key: 'MEGAPOLOS_IMAGE_ID', value: data.imageId},
-      {key: 'MEGAPOLOS_PATH_DATA', value: megapolosPath + '/data'},
-      ...envParameters.map((env) => ({key: env.container_env_name, value: deviceParameters.find(option => option.key === env.device_option_name).value})),
-      ...envs.map((env) => ({key: env.container_env_name, value: env.container_env_value})),
+      { key: 'MEGAPOLOS', value: '1' },
+      { key: 'MEGAPOLOS_TOKEN', value: UserAction.createToken(data.userId) },
+      { key: 'MEGAPOLOS_APP_ID', value: data.appId },
+      { key: 'MEGAPOLOS_DRIVER_ID', value: containerDevice?.driver_id || '' },
+      { key: 'MEGAPOLOS_DEVICE_ID', value: containerDevice?.device_id || '' },
+      { key: 'MEGAPOLOS_DEVICE_TYPE_ID', value: containerDevice?.device_type_id || '' },
+      { key: 'MEGAPOLOS_APP_INSTANCE_ID', value: data.appInstanceId },
+      { key: 'MEGAPOLOS_CONTAINER_ID', value: data.containerId },
+      { key: 'MEGAPOLOS_IMAGE_ID', value: data.imageId },
+      { key: 'MEGAPOLOS_PATH_DATA', value: megapolosPath + '/data' },
+      ...envParameters.map((env) => ({ key: env.container_env_name, value: deviceParameters.find(option => option.key === env.device_option_name).value })),
+      ...envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value })),
     ];
   }
 
@@ -164,9 +164,12 @@ class AppInstanceAction {
             HostPort: data.outerPort.toString(),
           }],
         },
-        Binds: [megapolosVolume + ':/megapolos',
-        ...containerVolumes.map((volume) => volumes.find((v) => v.id === volume.volume_id).outer_path + ':' + volume.inner_path),
-      ],
+        Binds: [
+          megapolosVolume + ':/megapolos:rw,rshared',
+          ...containerVolumes
+          .filter((volume) => !volume.is_dynamic)
+          .map((volume) => volumes.find((v) => v.id === volume.volume_id).outer_path + ':' + volume.inner_path),
+        ],
       },
     }));
   }
@@ -219,7 +222,7 @@ class AppInstanceAction {
       await domainDevice.add(containerId, container.outer_port);
     }
 
-    EventsObserver.listener({ 'type': 'addDeviceToContainer', data: {containerId, deviceId} });
+    EventsObserver.listener({ 'type': 'addDeviceToContainer', data: { containerId, deviceId } });
   }
 
   static async updateDeviceToContainer(containerId: string, deviceId: string, deviceInput: ContainerDeviceInput) {
@@ -249,7 +252,7 @@ class AppInstanceAction {
       }
     }
 
-    EventsObserver.listener({ 'type': 'updateDeviceToContainer', data: {containerId, deviceId} });
+    EventsObserver.listener({ 'type': 'updateDeviceToContainer', data: { containerId, deviceId } });
   }
 
   static async removeDeviceFromContainer(containerId: string, deviceId: string) {
@@ -340,14 +343,7 @@ class AppInstanceAction {
 
       for (let i in imageContainer.volumes) {
         const volume = imageContainer.volumes[i];
-        const volumeId = uuidv4();
-        await VolumeModel.addVolumeToContainer({
-          id: volumeId,
-          container_id: containerId,
-          volume_id: volume.volume,
-          name: volume.name,
-          inner_path: volume.inner_path,
-        })
+        AppInstanceAction.addVolumeToContainer(containerId, volume);
       }
 
       for (let i in imageContainer.envs) {
@@ -358,7 +354,7 @@ class AppInstanceAction {
           container_id: containerId,
           container_env_name: env.key,
           container_env_value: env.value,
-        })
+        });
       }
 
       await AppInstanceAction.createContainer({
@@ -368,9 +364,41 @@ class AppInstanceAction {
       // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerRuntimeId);
     }
 
-    EventsObserver.listener({ 'type': 'createAppInstance', data: {appInstanceId} });
+    EventsObserver.listener({ 'type': 'createAppInstance', data: { appInstanceId } });
   
     return appInstanceId;
+  }
+
+  static async addVolumeToContainer(containerId: string, volumeInput: ContainerVolumeInput) {
+    const volume = await VolumeModel.getVolume(volumeInput.volume);
+    const volumeContainerId = uuidv4();
+    if (volumeInput.is_dynamic) {
+      const volumePath = megapolosPath + '/volumes/' + containerId + '/' + volumeContainerId;
+      await fs.mkdir(volumePath);
+      await exec(`mount --bind ${volume.outer_path} ${volumePath}`);
+    }
+    await VolumeModel.addVolumeToContainer({
+      id: volumeContainerId,
+      container_id: containerId,
+      volume_id: volumeInput.volume,
+      name: volumeInput.name,
+      inner_path: volumeInput.is_dynamic ? '/megapolos/' + volumeContainerId : volumeInput.inner_path,
+      is_dynamic: volumeInput.is_dynamic ? 1 : 0,
+    });
+  }
+
+  static async removeVolumeFromContainer(containerId: string, volumeId: string) {
+    const volumeContainer = await VolumeModel.getVolumeOfContainer(containerId, volumeId);
+    if (volumeContainer.is_dynamic) {
+      const volumePath = megapolosPath + '/volumes/' + containerId + '/' + volumeContainer.id;
+      try {
+        await exec(`umount ${volumePath}`);
+      } catch (e) {
+        console.error(e);
+      }
+      await fs.rmdir(volumePath);
+    }
+    await VolumeModel.removeVolumeFromContainer(containerId, volumeId);
   }
   
   static async startAppInstance(appInstanceId) {
@@ -388,7 +416,7 @@ class AppInstanceAction {
     }
     await AppInstanceModel.updateAppInstanceLifeStatus(appInstanceId, 'running');
 
-    EventsObserver.listener({ 'type': 'startAppInstance', data:{appInstanceId} });
+    EventsObserver.listener({ 'type': 'startAppInstance', data:{ appInstanceId } });
   }
   
   static async stopAppInstance(appInstanceId) {
@@ -406,7 +434,7 @@ class AppInstanceAction {
     }
     await AppInstanceModel.updateAppInstanceLifeStatus(appInstanceId, 'stopped');
 
-    EventsObserver.listener({ 'type': 'stopAppInstance', data:{appInstanceId} });
+    EventsObserver.listener({ 'type': 'stopAppInstance', data:{ appInstanceId } });
   }
   
   static async removeAppInstance(appInstanceId, isDevice = false) {
@@ -447,7 +475,7 @@ class AppInstanceAction {
       }
     }
 
-    EventsObserver.listener({ 'type': 'removeAppInstance', data:{appInstanceId} });
+    EventsObserver.listener({ 'type': 'removeAppInstance', data:{ appInstanceId } });
   }
 
   static async dockerEvents() {

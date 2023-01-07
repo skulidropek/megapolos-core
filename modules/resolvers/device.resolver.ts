@@ -44,10 +44,21 @@ const deviceModule = createModule({
         driver_id: String
         url: String
         life_status: String
+        backup_volume_id: String
         create_date: String
         update_date: String
         remove_date: String
         options: [DeviceOption]
+      }
+      type DeviceBackup {
+        id: String
+        name: String
+        device_id: String
+        container_id: String
+        image_id: String
+        create_date: String
+        update_date: String
+        remove_date: String
       }
       type ContainerDeviceOption {
         id: String
@@ -66,6 +77,7 @@ const deviceModule = createModule({
         getDeviceManifest(id: String): Manifest
         getDeviceOptions(device_id: String): [DeviceOption]
         getContainerDeviceOptions(container_id: String, device_id: String): [ContainerDeviceOption]
+        getDeviceBackup: [DeviceBackup]
       }
 
       type Mutation {
@@ -76,6 +88,7 @@ const deviceModule = createModule({
         editDeviceOfContainer(container_id: String, input: ContainerDeviceInput): Boolean
         removeDeviceFromContainer(container_id: String, device_id: String): Boolean        
         createDeviceFromApp(app_id: String): Boolean
+        uploadDeviceBackup(file: Upload!, name: String, device_id: String): Boolean
       }
     `,
   ],

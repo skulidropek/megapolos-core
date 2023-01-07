@@ -124,6 +124,7 @@ const appModule = createModule({
         name: String
         volume: String
         inner_path: String
+        is_dynamic: Boolean
       }
 
       input ContainerInput {

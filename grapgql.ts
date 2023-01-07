@@ -63,7 +63,9 @@ const graphqlServer = async () => {
     );
 
     await server.start();
-    server.applyMiddleware({ app, path: '/' });
+    server.applyMiddleware({ app, path: '/', bodyParserConfig: {
+      limit: '10gb',
+    } });
 
     const port = 5100;
  

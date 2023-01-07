@@ -1,3 +1,4 @@
+import { exec } from 'child_process';
 import UserAction from './modules/actions/user.action';
 import AppInstanceAction from './modules/actions/appInstance.action';
 
@@ -9,6 +10,8 @@ if (process.getuid() != 0) {
 }
 
 export const megapolosPath = __dirname;
+
+exec('mount --make-shared /');
 
 (async () => {
   await AppInstanceAction.dockerEvents();
