@@ -174,12 +174,14 @@ device (
     driver_id text not null,
     url text,
     life_status text not null default 'running', 
+    backup_volume_id text null,
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')),
     remove_date date,
     FOREIGN KEY (device_type_id) REFERENCES device_type(id)
     FOREIGN KEY (node_id) REFERENCES node(id)
-    FOREIGN KEY (driver_id) REFERENCES driver(id)
+    FOREIGN KEY (driver_id) REFERENCES driver(id),
+    FOREIGN KEY (backup_volume_id) REFERENCES volume(id)
 )
 
 -- git, runner, proxy other type
@@ -255,7 +257,7 @@ CREATE TABLE IF NOT EXISTS
 volume (
     id text not null primary key,
     name text not null,
-    type text not null default 'auto', -- 'auto', 'path', 'dynamic_auto', 'dynamic_path'
+    type text not null default 'auto', -- 'auto', 'path'
     outer_path text,
     node_id text,
     create_date date default (DATETIME('now')), 
@@ -270,6 +272,7 @@ container_volume (
     container_id text not null,
     volume_id text not null,
     inner_path text not null,
+    is_dynamic int null,
     FOREIGN KEY (volume_id) REFERENCES volume(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
 )
@@ -290,4 +293,19 @@ device_option (
     device_option_name text not null,
     device_option_value text not null,
     FOREIGN KEY (device_id) REFERENCES device(id)
+)
+
+CREATE TABLE IF NOT EXISTS
+device_backup (
+    id text not null primary key,
+    name text null,
+    device_id text not null,
+    container_id text null,
+    image_id text null,
+    create_date date default (DATETIME('now')), 
+    update_date date default (DATETIME('now')),
+    remove_date date,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id),
+    FOREIGN KEY (image_id) REFERENCES image(id)
 )
