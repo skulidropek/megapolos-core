@@ -107,13 +107,13 @@ const nodeModule = createModule({
     Mutation: {
       shellCommand: 
       resolver<{ command: string, containerId: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
+        const command = args.command;
+        EventsObserver.listener({ type: 'shellCommandStarted', data: args });
         if (!args.containerId) {
           const osUserId = context.user.os_user_id;
           if (!osUserId) {
             throw new Error('No os user id');
           }
-          const command = args.command;
-          EventsObserver.listener({ type: 'shellCommandStarted', data: args });
           const result = await asyncSpawn(command, (data) => {
             EventsObserver.listener({ type: 'shellCommandOutput', data: data });
           }, (data) => {

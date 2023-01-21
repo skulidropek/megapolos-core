@@ -73,6 +73,7 @@ const deviceModule = createModule({
         image: String
       }
       type Query {
+        getDevice(id: String): Device
         getDevices: [Device]
         getDeviceManifest(id: String): Manifest
         getDeviceOptions(device_id: String): [DeviceOption]
@@ -88,12 +89,17 @@ const deviceModule = createModule({
         editDeviceOfContainer(container_id: String, input: ContainerDeviceInput): Boolean
         removeDeviceFromContainer(container_id: String, device_id: String): Boolean        
         createDeviceFromApp(app_id: String): Boolean
-        uploadDeviceBackup(file: Upload!, name: String, device_id: String): Boolean
       }
     `,
   ],
   resolvers: {
     Query: {
+      getDevice: resolver<{ id: string }, (DeviceTable & { options: DeviceOptionTable[] })>(async (parent, args, context, info) => {
+        const device = await DeviceModel.getDevice(args.id) as DeviceTable & { options: DeviceOptionTable[] };
+        const options = await DeviceModel.getDeviceOptions(device.id);
+        device.options = options;
+        return device;
+      }),
       getDevices: resolver<void, (DeviceTable & { options: DeviceOptionTable[] })[]>(async (parent, args, context, info) => {
         const results = await DeviceModel.getDevices() as (DeviceTable & { options: DeviceOptionTable[] })[];
         for (const k in results) {

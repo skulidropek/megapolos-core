@@ -40,15 +40,20 @@ class BaseDevice {
     return (await this.getManifest()).container_env_fields;
   }
 
-  async getEnvFieldsValues(userId: string):Promise<{ key: string, value: string }[]> {
+  async getEnvFieldsValues(containerId: string):Promise<{ key: string, value: string }[]> {
+    try {
     return (await this.client.request(gql`
-      query($userId: String) {
-        getAppOptionsEnv(userId: $userId) {
+      query($containerId: String) {
+        getAppOptionsEnv(containerId: $containerId) {
           key
           value
         }
       }
-    `, { userId })).getAppOptionsEnv;
+    `, { containerId })).getAppOptionsEnv;
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
 
 }

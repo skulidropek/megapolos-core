@@ -4,12 +4,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { ContainerVolumeInput, resolver } from '../../types';
 import EventsObserver from '../events/eventsObserver';
 import VolumeModel from '../models/volume.model';
-import { DeviceBackupTable, VolumeTable } from '../models/tables';
+import { ContainerVolumeTable, DeviceBackupTable, VolumeTable } from '../models/tables';
 import { megapolosPath } from '../..';
 import { promises as fs } from 'fs';
 import fsSync from 'fs';
 import AppInstanceAction from '../actions/appInstance.action';
 import DeviceModel from '../models/device.model';
+import DatabaseDevice from '../devices/databaseDevice';
 
 const volumeModule = createModule({
   id: 'volume-module',
@@ -56,13 +57,15 @@ const volumeModule = createModule({
       type Mutation {
         addVolume(input: VolumeInput): Boolean
         deleteVolume(id: String): Boolean
-        addVolumeToContainer(container_id: String, input: ContainerVolumeInput): Boolean
+        addVolumeToContainer(container_id: String, input: ContainerVolumeInput): ContainerVolume
         removeVolumeFromContainer(container_id: String, volume_id: String): Boolean
         uploadFileToVolume(volume_id: String, file: Upload!): Boolean
         setDeviceBackupVolume(device_id: String, volume_id: String): Boolean
         removeDeviceBackupVolume(device_id: String): Boolean
         uploadDeviceBackup(device_id: String, name: String, file: Upload!): Boolean
         removeDeviceBackup(id: String): Boolean
+        backupDevice(device_id: String, container_id: String): Boolean
+        restoreDeviceBackup(device_id:String, backup_id: String, container_id: String): Boolean
       }
     `,
   ],
@@ -106,10 +109,10 @@ const volumeModule = createModule({
         EventsObserver.listener({ type: 'deleteVolume', data: args });
         return true;
       }),
-      addVolumeToContainer: resolver<{ container_id: string, input: ContainerVolumeInput }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.addVolumeToContainer(args.container_id, args.input);
+      addVolumeToContainer: resolver<{ container_id: string, input: ContainerVolumeInput }, ContainerVolumeTable>(async (parent, args, context, info) => {
+        const containerVolume = await AppInstanceAction.addVolumeToContainer(args.container_id, args.input);
         EventsObserver.listener({ type: 'addVolumeToContainer', data: args });
-        return true;
+        return containerVolume;
       }),
       removeVolumeFromContainer: resolver<{ container_id: string, volume_id: string }, boolean>(async (parent, args, context, info) => {
         await AppInstanceAction.removeVolumeFromContainer(args.container_id, args.volume_id);
@@ -168,6 +171,18 @@ const volumeModule = createModule({
       removeDeviceBackupVolume: resolver<{ device_id: string }, boolean>(async (parent, args, context, info) => {
         await VolumeModel.removeDeviceBackupVolume(args.device_id);
         EventsObserver.listener({ type: 'removeDeviceBackupVolume', data: args });
+        return true;
+      }),
+      backupDevice: resolver<{ device_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
+        const deviceContainer = await DeviceModel.getDeviceContainer(args.device_id);
+        const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
+        await databaseDevice.backup(args.container_id);
+        return true;
+      }),
+      restoreDeviceBackup: resolver<{ device_id: string, backup_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
+        const deviceContainer = await DeviceModel.getDeviceContainer(args.device_id);
+        const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
+        await databaseDevice.restore(args.backup_id, args.container_id);
         return true;
       }),
     },

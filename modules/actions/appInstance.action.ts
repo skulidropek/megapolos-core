@@ -99,9 +99,11 @@ class AppInstanceAction {
     for (let i in devices) {
       const device = devices[i];
       const deviceObject = new BaseDevice(device.outer_port);
-      const result = await deviceObject.getEnvFieldsValues(data.userId);
+      const result = await deviceObject.getEnvFieldsValues(data.containerId);
       deviceParameters = deviceParameters.concat(result);
     }
+
+    console.log(deviceParameters);
 
     const containerDevice = await DeviceModel.getDeviceFromContainer(data.containerId);
   
@@ -118,7 +120,7 @@ class AppInstanceAction {
       { key: 'MEGAPOLOS_CONTAINER_ID', value: data.containerId },
       { key: 'MEGAPOLOS_IMAGE_ID', value: data.imageId },
       { key: 'MEGAPOLOS_PATH_DATA', value: megapolosPath + '/data' },
-      ...envParameters.map((env) => ({ key: env.container_env_name, value: deviceParameters.find(option => option.key === env.device_option_name).value })),
+      ...envParameters.map((env) => ({ key: env.container_env_name, value: deviceParameters.find(option => option.key === env.device_option_name)?.value })),
       ...envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value })),
     ];
   }
@@ -186,7 +188,7 @@ class AppInstanceAction {
     const deviceContainer = await DeviceModel.getDeviceContainer(deviceId);
     if (deviceContainer.device_type_id === 'db') {
       const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
-      await databaseDevice.add(userId);
+      await databaseDevice.add(containerId);
     }
 
     if (deviceInput.env_parameters) {
@@ -261,7 +263,7 @@ class AppInstanceAction {
     const instance = await AppInstanceModel.getAppInstance(container.app_instance_id);
     if (deviceContainer.device_type_id === 'db') {
       const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
-      await databaseDevice.remove(instance.user_id);
+      await databaseDevice.remove(containerId);
     }
     if (deviceContainer.device_type_id === 'domain') {
       const domainDevice = new DomainDevice(deviceContainer.outer_port);
@@ -385,6 +387,7 @@ class AppInstanceAction {
       inner_path: volumeInput.is_dynamic ? '/megapolos/' + volumeContainerId : volumeInput.inner_path,
       is_dynamic: volumeInput.is_dynamic ? 1 : 0,
     });
+    return VolumeModel.getVolumeOfContainer(containerId, volumeInput.volume);
   }
 
   static async removeVolumeFromContainer(containerId: string, volumeId: string) {
