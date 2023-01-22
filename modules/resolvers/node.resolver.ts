@@ -48,7 +48,7 @@ function asyncContainerSpawn(command: string, dockerRuntimeId: string, onoutput,
     let stdout = '';
     let stderr = '';
     docker.getContainer(dockerRuntimeId).exec({
-      Cmd: command.split(' '),
+      Cmd: ['bash', '-c', '--', command],
       AttachStdout: true,
       AttachStderr: true,
     }, (err, exec) => {

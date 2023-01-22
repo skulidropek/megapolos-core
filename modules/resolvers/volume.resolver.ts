@@ -8,6 +8,7 @@ import { ContainerVolumeTable, DeviceBackupTable, VolumeTable } from '../models/
 import { megapolosPath } from '../..';
 import { promises as fs } from 'fs';
 import fsSync from 'fs';
+import AdmZip from 'adm-zip';
 import AppInstanceAction from '../actions/appInstance.action';
 import DeviceModel from '../models/device.model';
 import DatabaseDevice from '../devices/databaseDevice';
@@ -62,10 +63,11 @@ const volumeModule = createModule({
         uploadFileToVolume(volume_id: String, file: Upload!): Boolean
         setDeviceBackupVolume(device_id: String, volume_id: String): Boolean
         removeDeviceBackupVolume(device_id: String): Boolean
+        downloadDeviceBackup(backup_id: String): String
         uploadDeviceBackup(device_id: String, name: String, file: Upload!): Boolean
         removeDeviceBackup(id: String): Boolean
         backupDevice(device_id: String, container_id: String): Boolean
-        restoreDeviceBackup(device_id:String, backup_id: String, container_id: String): Boolean
+        restoreDeviceBackup(device_id: String, backup_id: String, container_id: String): Boolean
       }
     `,
   ],
@@ -148,6 +150,19 @@ const volumeModule = createModule({
         });
         return true;
       }),
+      downloadDeviceBackup: resolver<{ backup_id: string }, string>(async (parent, args, context, info) => {
+        const backup = await VolumeModel.getDeviceBackup(args.backup_id);
+        const device = await DeviceModel.getDevice(backup.device_id);
+        const volume = await VolumeModel.getVolume(device.backup_volume_id);
+        if (!volume) {
+          throw new Error('Volume not found');
+        }
+        const backupPath = volume.outer_path + '/' + backup.id;
+        const zip = new AdmZip();
+        zip.addLocalFolder(backupPath);
+        const zipData = zip.toBuffer();
+        return zipData.toString('base64');
+      }),
       removeDeviceBackup: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         const backup = await VolumeModel.getDeviceBackup(args.id);
         const device = await DeviceModel.getDevice(backup.device_id);
@@ -176,7 +191,13 @@ const volumeModule = createModule({
       backupDevice: resolver<{ device_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
         const deviceContainer = await DeviceModel.getDeviceContainer(args.device_id);
         const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
-        await databaseDevice.backup(args.container_id);
+        const backupId = uuidv4();
+        await databaseDevice.backup(backupId, args.container_id);
+        await VolumeModel.addDeviceBackup({
+          id: backupId,
+          device_id: args.device_id,
+          container_id: args.container_id,
+        });
         return true;
       }),
       restoreDeviceBackup: resolver<{ device_id: string, backup_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {

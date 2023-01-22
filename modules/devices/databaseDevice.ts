@@ -18,12 +18,12 @@ class DatabaseDevice extends BaseDevice {
     `, { containerId });
   }
 
-  async backup(containerId: string) {
+  async backup(backupId:string, containerId: string) {
     return this.client.request(gql`
-      mutation($containerId: String) {
-        backupDatabase(containerId: $containerId)
+      mutation($backupId: String, $containerId: String) {
+        backupDatabase(backupId: $backupId containerId: $containerId)
       }
-    `, { containerId });
+    `, { backupId, containerId });
   }
 
   async restore(backupId: string, containerId: string) {
