@@ -8,7 +8,11 @@ group_user (
     create_date date default (DATETIME('now')),
     update_date date default (DATETIME('now')),
     disable_date date
-)
+);
+
+INSERT OR IGNORE INTO group_user (id, name)
+VALUES
+	("root", "root");
 
 -- users 
 -- rest_api [command_uri + crud]
@@ -17,15 +21,14 @@ user (
     id text not null primary key,
     name text not null,
     group_user_id text not null,
-    rest_api text
-    -- enable/disable
-    os_user_id text
+    rest_api text, -- enable/disable
+    os_user_id text,
     user_status text not null default 'enable',
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')),
-    disable_date date
+    disable_date date,
     FOREIGN KEY (group_user_id) REFERENCES group_user(id)
-)
+);
 
 -- analogue docker compose manifest file
 CREATE TABLE IF NOT EXISTS
@@ -37,7 +40,7 @@ app (
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')),
     FOREIGN KEY (owner_user_id) REFERENCES user(id)
-)
+);
 
 -- images can be install
 CREATE TABLE IF NOT EXISTS
@@ -45,23 +48,20 @@ image (
     id text not null primary key,
     name text not null unique,
     app_id text not null,
-    repository not null,
-    --true statefull/false stateless
+    repository not null, --true statefull/false stateless
     inner_port integer not null,
-    has_state int not null default 1,
-    -- git branch name or other
+    has_state int not null default 1, -- git branch name or other
     tags text not null default '',
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')),
     commit_id text not null, 
     FOREIGN KEY (app_id) REFERENCES app(id)
-)
+);
 
 -- analogue docker compose runtime / analogue helm chart
 CREATE TABLE IF NOT EXISTS
 app_instance (
-    id text not null primary key,
-    -- image tag, git branch name 
+    id text not null primary key, -- image tag, git branch name 
     name text not null unique,
     user_id text not null,
     life_status text not null,
@@ -73,55 +73,55 @@ app_instance (
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')), 
     remove_date date,
-    FOREIGN KEY (instance_type_id) REFERENCES instance_type(id)
-    FOREIGN KEY (deploy_strategy_id) REFERENCES deploy_strategy(id)
-    FOREIGN KEY (remove_strategy_id) REFERENCES remove_strategy(id)
-    FOREIGN KEY (app_id) REFERENCES app(id)
+    FOREIGN KEY (instance_type_id) REFERENCES instance_type(id),
+    FOREIGN KEY (deploy_strategy_id) REFERENCES deploy_strategy(id),
+    FOREIGN KEY (remove_strategy_id) REFERENCES remove_strategy(id),
+    FOREIGN KEY (app_id) REFERENCES app(id),
     FOREIGN KEY (user_id) REFERENCES user(id)
-)
+);
 
 -- prod, test, demo
 CREATE TABLE IF NOT EXISTS
 instance_type (
     id text not null primary key,
     name text not null unique
-)
+);
 
-INSERT INTO instance_type (name)
+INSERT OR IGNORE INTO instance_type (id, name)
 VALUES
-	("prod"),
-	("test"),
-	("demo"),    
-	("master"),
-    ("feature");
+	("prod", "prod"),
+	("test", "test"),
+	("demo", "demo"),    
+	("master", "master"),
+    ("feature", "feature");
 
 -- rolling, recreate, bg: blue/green, canary, dark: A/B
 CREATE TABLE IF NOT EXISTS
 deploy_strategy (
     id text not null primary key,
     name text not null unique
-)
+);
 
-INSERT INTO deploy_strategy (name)
+INSERT OR IGNORE INTO deploy_strategy (id, name)
 VALUES
-	("rolling"),
-	("recreate"),
-	("bg"),    
-    ("canary"),
-    ("dark"),
-    ("restore");
+	("rolling", "rolling"),
+	("recreate", "recreate"),
+	("bg", "bg"),    
+    ("canary", "canary"),
+    ("dark", "dark"),
+    ("restore", "restore");
 
 -- full, achive
 CREATE TABLE IF NOT EXISTS
 remove_strategy (
     id text not null primary key,
     name text not null unique
-)
+);
 
-INSERT INTO remove_strategy (name)
+INSERT OR IGNORE INTO remove_strategy (id, name)
 VALUES
-	("full"),
-	("achive");    
+	("full", "full"),
+	("achive", "achive");    
 
 -- runtime image
 CREATE TABLE IF NOT EXISTS
@@ -140,7 +140,7 @@ container (
     FOREIGN KEY (app_instance_id) REFERENCES app_instance(id)
     FOREIGN KEY (node_id) REFERENCES node(id)
     FOREIGN KEY (image_id) REFERENCES image(id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 node (
@@ -148,13 +148,12 @@ node (
     name text not null unique,
     url text,
     cpu text,
-    memory text,
-    -- iswork, restart, remove
+    memory text, -- iswork, restart, remove
     life_status text not null default 'running',    
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')), 
     remove_date date
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 driver (
@@ -162,7 +161,7 @@ driver (
     name text not null unique,
     app_id text not null, 
     FOREIGN KEY (app_id) REFERENCES app(id)
-)
+);
 
 -- gitlab, runner, other programm
 CREATE TABLE IF NOT EXISTS
@@ -182,25 +181,25 @@ device (
     FOREIGN KEY (node_id) REFERENCES node(id)
     FOREIGN KEY (driver_id) REFERENCES driver(id),
     FOREIGN KEY (backup_volume_id) REFERENCES volume(id)
-)
+);
 
 -- git, runner, proxy other type
 CREATE TABLE IF NOT EXISTS
 device_type (
     id text not null primary key,
     name text not null unique
-)
+);
 
-INSERT INTO device_type (name)
+INSERT OR IGNORE INTO device_type (id, name)
 VALUES
-    ("volume"),
-	("git"),
-	("runner"),
-	("images"),    
-	("proxy"),
-    ("sql_db"),
-    ("mongo_db"),
-    ("broker");
+    ("volume","volume"),
+	("git","git"),
+	("runner","runner"),
+	("images","images"),
+	("proxy","proxy"),
+    ("sql_db","sql_db"),
+    ("mongo_db","mongo_db"),
+    ("broker", "broker");
 
 -- compile time: git, runner, images
 CREATE TABLE IF NOT EXISTS
@@ -210,7 +209,7 @@ app_device (
     device_id text not null,
     FOREIGN KEY (device_id) REFERENCES device(id)
     FOREIGN KEY (app_id) REFERENCES app(id)
-)
+);
 
 -- runtime: proxy, db, broker 
 CREATE TABLE IF NOT EXISTS
@@ -220,7 +219,7 @@ app_instance_device (
     device_id text not null,
     FOREIGN KEY (device_id) REFERENCES device(id)
     FOREIGN KEY (app_instance_id) REFERENCES app_instance(id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 container_device (
@@ -229,7 +228,7 @@ container_device (
     device_id text not null,
     FOREIGN KEY (device_id) REFERENCES device(id)
     FOREIGN KEY (container_id) REFERENCES container(id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 container_device_env_option (
@@ -240,7 +239,7 @@ container_device_env_option (
     device_option_name text not null,
     FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 container_device_option (
@@ -251,7 +250,7 @@ container_device_option (
     container_option_value text not null,
     FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 volume (
@@ -263,7 +262,7 @@ volume (
     create_date date default (DATETIME('now')), 
     update_date date default (DATETIME('now')),
     remove_date date
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 container_volume (
@@ -275,7 +274,7 @@ container_volume (
     is_dynamic int null,
     FOREIGN KEY (volume_id) REFERENCES volume(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 container_env_option (
@@ -284,7 +283,7 @@ container_env_option (
     container_env_name text not null,
     container_env_value text not null,
     FOREIGN KEY (container_id) REFERENCES container(id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 device_option (
@@ -293,7 +292,7 @@ device_option (
     device_option_name text not null,
     device_option_value text not null,
     FOREIGN KEY (device_id) REFERENCES device(id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS
 device_backup (
@@ -308,4 +307,4 @@ device_backup (
     FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (container_id) REFERENCES container(id),
     FOREIGN KEY (image_id) REFERENCES image(id)
-)
+);
