@@ -44,12 +44,12 @@ class BaseDevice {
     try {
     return (await this.client.request(gql`
       query($containerId: String) {
-        getAppOptionsEnv(containerId: $containerId) {
+        getContainerOptionsEnv(containerId: $containerId) {
           key
           value
         }
       }
-    `, { containerId })).getAppOptionsEnv;
+    `, { containerId })).getContainerOptionsEnv;
     } catch (e) {
       console.error(e);
       return [];

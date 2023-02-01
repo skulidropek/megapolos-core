@@ -162,7 +162,7 @@ class AppInstanceAction {
       HostConfig: {
         PortBindings: {
           [data.innerPort + '/tcp']: [{ 
-            HostIp: '',
+            HostIp: '127.0.0.1',
             HostPort: data.outerPort.toString(),
           }],
         },
