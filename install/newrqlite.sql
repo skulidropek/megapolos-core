@@ -231,6 +231,33 @@ container_device (
 );
 
 CREATE TABLE IF NOT EXISTS
+container_device_domain {
+    id text not null primary key,
+    container_id text not null,
+    device_id text not null,
+    domain text not null,
+    is_ssl int not null default 0
+}
+
+container_device_certificate {
+    id text not null primary key,
+    container_id text not null,
+    device_id text not null,
+    private_key_path text not null,
+    public_key_path text not null
+}
+
+containver_device_db {
+    id text not null primary key,
+    container_id text not null,
+    device_id text not null,
+    db_name text not null,
+    db_user text not null,
+    db_password text not null
+    db_protocol text not null
+}
+
+CREATE TABLE IF NOT EXISTS
 container_device_env_option (
     id text not null primary key,
     container_id text not null,
@@ -242,7 +269,7 @@ container_device_env_option (
 );
 
 CREATE TABLE IF NOT EXISTS
-container_device_option (
+container_device_aux_option (
     id text not null primary key,
     container_id text not null,
     device_id text not null,
