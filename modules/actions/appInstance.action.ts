@@ -18,6 +18,7 @@ import UserAction from './user.action';
 import EventsObserver from '../events/eventsObserver';
 import DockerEvent from '../events/docker.event';
 import VolumeModel from '../models/volume.model';
+import CertificateDevice from '../devices/certificateDevice';
 
 const exec =   promisify(require('child_process').exec);
 
@@ -223,6 +224,14 @@ class AppInstanceAction {
       const domainDevice = new DomainDevice(deviceContainer.outer_port);
       await domainDevice.add(containerId, container.outer_port);
     }
+    if (deviceContainer.device_type_id === 'certificate') {
+      const certificateDevice = new CertificateDevice(deviceContainer.outer_port);
+      try {
+        await certificateDevice.add(containerId);
+      } catch (e) {
+        console.error(e);
+      }
+    }
 
     EventsObserver.listener({ 'type': 'addDeviceToContainer', data: { containerId, deviceId } });
   }
@@ -264,6 +273,14 @@ class AppInstanceAction {
     if (deviceContainer.device_type_id === 'db') {
       const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
       await databaseDevice.remove(containerId);
+    }
+    if (deviceContainer.device_type_id === 'certificate') {
+      const certificateDevice = new CertificateDevice(deviceContainer.outer_port);
+      try {
+        await certificateDevice.remove(containerId);
+      } catch (e) {
+        console.error(e);
+      }
     }
     if (deviceContainer.device_type_id === 'domain') {
       const domainDevice = new DomainDevice(deviceContainer.outer_port);

@@ -10,12 +10,12 @@ class CertificateDevice extends BaseDevice {
     `, { container_id });
   }
 
-  async add(container_id: string) {
+  async add(containerId: string) {
     return this.client.request(gql`
       mutation($containerId: String) {
         addCertificate(container_id: $containerId)
       }
-    `, { input: { container_id } });
+    `, { containerId });
   }
 
   async remove(containerId: string) {
