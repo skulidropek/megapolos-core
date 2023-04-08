@@ -15,9 +15,9 @@ class DeviceModel {
   `, input.id, input.name, input.app_id]]);
   }
 
-  static async getDeviceContainer(deviceId: string):Promise<(ContainerTable & { device_type_id: string; device_id: string })> {
+  static async getDeviceContainer(deviceId: string):Promise<(ContainerTable)> {
     return (await coreRqlite.query([[`
-        SELECT c.*, d.id AS device_id, d.device_type_id FROM device d
+        SELECT c.* FROM device d
         LEFT JOIN driver dr ON d.driver_id = dr.id
         LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
         LEFT JOIN container c ON ai.id = c.app_instance_id
@@ -171,14 +171,9 @@ class DeviceModel {
   }
 
 
-  static async getDevicesOfContainer(containerId: string):Promise<(ContainerTable & { 
-    device_type_id: string; 
-    device_id: string;
-    device_name: string;
-  })[]> {
+  static async getDevicesOfContainer(containerId: string):Promise<(DeviceTable)[]> {
     return (await coreRqlite.query([[`
-    SELECT c.*, 
-    d.id AS device_id, d.device_type_id AS device_type_id, d.name AS device_name
+    SELECT d.*
     FROM device d
     LEFT JOIN container_device cd ON d.id = cd.device_id
     LEFT JOIN driver dr ON d.driver_id = dr.id

@@ -144,6 +144,8 @@ device (
     name text not null unique,
     device_type_id text not null,
     node_id text not null,
+    is_virtual int not null default 0,
+    virtual_device_container_id text null,
     driver_id text not null,
     url text,
     life_status text not null default 'running', 
@@ -216,7 +218,7 @@ container_device_certificate (
 );
 
 CREATE TABLE IF NOT EXISTS
-containver_device_db (
+container_device_db (
     id text not null primary key,
     container_id text not null,
     device_id text not null,

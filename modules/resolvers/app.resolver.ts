@@ -176,8 +176,8 @@ const appModule = createModule({
             const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
             containers[j].devices = [];
             for (let k in devices) {
-              const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].device_id, containers[j].id);
-              const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].device_id, containers[j].id);
+              const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, containers[j].id);
+              const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, containers[j].id);
               containers[j].devices.push({
                 device: devices[k],
                 parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),

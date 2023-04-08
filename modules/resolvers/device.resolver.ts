@@ -7,7 +7,7 @@ import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
 import { sleep } from '../..';
 import { createModule, gql } from 'graphql-modules';
-import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceAuxOptionTable, DeviceOptionTable, DeviceTable } from '../models/tables';
+import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceAuxOptionTable, DeviceOptionTable, DeviceTable, ContainerDeviceEnvOptionTable, ContainerTable } from '../models/tables';
 import EventsObserver from '../events/eventsObserver';
 import AppModel from '../models/app.model';
 import DeviceAction from '../actions/device.action';
@@ -37,8 +37,6 @@ const deviceModule = createModule({
       type Device {
         id: String
         name: String
-        device_id: String
-        device_name: String
         device_type_id: String
         node_id: String
         driver_id: String
@@ -49,6 +47,7 @@ const deviceModule = createModule({
         update_date: String
         remove_date: String
         options: [DeviceOption]
+        container: Container
       }
       type DeviceBackup {
         id: String
@@ -79,6 +78,21 @@ const deviceModule = createModule({
         device_id: String
         device_option_name: String
         container_option_value: String
+      }
+      
+      type ContainerDeviceEnvOption {
+        id: String
+        container_id: String
+        device_id: String
+        container_env_name: String
+        device_option_name: String
+      }
+
+      input ContainerDeviceEnvOptionInput {
+        container_id: String
+        device_id: String
+        container_env_name: String
+        device_option_name: String
       }
       
       type ContainerDeviceDomain {
@@ -135,7 +149,8 @@ const deviceModule = createModule({
         getDevices: [Device]
         getDeviceManifest(id: String): Manifest
         getDeviceOptions(device_id: String): [DeviceOption]
-        getContainerDeviceAuxOptions(container_id: String, device_id: String): [ContainerDeviceAuxOption]
+        getContainerDeviceEnvOptions(container_id: String, device_id: String): [ContainerDeviceAuxOption]
+        getContainerDeviceAuxOptions(container_id: String, device_id: String): [ContainerDeviceEnvOption]
         getContainerDeviceDomain(container_id: String, device_id: String): ContainerDeviceDomain
         getContainerDeviceCertificate(container_id: String, device_id: String): ContainerDeviceCertificate
         getContainerDeviceDb(container_id: String, device_id: String): ContainerDeviceDb
@@ -160,18 +175,18 @@ const deviceModule = createModule({
   ],
   resolvers: {
     Query: {
-      getDevice: resolver<{ id: string }, (DeviceTable & { options: DeviceOptionTable[] })>(async (parent, args, context, info) => {
-        const device = await DeviceModel.getDevice(args.id) as DeviceTable & { options: DeviceOptionTable[] };
-        const options = await DeviceModel.getDeviceOptions(device.id);
-        device.options = options;
+      getDevice: resolver<{ id: string }, (DeviceTable & { options?: DeviceOptionTable[], container?: ContainerTable })>(async (parent, args, context, info) => {
+        const device: DeviceTable & { options?: DeviceOptionTable[], container?: ContainerTable } = await DeviceModel.getDevice(args.id);
+        device.options = await DeviceModel.getDeviceOptions(device.id);
+        device.container = await DeviceModel.getDeviceContainer(device.id);
         return device;
       }),
-      getDevices: resolver<void, (DeviceTable & { options: DeviceOptionTable[] })[]>(async (parent, args, context, info) => {
+      getDevices: resolver<void, (DeviceTable & { options?: DeviceOptionTable[], container?: ContainerTable })[]>(async (parent, args, context, info) => {
         const results = await DeviceModel.getDevices() as (DeviceTable & { options: DeviceOptionTable[] })[];
         for (const k in results) {
-          const device = results[k];
-          const options = await DeviceModel.getDeviceOptions(device.id);
-          device.options = options;
+          const device: DeviceTable & { options?: DeviceOptionTable[], container?: ContainerTable } = results[k];
+          device.options = await DeviceModel.getDeviceOptions(device.id);
+          device.container = await DeviceModel.getDeviceContainer(device.id);
         }
         return results;
       }),
@@ -208,13 +223,17 @@ const deviceModule = createModule({
         const devices = await DeviceModel.getDevicesOfContainer(args.container_id);
         const domainDevice = devices.find((device) => device.device_type_id === 'domain');
         if (domainDevice) {
-          const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(domainDevice.device_id, args.container_id);
+          const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(domainDevice.id, args.container_id);
           const domainOption = auxOptions.find((option) => option.device_option_name === 'domain');
           if (domainOption) {
             return domainOption.container_option_value;
           }
         }
         return '';
+      }),
+      getContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceEnvOptionTable[]>(async (parent, args, context, info) => {
+        const options = await DeviceModel.getDeviceEnvsOfContainer(args.device_id, args.container_id);
+        return options;
       }),
     },
     Mutation: {
