@@ -4,7 +4,7 @@ export interface Manifest {
   name: string;
   type: string;
   fields: [string];
-  container_fields: [string];
+  container_aux_fields: [string];
   container_env_fields: [string];
 }
 
@@ -25,15 +25,15 @@ class BaseDevice {
           name
           type
           fields
-          container_fields
+          container_aux_fields
           container_env_fields
         }
       }
       `)).getManifest;
   }
 
-  async getFields():Promise<[string]> {
-    return (await this.getManifest()).container_fields;
+  async getAuxFields():Promise<[string]> {
+    return (await this.getManifest()).container_aux_fields;
   }
 
   async getEnvFields():Promise<[string]> {

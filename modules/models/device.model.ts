@@ -1,5 +1,5 @@
 import coreRqlite from '../../coreRqlite';
-import { AppInstanceTable, AppTable, ContainerDeviceEnvOptionTable, ContainerDeviceOptionTable, ContainerTable, DeviceOptionTable, DeviceTable, DriverTable, ImageTable } from './tables';
+import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceEnvOptionTable, ContainerDeviceAuxOptionTable, ContainerTable, DeviceOptionTable, DeviceTable, DriverTable } from './tables';
 import { v4 as uuidv4 } from 'uuid';
 
 class DeviceModel {
@@ -49,7 +49,7 @@ class DeviceModel {
         `, input.id, input.container_id, input.device_id, input.device_option_name, input.container_env_name]]);
   }
 
-  static async addOptionToContainer(input: ContainerDeviceOptionTable) {
+  static async addAuxOptionToContainer(input: ContainerDeviceAuxOptionTable) {
     await coreRqlite.execute([[`
           INSERT INTO container_device_option (id, container_id, device_id, device_option_name, container_option_value)
           VALUES (?, ?, ?, ?, ?)
@@ -77,10 +77,91 @@ class DeviceModel {
   `, containerId]])).toArray();
   }
 
-  static async getDeviceOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceOptionTable[]> {
+  static async getDeviceAuxOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceAuxOptionTable[]> {
     return (await coreRqlite.query([[`
-    SELECT * FROM container_device_option WHERE device_id = ? AND container_id = ?
+    SELECT * FROM container_device_aux_option WHERE device_id = ? AND container_id = ?
   `, deviceId, containerId]])).toArray();
+  }
+
+  static async setDeviceAuxOptionsOfContainer(deviceId: string, containerId: string, options: { key: string, value: string }[]) {
+    await coreRqlite.execute([[`
+      DELETE FROM container_device_aux_option WHERE device_id = ? AND container_id = ?
+    `, deviceId, containerId]]);
+    await coreRqlite.execute(options.map(option => [`
+        INSERT INTO container_device_aux_option (id, container_id, device_id, device_option_name, container_option_value) VALUES (?, ?, ?, ?, ?)
+      `, uuidv4(), containerId, deviceId, option.key, option.value]));
+  }
+
+  static async getDeviceDomainOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceDomainTable> {
+    return (await coreRqlite.query([[`
+    SELECT * FROM container_device_domain WHERE device_id = ? AND container_id = ?
+  `, deviceId, containerId]])).toArray()[0];
+  }
+
+  static async setDeviceDomainOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceDomainTable) {
+    if (await DeviceModel.getDeviceDomainOptionsOfContainer(deviceId, containerId)) {
+      await coreRqlite.execute([[`
+      UPDATE container_device_domain SET domain = ?, is_ssl = ? WHERE device_id = ? AND container_id = ?
+    `, options.domain, options.is_ssl.toString(), deviceId, containerId]]);
+    } else {
+      await coreRqlite.execute([[`
+      INSERT INTO container_device_domain (id, container_id, device_id, domain, is_ssl) VALUES (?, ?, ?, ?, ?)
+    `, uuidv4(), containerId, deviceId, options.domain, options.is_ssl.toString()]]);
+    }
+  }
+
+  static async removeDeviceDomainOptionsOfContainer(deviceId: string, containerId: string) {
+    await coreRqlite.execute([[`
+      DELETE FROM container_device_domain WHERE device_id = ? AND container_id = ?
+    `, deviceId, containerId]]);
+  }
+
+  static async getDeviceCertificateOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceCertificateTable> {
+    return (await coreRqlite.query([[`
+    SELECT * FROM container_device_certificate WHERE device_id = ? AND container_id = ?
+  `, deviceId, containerId]])).toArray()[0];
+  }
+
+  static async setDeviceCertificateOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceCertificateTable) {
+    if (await DeviceModel.getDeviceCertificateOptionsOfContainer(deviceId, containerId)) {
+      await coreRqlite.execute([[`
+      UPDATE container_device_certificate SET private_key_path = ?, public_key_path = ? WHERE device_id = ? AND container_id = ?
+    `, options.private_key_path, options.public_key_path, deviceId, containerId]]);
+    } else {
+      await coreRqlite.execute([[`
+      INSERT INTO container_device_certificate (id, container_id, device_id, private_key_path, public_key_path) VALUES (?, ?, ?, ?, ?)
+    `, uuidv4(), containerId, deviceId, options.private_key_path, options.public_key_path]]);
+    }
+  }
+
+  static async removeDeviceCertificateOptionsOfContainer(deviceId: string, containerId: string) {
+    await coreRqlite.execute([[`
+      DELETE FROM container_device_certificate WHERE device_id = ? AND container_id = ?
+    `, deviceId, containerId]]);
+  }
+
+  static async getDeviceDbOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceDbTable> {
+    return (await coreRqlite.query([[`
+    SELECT * FROM container_device_db WHERE device_id = ? AND container_id = ?
+  `, deviceId, containerId]])).toArray()[0];
+  }
+
+  static async setDeviceDbOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceDbTable) {
+    if (await DeviceModel.getDeviceDbOptionsOfContainer(deviceId, containerId)) {
+      await coreRqlite.execute([[`
+      UPDATE container_device_db SET db_name = ?, db_user = ?, db_password = ?, db_protocol = ? WHERE device_id = ? AND container_id = ?
+    `, options.db_name, options.db_user, options.db_password, options.db_protocol, deviceId, containerId]]);
+    } else {
+      await coreRqlite.execute([[`
+      INSERT INTO container_device_db (id, container_id, device_id, db_name, db_user, db_password, db_protocol) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, uuidv4(), containerId, deviceId, options.db_name, options.db_user, options.db_password, options.db_protocol]]);
+    }
+  }
+
+  static async removeDeviceDbOptionsOfContainer(deviceId: string, containerId: string) {
+    return coreRqlite.execute([[`
+      DELETE FROM container_device_db WHERE device_id = ? AND container_id = ?
+    `, deviceId, containerId]]);
   }
 
   static async getDeviceEnvsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceEnvOptionTable[]> {
@@ -127,7 +208,17 @@ class DeviceModel {
   static async removeDeviceFromContainer(input: { containerId: string, deviceId: string }) {
     await coreRqlite.execute([['DELETE FROM container_device WHERE container_id = ? AND device_id = ?', 
       input.containerId, input.deviceId]]);
-    await coreRqlite.execute([['DELETE FROM container_device_option WHERE container_id = ? AND device_id = ?',
+    const device = await DeviceModel.getDevice(input.deviceId);
+    if (device.device_type_id === 'domain') {
+      await DeviceModel.removeDeviceDomainOptionsOfContainer(input.deviceId, input.containerId);
+    }
+    if (device.device_type_id === 'db') {
+      await DeviceModel.removeDeviceDbOptionsOfContainer(input.deviceId, input.containerId);
+    }
+    if (device.device_type_id === 'certificate') {
+      await DeviceModel.removeDeviceCertificateOptionsOfContainer(input.deviceId, input.containerId);
+    }
+    await coreRqlite.execute([['DELETE FROM container_device_aux_option WHERE container_id = ? AND device_id = ?',
       input.containerId, input.deviceId]]);
     await coreRqlite.execute([['DELETE FROM container_device_env_option WHERE container_id = ? AND device_id = ?',
       input.containerId, input.deviceId]]);

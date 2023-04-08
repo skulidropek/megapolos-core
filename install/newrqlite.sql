@@ -10,10 +10,6 @@ group_user (
     disable_date date
 );
 
-INSERT OR IGNORE INTO group_user (id, name)
-VALUES
-	("root", "root");
-
 -- users 
 -- rest_api [command_uri + crud]
 CREATE TABLE IF NOT EXISTS
@@ -87,14 +83,6 @@ instance_type (
     name text not null unique
 );
 
-INSERT OR IGNORE INTO instance_type (id, name)
-VALUES
-	("prod", "prod"),
-	("test", "test"),
-	("demo", "demo"),    
-	("master", "master"),
-    ("feature", "feature");
-
 -- rolling, recreate, bg: blue/green, canary, dark: A/B
 CREATE TABLE IF NOT EXISTS
 deploy_strategy (
@@ -102,26 +90,12 @@ deploy_strategy (
     name text not null unique
 );
 
-INSERT OR IGNORE INTO deploy_strategy (id, name)
-VALUES
-	("rolling", "rolling"),
-	("recreate", "recreate"),
-	("bg", "bg"),    
-    ("canary", "canary"),
-    ("dark", "dark"),
-    ("restore", "restore");
-
 -- full, achive
 CREATE TABLE IF NOT EXISTS
 remove_strategy (
     id text not null primary key,
     name text not null unique
 );
-
-INSERT OR IGNORE INTO remove_strategy (id, name)
-VALUES
-	("full", "full"),
-	("achive", "achive");    
 
 -- runtime image
 CREATE TABLE IF NOT EXISTS
@@ -190,17 +164,6 @@ device_type (
     name text not null unique
 );
 
-INSERT OR IGNORE INTO device_type (id, name)
-VALUES
-    ("volume","volume"),
-	("git","git"),
-	("runner","runner"),
-	("images","images"),
-	("proxy","proxy"),
-    ("sql_db","sql_db"),
-    ("mongo_db","mongo_db"),
-    ("broker", "broker");
-
 -- compile time: git, runner, images
 CREATE TABLE IF NOT EXISTS
 app_device (
@@ -226,36 +189,44 @@ container_device (
     id text not null primary key,
     container_id text not null,     
     device_id text not null,
-    FOREIGN KEY (device_id) REFERENCES device(id)
+    FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
 );
 
 CREATE TABLE IF NOT EXISTS
-container_device_domain {
+container_device_domain (
     id text not null primary key,
     container_id text not null,
     device_id text not null,
     domain text not null,
-    is_ssl int not null default 0
-}
+    is_ssl int not null default 0,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
+);
 
-container_device_certificate {
+CREATE TABLE IF NOT EXISTS
+container_device_certificate (
     id text not null primary key,
     container_id text not null,
     device_id text not null,
     private_key_path text not null,
-    public_key_path text not null
-}
+    public_key_path text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
+);
 
-containver_device_db {
+CREATE TABLE IF NOT EXISTS
+containver_device_db (
     id text not null primary key,
     container_id text not null,
     device_id text not null,
     db_name text not null,
     db_user text not null,
-    db_password text not null
-    db_protocol text not null
-}
+    db_password text not null,
+    db_protocol text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
+);
 
 CREATE TABLE IF NOT EXISTS
 container_device_env_option (
@@ -335,3 +306,40 @@ device_backup (
     FOREIGN KEY (container_id) REFERENCES container(id),
     FOREIGN KEY (image_id) REFERENCES image(id)
 );
+
+INSERT OR IGNORE INTO group_user (id, name)
+VALUES
+	("root", "root");
+
+INSERT OR IGNORE INTO instance_type (id, name)
+VALUES
+	("prod", "prod"),
+	("test", "test"),
+	("demo", "demo"),    
+	("master", "master"),
+    ("feature", "feature");
+
+INSERT OR IGNORE INTO deploy_strategy (id, name)
+VALUES
+	("rolling", "rolling"),
+	("recreate", "recreate"),
+	("bg", "bg"),    
+    ("canary", "canary"),
+    ("dark", "dark"),
+    ("restore", "restore");
+
+INSERT OR IGNORE INTO remove_strategy (id, name)
+VALUES
+	("full", "full"),
+	("achive", "achive");    
+
+INSERT OR IGNORE INTO device_type (id, name)
+VALUES
+    ("volume","volume"),
+	("git","git"),
+	("runner","runner"),
+	("images","images"),
+	("proxy","proxy"),
+    ("sql_db","sql_db"),
+    ("mongo_db","mongo_db"),
+    ("broker", "broker");

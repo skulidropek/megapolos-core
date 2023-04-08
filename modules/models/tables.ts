@@ -134,13 +134,41 @@ export interface ContainerTable {
   update_date: string;
   remove_date: string;
 }
-export interface ContainerDeviceOptionTable {
+
+export interface ContainerDeviceAuxOptionTable {
   id: string;
   container_id: string;
   device_id: string;
   device_option_name: string;
   container_option_value: string;
 }
+
+export interface ContainerDeviceDomainTable {
+  id: string;
+  container_id: string;
+  device_id: string;
+  domain: string;
+  is_ssl: number;
+}
+
+export interface ContainerDeviceCertificateTable {
+  id: string;
+  container_id: string;
+  device_id: string;
+  private_key_path: string;
+  public_key_path: string;
+}
+
+export interface ContainerDeviceDbTable {
+  id: string;
+  container_id: string;
+  device_id: string;
+  db_name: string;
+  db_user: string;
+  db_password: string;
+  db_protocol: string;
+}
+
 export interface VolumeTable {
   id: string;
   name: string;

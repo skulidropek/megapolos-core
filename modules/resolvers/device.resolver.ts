@@ -7,7 +7,7 @@ import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
 import { sleep } from '../..';
 import { createModule, gql } from 'graphql-modules';
-import { ContainerDeviceOptionTable, DeviceOptionTable, DeviceTable } from '../models/tables';
+import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceAuxOptionTable, DeviceOptionTable, DeviceTable } from '../models/tables';
 import EventsObserver from '../events/eventsObserver';
 import AppModel from '../models/app.model';
 import DeviceAction from '../actions/device.action';
@@ -21,7 +21,7 @@ const deviceModule = createModule({
         name: String
         type: String
         fields: [String]
-        container_fields: [String]
+        container_aux_fields: [String]
         container_env_fields: [String]
       }
       type DeviceOption {
@@ -60,24 +60,85 @@ const deviceModule = createModule({
         update_date: String
         remove_date: String
       }
-      type ContainerDeviceOption {
+      input DeviceInput {
+        name: String
+        inner_port: Int
+        image: String
+      }
+
+      type ContainerDeviceAuxOption {
         id: String
         container_id: String
         device_id: String
         device_option_name: String
         container_option_value: String
       }
-      input DeviceInput {
-        name: String
-        inner_port: Int
-        image: String
+
+      input ContainerDeviceAuxOptionInput {
+        container_id: String
+        device_id: String
+        device_option_name: String
+        container_option_value: String
       }
+      
+      type ContainerDeviceDomain {
+        id: String
+        container_id: String
+        device_id: String
+        domain: String
+        is_ssl: Int
+      }
+
+      input ContainerDeviceDomainInput {
+        container_id: String
+        device_id: String
+        domain: String
+        is_ssl: Int
+      }
+      
+      type ContainerDeviceCertificate {
+        id: String
+        container_id: String
+        device_id: String
+        private_key_path: String
+        public_key_path: String
+      }
+
+      input ContainerDeviceCertificateInput {
+        container_id: String
+        device_id: String
+        private_key_path: String
+        public_key_path: String
+      }
+      
+      type ContainerDeviceDb {
+        id: String
+        container_id: String
+        device_id: String
+        db_name: String
+        db_user: String
+        db_password: String
+        db_protocol: String
+      }
+
+      input ContainerDeviceDbInput {
+        container_id: String
+        device_id: String
+        db_name: String
+        db_user: String
+        db_password: String
+        db_protocol: String
+      }
+
       type Query {
         getDevice(id: String): Device
         getDevices: [Device]
         getDeviceManifest(id: String): Manifest
         getDeviceOptions(device_id: String): [DeviceOption]
-        getContainerDeviceOptions(container_id: String, device_id: String): [ContainerDeviceOption]
+        getContainerDeviceAuxOptions(container_id: String, device_id: String): [ContainerDeviceAuxOption]
+        getContainerDeviceDomain(container_id: String, device_id: String): ContainerDeviceDomain
+        getContainerDeviceCertificate(container_id: String, device_id: String): ContainerDeviceCertificate
+        getContainerDeviceDb(container_id: String, device_id: String): ContainerDeviceDb
         getDeviceBackup: [DeviceBackup]
         getContainerDomain(container_id: String): String
       }
@@ -88,6 +149,10 @@ const deviceModule = createModule({
         setDeviceOptions(id: String, options: [DeviceOptionInput]): Boolean
         addDeviceToContainer(container_id: String, input: ContainerDeviceInput): Boolean
         editDeviceOfContainer(container_id: String, input: ContainerDeviceInput): Boolean
+        setContainerDeviceAuxOptions(container_id: String, device_id: String, options: [ContainerDeviceAuxOptionInput]): Boolean
+        setContainerDeviceDomain(container_id: String, device_id: String, domain: ContainerDeviceDomainInput): Boolean
+        setContainerDeviceCertificate(container_id: String, device_id: String, certificate: ContainerDeviceCertificateInput): Boolean
+        setContainerDeviceDb(container_id: String, device_id: String, db: ContainerDeviceDbInput): Boolean
         removeDeviceFromContainer(container_id: String, device_id: String): Boolean        
         createDeviceFromApp(app_id: String): Boolean
       }
@@ -123,16 +188,28 @@ const deviceModule = createModule({
         const options = await DeviceModel.getDeviceOptions(deviceId);
         return options;
       }),
-      getContainerDeviceOptions: resolver<{ container_id: string, device_id: string }, (ContainerDeviceOptionTable & { token?: String })[]>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceOptionsOfContainer(args.device_id, args.container_id);
+      getContainerDeviceAuxOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceAuxOptionTable[]>(async (parent, args, context, info) => {
+        const options = await DeviceModel.getDeviceAuxOptionsOfContainer(args.device_id, args.container_id);
+        return options;
+      }),
+      getContainerDeviceDomain: resolver<{ container_id: string, device_id: string }, ContainerDeviceDomainTable>(async (parent, args, context, info) => {
+        const options = await DeviceModel.getDeviceDomainOptionsOfContainer(args.device_id, args.container_id);
+        return options;
+      }),
+      getContainerDeviceCertificate: resolver<{ container_id: string, device_id: string }, ContainerDeviceCertificateTable>(async (parent, args, context, info) => {
+        const options = await DeviceModel.getDeviceCertificateOptionsOfContainer(args.device_id, args.container_id);
+        return options;
+      }),
+      getContainerDeviceDb: resolver<{ container_id: string, device_id: string }, ContainerDeviceDbTable>(async (parent, args, context, info) => {
+        const options = await DeviceModel.getDeviceDbOptionsOfContainer(args.device_id, args.container_id);
         return options;
       }),
       getContainerDomain: resolver<{ container_id: string }, string>(async (parent, args, context, info) => {
         const devices = await DeviceModel.getDevicesOfContainer(args.container_id);
         const domainDevice = devices.find((device) => device.device_type_id === 'domain');
         if (domainDevice) {
-          const options = await DeviceModel.getDeviceOptionsOfContainer(domainDevice.device_id, args.container_id);
-          const domainOption = options.find((option) => option.device_option_name === 'domain');
+          const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(domainDevice.device_id, args.container_id);
+          const domainOption = auxOptions.find((option) => option.device_option_name === 'domain');
           if (domainOption) {
             return domainOption.container_option_value;
           }
@@ -174,7 +251,9 @@ const deviceModule = createModule({
         const device = await DeviceModel.getDevice(deviceId);
         const driver = await DeviceModel.getDriver(device.driver_id);
         const appInstance = await AppInstanceModel.getFirstAppInstanceOfApp(driver.app_id);
-        await AppInstanceAction.removeAppInstance(appInstance.id, true);
+        if (appInstance) {
+          await AppInstanceAction.removeAppInstance(appInstance.id, true);
+        }
         await AppAction.uninstallApp(driver.app_id);
         await DeviceModel.removeDevice(deviceId);
         await DeviceModel.removeDriver(device.driver_id);
@@ -200,6 +279,22 @@ const deviceModule = createModule({
       editDeviceOfContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
         AppInstanceAction.updateDeviceToContainer(args.container_id, args.input.id, args.input);
         EventsObserver.listener({ type: 'editDeviceOfContainer', data: args });
+        return true;
+      }),
+      setContainerDeviceAuxOptions: resolver<{ container_id: string, device_id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {
+        await DeviceModel.setDeviceAuxOptionsOfContainer(args.device_id, args.container_id, args.options);
+        return true;
+      }),
+      setContainerDeviceDomain: resolver<{ container_id: string, device_id: string, domain: ContainerDeviceDomainTable }, boolean>(async (parent, args, context, info) => {
+        await DeviceModel.setDeviceDomainOptionsOfContainer(args.device_id, args.container_id, args.domain);
+        return true;
+      }),
+      setContainerDeviceCertificate: resolver<{ container_id: string, device_id: string, certificate: ContainerDeviceCertificateTable }, boolean>(async (parent, args, context, info) => {
+        await DeviceModel.setDeviceCertificateOptionsOfContainer(args.device_id, args.container_id, args.certificate);
+        return true;
+      }),
+      setContainerDeviceDb: resolver<{ container_id: string, device_id: string, db: ContainerDeviceDbTable }, boolean>(async (parent, args, context, info) => {
+        await DeviceModel.setDeviceDbOptionsOfContainer(args.device_id, args.container_id, args.db);
         return true;
       }),
       removeDeviceFromContainer: resolver<{ container_id: string, device_id: string }, boolean>(async (parent, args, context, info) => {

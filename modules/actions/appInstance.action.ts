@@ -207,7 +207,7 @@ class AppInstanceAction {
     if (deviceInput.parameters) {
       for (let i in deviceInput.parameters) {
         const containerDeviceEnvId = uuidv4();
-        await DeviceModel.addOptionToContainer({
+        await DeviceModel.addAuxOptionToContainer({
           id: containerDeviceEnvId,
           container_id: containerId,
           device_id: deviceId,
@@ -217,7 +217,7 @@ class AppInstanceAction {
       }
     }
 
-    console.log(await DeviceModel.getDeviceOptionsOfContainer(deviceId, containerId));
+    console.log(await DeviceModel.getDeviceAuxOptionsOfContainer(deviceId, containerId));
 
     if (deviceContainer.device_type_id === 'domain') {
       const container = await AppInstanceModel.getContainer(containerId);
@@ -253,7 +253,7 @@ class AppInstanceAction {
     if (deviceInput.parameters) {
       for (let i in deviceInput.parameters) {
         const containerDeviceEnvId = uuidv4();
-        await DeviceModel.addOptionToContainer({
+        await DeviceModel.addAuxOptionToContainer({
           id: containerDeviceEnvId,
           container_id: containerId,
           device_id: deviceId,
