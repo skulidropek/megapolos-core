@@ -128,12 +128,13 @@ class AppInstanceAction {
       { key: 'MEGAPOLOS_TOKEN', value: UserAction.createToken(data.userId) },
       { key: 'MEGAPOLOS_APP_ID', value: data.appId },
       { key: 'MEGAPOLOS_DRIVER_ID', value: containerDevice?.driver_id || '' },
-      { key: 'MEGAPOLOS_DEVICE_ID', value: containerDevice?.device_id || '' },
+      { key: 'MEGAPOLOS_DEVICE_ID', value: containerDevice?.id || '' },
       { key: 'MEGAPOLOS_DEVICE_TYPE_ID', value: containerDevice?.device_type_id || '' },
       { key: 'MEGAPOLOS_APP_INSTANCE_ID', value: data.appInstanceId },
       { key: 'MEGAPOLOS_CONTAINER_ID', value: data.containerId },
       { key: 'MEGAPOLOS_IMAGE_ID', value: data.imageId },
       { key: 'MEGAPOLOS_PATH_DATA', value: megapolosPath + '/data' },
+      { key: 'MEGAPOLOS_PATH_VOLUME', value: megapolosPath + '/volumes/' + data.containerId },
       ...envParameters.map((env) => ({ key: env.container_env_name, value: deviceParameters.find(option => option.key === env.device_option_name)?.value })),
       ...envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value })),
     ];
@@ -237,9 +238,9 @@ class AppInstanceAction {
     console.log(await DeviceModel.getDeviceAuxOptionsOfContainer(deviceId, containerId));
 
     if (device.device_type_id === 'domain') {
-      const container = await AppInstanceModel.getContainer(containerId);
-      const domainDevice = new DomainDevice(deviceDriverContainer.outer_port);
-      await domainDevice.add(containerId, container.outer_port);
+      // const container = await AppInstanceModel.getContainer(containerId);
+      // const domainDevice = new DomainDevice(deviceDriverContainer.outer_port);
+      // await domainDevice.add(containerId, container.outer_port);
     }
     if (device.device_type_id === 'certificate') {
       const certificateDevice = new CertificateDevice(deviceDriverContainer.outer_port);

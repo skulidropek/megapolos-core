@@ -108,20 +108,24 @@ class DeviceModel {
   }
 
   static async getDeviceDomainOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceDomainTable> {
-    return (await coreRqlite.query([[`
+    const result = (await coreRqlite.query([[`
     SELECT * FROM container_device_domain WHERE device_id = ? AND container_id = ?
   `, deviceId, containerId]])).toArray()[0];
+    if (!result.is_ssl) {
+      result.is_ssl = 0;
+    }
+    return result;
   }
 
   static async setDeviceDomainOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceDomainTable) {
     if (await DeviceModel.getDeviceDomainOptionsOfContainer(deviceId, containerId)) {
       await coreRqlite.execute([[`
       UPDATE container_device_domain SET domain = ?, is_ssl = ? WHERE device_id = ? AND container_id = ?
-    `, options.domain, options.is_ssl.toString(), deviceId, containerId]]);
+    `, options.domain, options.is_ssl?.toString() || '', deviceId, containerId]]);
     } else {
       await coreRqlite.execute([[`
       INSERT INTO container_device_domain (id, container_id, device_id, domain, is_ssl) VALUES (?, ?, ?, ?, ?)
-    `, uuidv4(), containerId, deviceId, options.domain, options.is_ssl.toString()]]);
+    `, uuidv4(), containerId, deviceId, options.domain, options.is_ssl?.toString() || '']]);
     }
   }
 
@@ -198,9 +202,9 @@ class DeviceModel {
   `, containerId]])).toArray();
   }
 
-  static async getDeviceFromContainer(containerId: string):Promise<{ driver_id: string, device_id: string, device_type_id: string }> {
+  static async getDeviceFromContainer(containerId: string):Promise<DeviceTable> {
     return (await coreRqlite.query([[`
-  SELECT dr.id AS driver_id, d.id AS device_id, d.device_type_id AS device_type_id FROM device d
+  SELECT d.* FROM device d
   LEFT JOIN driver dr ON d.driver_id = dr.id
   LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
   LEFT JOIN container c ON ai.id = c.app_instance_id

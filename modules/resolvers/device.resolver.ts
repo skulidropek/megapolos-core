@@ -11,6 +11,7 @@ import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDevic
 import EventsObserver from '../events/eventsObserver';
 import AppModel from '../models/app.model';
 import DeviceAction from '../actions/device.action';
+import DomainDevice from '../devices/domainDevice';
 
 const deviceModule = createModule({
   id: 'device-module',
@@ -316,6 +317,10 @@ const deviceModule = createModule({
       }),
       setContainerDeviceDomain: resolver<{ container_id: string, device_id: string, domain: ContainerDeviceDomainTable }, boolean>(async (parent, args, context, info) => {
         await DeviceModel.setDeviceDomainOptionsOfContainer(args.device_id, args.container_id, args.domain);
+        const container = await AppInstanceModel.getContainer(args.container_id);
+        const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(args.device_id);
+        const domainDevice = new DomainDevice(deviceDriverContainer.outer_port);
+        await domainDevice.add(args.container_id, container.outer_port);
         return true;
       }),
       setContainerDeviceCertificate: resolver<{ container_id: string, device_id: string, certificate: ContainerDeviceCertificateTable }, boolean>(async (parent, args, context, info) => {
