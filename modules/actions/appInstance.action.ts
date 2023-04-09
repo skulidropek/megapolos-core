@@ -59,10 +59,10 @@ class AppInstanceAction {
     const repositoryDevice = devices.find((device) => device.device_type_id === 'repository');
     const builderDevice = devices.find((device) => device.device_type_id === 'builder');
     if (builderDevice) {
-      const builderDeviceContainer = await DeviceModel.getDeviceContainer(builderDevice.id);
+      const builderDeviceContainer = await DeviceModel.getDeviceDriverContainer(builderDevice.id);
       const builderDeviceObject = new BuilderDevice(builderDeviceContainer.outer_port);
       if (repositoryDevice) {
-        const repositoryDeviceContainer = await DeviceModel.getDeviceContainer(repositoryDevice.id);
+        const repositoryDeviceContainer = await DeviceModel.getDeviceDriverContainer(repositoryDevice.id);
         const repositoryDeviceObject = new RepositoryDevice(repositoryDeviceContainer.outer_port);
         const repository = await repositoryDeviceObject.cloneContainer(data.containerId);
         await builderDeviceObject.build(data.containerId, data.imageName, repository.path, allEnvs);
@@ -101,13 +101,13 @@ class AppInstanceAction {
   
     for (let i in devices) {
       const device = devices[i];
-      const deviceContainer = await DeviceModel.getDeviceContainer(device.id);
-      const deviceObject = new BaseDevice(deviceContainer.outer_port);
+      const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(device.id);
+      const deviceObject = new BaseDevice(deviceDriverContainer.outer_port);
       let deviceOptions: {key: string, value: string}[] = (await DeviceModel.getDeviceAuxOptionsOfContainer(data.containerId, device.id))
       .map((option) => ({ key: option.device_option_name, value: option.container_option_value }));
       if (device.device_type_id === 'db') {
         const dbOptions = await DeviceModel.getDeviceDbOptionsOfContainer(device.id, data.containerId);
-        ['db_user', 'db_password', 'db_name', 'db_protocol'].forEach((key) => {
+        ['db_host', 'db_user', 'db_password', 'db_name', 'db_protocol'].forEach((key) => {
         deviceOptions.push({
           key: key,
           value: dbOptions[key]
@@ -202,10 +202,10 @@ class AppInstanceAction {
       deviceId,
     });
 
-    const deviceContainer = await DeviceModel.getDeviceContainer(deviceId);
+    const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(deviceId);
     const device = await DeviceModel.getDevice(deviceId);
     if (device.device_type_id === 'db') {
-      const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
+      const databaseDevice = new DatabaseDevice(deviceDriverContainer.outer_port);
       await databaseDevice.add(containerId);
     }
 
@@ -238,11 +238,11 @@ class AppInstanceAction {
 
     if (device.device_type_id === 'domain') {
       const container = await AppInstanceModel.getContainer(containerId);
-      const domainDevice = new DomainDevice(deviceContainer.outer_port);
+      const domainDevice = new DomainDevice(deviceDriverContainer.outer_port);
       await domainDevice.add(containerId, container.outer_port);
     }
     if (device.device_type_id === 'certificate') {
-      const certificateDevice = new CertificateDevice(deviceContainer.outer_port);
+      const certificateDevice = new CertificateDevice(deviceDriverContainer.outer_port);
       try {
         await certificateDevice.add(containerId);
       } catch (e) {
@@ -284,16 +284,16 @@ class AppInstanceAction {
   }
 
   static async removeDeviceFromContainer(containerId: string, deviceId: string) {
-    const deviceContainer = await DeviceModel.getDeviceContainer(deviceId);
+    const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(deviceId);
     const device = await DeviceModel.getDevice(deviceId);
     const container = await AppInstanceModel.getContainer(containerId);
     const instance = await AppInstanceModel.getAppInstance(container.app_instance_id);
     if (device.device_type_id === 'db') {
-      const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
+      const databaseDevice = new DatabaseDevice(deviceDriverContainer.outer_port);
       await databaseDevice.remove(containerId);
     }
     if (device.device_type_id === 'certificate') {
-      const certificateDevice = new CertificateDevice(deviceContainer.outer_port);
+      const certificateDevice = new CertificateDevice(deviceDriverContainer.outer_port);
       try {
         await certificateDevice.remove(containerId);
       } catch (e) {
@@ -301,7 +301,7 @@ class AppInstanceAction {
       }
     }
     if (device.device_type_id === 'domain') {
-      const domainDevice = new DomainDevice(deviceContainer.outer_port);
+      const domainDevice = new DomainDevice(deviceDriverContainer.outer_port);
       await domainDevice.remove(containerId);
     }
     await DeviceModel.removeDeviceFromContainer({

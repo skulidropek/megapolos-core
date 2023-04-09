@@ -52,6 +52,8 @@ export interface DeviceTable {
   name: string;
   device_type_id: string;
   node_id: string;
+  is_virtual: number;
+  virtual_device_container_id: string;
   driver_id: string;
   url: string;
   life_status: string;
@@ -163,6 +165,7 @@ export interface ContainerDeviceDbTable {
   id: string;
   container_id: string;
   device_id: string;
+  db_host: string;
   db_name: string;
   db_user: string;
   db_password: string;
@@ -207,6 +210,7 @@ export interface DeviceBackupTable {
   id: string,
   name: string,
   device_id: string,
+  device_name: string,
   container_id: string,
   image_id: string,
   create_date: string,

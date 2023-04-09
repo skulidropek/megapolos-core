@@ -55,10 +55,10 @@ class VolumeModel {
     return true;
   }
 
-  static async getDeviceBackups(deviceId: string): Promise<DeviceBackupTable[]> {
+  static async getDeviceBackups(deviceName: string): Promise<DeviceBackupTable[]> {
     return (await coreRqlite.query([[`
-        SELECT * FROM device_backup WHERE device_id = ?
-    `, deviceId]])).toArray();
+        SELECT * FROM device_backup WHERE device_name = ?
+    `, deviceName]])).toArray();
   }
 
   static async getDeviceBackup(id: string): Promise<DeviceBackupTable> {

@@ -39,6 +39,8 @@ const deviceModule = createModule({
         name: String
         device_type_id: String
         node_id: String
+        is_virtual: Int
+        virtual_device_container_id: String
         driver_id: String
         url: String
         life_status: String
@@ -47,12 +49,13 @@ const deviceModule = createModule({
         update_date: String
         remove_date: String
         options: [DeviceOption]
-        container: Container
+        driver_container: Container
       }
       type DeviceBackup {
         id: String
         name: String
         device_id: String
+        device_name: String
         container_id: String
         image_id: String
         create_date: String
@@ -74,10 +77,8 @@ const deviceModule = createModule({
       }
 
       input ContainerDeviceAuxOptionInput {
-        container_id: String
-        device_id: String
-        device_option_name: String
-        container_option_value: String
+        key: String
+        value: String
       }
       
       type ContainerDeviceEnvOption {
@@ -89,10 +90,8 @@ const deviceModule = createModule({
       }
 
       input ContainerDeviceEnvOptionInput {
-        container_id: String
-        device_id: String
-        container_env_name: String
-        device_option_name: String
+        key: String
+        value: String
       }
       
       type ContainerDeviceDomain {
@@ -129,6 +128,7 @@ const deviceModule = createModule({
         id: String
         container_id: String
         device_id: String
+        db_host: String
         db_name: String
         db_user: String
         db_password: String
@@ -138,6 +138,7 @@ const deviceModule = createModule({
       input ContainerDeviceDbInput {
         container_id: String
         device_id: String
+
         db_name: String
         db_user: String
         db_password: String
@@ -149,12 +150,11 @@ const deviceModule = createModule({
         getDevices: [Device]
         getDeviceManifest(id: String): Manifest
         getDeviceOptions(device_id: String): [DeviceOption]
-        getContainerDeviceEnvOptions(container_id: String, device_id: String): [ContainerDeviceAuxOption]
-        getContainerDeviceAuxOptions(container_id: String, device_id: String): [ContainerDeviceEnvOption]
+        getContainerDeviceEnvOptions(container_id: String, device_id: String): [ContainerDeviceEnvOption]
+        getContainerDeviceAuxOptions(container_id: String, device_id: String): [ContainerDeviceAuxOption]
         getContainerDeviceDomain(container_id: String, device_id: String): ContainerDeviceDomain
         getContainerDeviceCertificate(container_id: String, device_id: String): ContainerDeviceCertificate
         getContainerDeviceDb(container_id: String, device_id: String): ContainerDeviceDb
-        getDeviceBackup: [DeviceBackup]
         getContainerDomain(container_id: String): String
       }
 
@@ -162,8 +162,10 @@ const deviceModule = createModule({
         addDevice(input: DeviceInput): Boolean
         removeDevice(id: String): Boolean
         setDeviceOptions(id: String, options: [DeviceOptionInput]): Boolean
+        setDeviceVirtual(id: String, is_virtual: Int, virtual_device_container_id: String): Boolean
         addDeviceToContainer(container_id: String, input: ContainerDeviceInput): Boolean
         editDeviceOfContainer(container_id: String, input: ContainerDeviceInput): Boolean
+        setContainerDeviceEnvOptions(container_id: String, device_id: String, options: [ContainerDeviceEnvOptionInput]): Boolean
         setContainerDeviceAuxOptions(container_id: String, device_id: String, options: [ContainerDeviceAuxOptionInput]): Boolean
         setContainerDeviceDomain(container_id: String, device_id: String, domain: ContainerDeviceDomainInput): Boolean
         setContainerDeviceCertificate(container_id: String, device_id: String, certificate: ContainerDeviceCertificateInput): Boolean
@@ -175,27 +177,27 @@ const deviceModule = createModule({
   ],
   resolvers: {
     Query: {
-      getDevice: resolver<{ id: string }, (DeviceTable & { options?: DeviceOptionTable[], container?: ContainerTable })>(async (parent, args, context, info) => {
-        const device: DeviceTable & { options?: DeviceOptionTable[], container?: ContainerTable } = await DeviceModel.getDevice(args.id);
+      getDevice: resolver<{ id: string }, (DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable })>(async (parent, args, context, info) => {
+        const device: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = await DeviceModel.getDevice(args.id);
         device.options = await DeviceModel.getDeviceOptions(device.id);
-        device.container = await DeviceModel.getDeviceContainer(device.id);
+        device.driver_container = await DeviceModel.getDeviceDriverContainer(device.id);
         return device;
       }),
-      getDevices: resolver<void, (DeviceTable & { options?: DeviceOptionTable[], container?: ContainerTable })[]>(async (parent, args, context, info) => {
+      getDevices: resolver<void, (DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable })[]>(async (parent, args, context, info) => {
         const results = await DeviceModel.getDevices() as (DeviceTable & { options: DeviceOptionTable[] })[];
         for (const k in results) {
-          const device: DeviceTable & { options?: DeviceOptionTable[], container?: ContainerTable } = results[k];
+          const device: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = results[k];
           device.options = await DeviceModel.getDeviceOptions(device.id);
-          device.container = await DeviceModel.getDeviceContainer(device.id);
+          device.driver_container = await DeviceModel.getDeviceDriverContainer(device.id);
         }
         return results;
       }),
       getDeviceManifest: resolver<{ id: string }, Manifest>(async (parent, args, context, info) => {
         const deviceId = args.id;
         
-        const container = await DeviceModel.getDeviceContainer(deviceId);
+        const driverContainer = await DeviceModel.getDeviceDriverContainer(deviceId);
         
-        const device = new BaseDevice(container.outer_port);
+        const device = new BaseDevice(driverContainer.outer_port);
         return device.getManifest();
       }),
       getDeviceOptions: resolver<{ device_id: string }, DeviceOptionTable[]>(async (parent, args, context, info) => {
@@ -283,6 +285,10 @@ const deviceModule = createModule({
         await DeviceModel.setDeviceOptions(args.id, args.options);
         return true;
       }),
+      setDeviceVirtual: resolver<{ id: string, is_virtual: number, virtual_device_container_id: string }, boolean>(async (parent, args, context, info) => {
+        await DeviceModel.setDeviceVirtual(args.id, args.is_virtual, args.is_virtual ? args.virtual_device_container_id : null);
+        return true;
+      }),
       addDeviceToContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
         const container = await AppInstanceModel.getContainer(args.container_id);
         const appInstance = await AppInstanceModel.getAppInstance(container.app_instance_id);
@@ -298,6 +304,10 @@ const deviceModule = createModule({
       editDeviceOfContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
         AppInstanceAction.updateDeviceToContainer(args.container_id, args.input.id, args.input);
         EventsObserver.listener({ type: 'editDeviceOfContainer', data: args });
+        return true;
+      }),
+      setContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {
+        await DeviceModel.setDeviceEnvOptionsOfContainer(args.device_id, args.container_id, args.options);
         return true;
       }),
       setContainerDeviceAuxOptions: resolver<{ container_id: string, device_id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {

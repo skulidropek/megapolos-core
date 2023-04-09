@@ -52,7 +52,7 @@ const volumeModule = createModule({
 
       type Query {
         getVolumes: [Volume]
-        getDeviceBackups(device_id: String): [DeviceBackup]
+        getDeviceBackups(device_name: String): [DeviceBackup]
       }
 
       type Mutation {
@@ -77,8 +77,8 @@ const volumeModule = createModule({
         const volumes = await VolumeModel.getVolumes();
         return volumes;
       }),
-      getDeviceBackups: resolver<{ device_id: string }, DeviceBackupTable[]>(async (parent, args, context, info) => {
-        const backups = await VolumeModel.getDeviceBackups(args.device_id);
+      getDeviceBackups: resolver<{ device_name: string }, DeviceBackupTable[]>(async (parent, args, context, info) => {
+        const backups = await VolumeModel.getDeviceBackups(args.device_name);
         return backups;
       }),
     },
@@ -189,8 +189,8 @@ const volumeModule = createModule({
         return true;
       }),
       backupDevice: resolver<{ device_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
-        const deviceContainer = await DeviceModel.getDeviceContainer(args.device_id);
-        const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
+        const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(args.device_id);
+        const databaseDevice = new DatabaseDevice(deviceDriverContainer.outer_port);
         const backupId = uuidv4();
         await databaseDevice.backup(backupId, args.container_id);
         await VolumeModel.addDeviceBackup({
@@ -201,8 +201,8 @@ const volumeModule = createModule({
         return true;
       }),
       restoreDeviceBackup: resolver<{ device_id: string, backup_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
-        const deviceContainer = await DeviceModel.getDeviceContainer(args.device_id);
-        const databaseDevice = new DatabaseDevice(deviceContainer.outer_port);
+        const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(args.device_id);
+        const databaseDevice = new DatabaseDevice(deviceDriverContainer.outer_port);
         await databaseDevice.restore(args.backup_id, args.container_id);
         return true;
       }),

@@ -15,7 +15,7 @@ class DeviceModel {
   `, input.id, input.name, input.app_id]]);
   }
 
-  static async getDeviceContainer(deviceId: string):Promise<(ContainerTable)> {
+  static async getDeviceDriverContainer(deviceId: string):Promise<(ContainerTable)> {
     return (await coreRqlite.query([[`
         SELECT c.* FROM device d
         LEFT JOIN driver dr ON d.driver_id = dr.id
@@ -71,6 +71,12 @@ class DeviceModel {
       `, uuidv4(), deviceId, option.key, option.value]));
   }
 
+  static async setDeviceVirtual(deviceId: string, isVirtual: number, virtualDeviceContainerId: string) {
+    await coreRqlite.execute([[`
+      UPDATE device SET is_virtual = ?, virtual_device_container_id = ? WHERE id = ?
+    `, isVirtual.toString(), virtualDeviceContainerId, deviceId]]);
+  }
+
   static async getEnvOfContainer(containerId: string):Promise<ContainerDeviceEnvOptionTable[]> {
     return (await coreRqlite.query([[`
     SELECT * FROM container_device_env_option WHERE container_id = ?
@@ -89,6 +95,15 @@ class DeviceModel {
     `, deviceId, containerId]]);
     await coreRqlite.execute(options.map(option => [`
         INSERT INTO container_device_aux_option (id, container_id, device_id, device_option_name, container_option_value) VALUES (?, ?, ?, ?, ?)
+      `, uuidv4(), containerId, deviceId, option.key, option.value]));
+  }
+
+  static async setDeviceEnvOptionsOfContainer(deviceId: string, containerId: string, options: { key: string, value: string }[]) {
+    await coreRqlite.execute([[`
+      DELETE FROM container_device_env_option WHERE device_id = ? AND container_id = ?
+    `, deviceId, containerId]]);
+    await coreRqlite.execute(options.map(option => [`
+        INSERT INTO container_device_env_option (id, container_id, device_id, device_option_name, container_env_name) VALUES (?, ?, ?, ?, ?)
       `, uuidv4(), containerId, deviceId, option.key, option.value]));
   }
 
@@ -149,12 +164,12 @@ class DeviceModel {
   static async setDeviceDbOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceDbTable) {
     if (await DeviceModel.getDeviceDbOptionsOfContainer(deviceId, containerId)) {
       await coreRqlite.execute([[`
-      UPDATE container_device_db SET db_name = ?, db_user = ?, db_password = ?, db_protocol = ? WHERE device_id = ? AND container_id = ?
-    `, options.db_name, options.db_user, options.db_password, options.db_protocol, deviceId, containerId]]);
+      UPDATE container_device_db SET db_host = ?, db_name = ?, db_user = ?, db_password = ?, db_protocol = ? WHERE device_id = ? AND container_id = ?
+    `, options.db_host, options.db_name, options.db_user, options.db_password, options.db_protocol, deviceId, containerId]]);
     } else {
       await coreRqlite.execute([[`
-      INSERT INTO container_device_db (id, container_id, device_id, db_name, db_user, db_password, db_protocol) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, uuidv4(), containerId, deviceId, options.db_name, options.db_user, options.db_password, options.db_protocol]]);
+      INSERT INTO container_device_db (id, container_id, device_id, db_host, db_name, db_user, db_password, db_protocol) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, uuidv4(), containerId, deviceId, options.db_host, options.db_name, options.db_user, options.db_password, options.db_protocol]]);
     }
   }
 
