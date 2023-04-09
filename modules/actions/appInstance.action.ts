@@ -205,9 +205,22 @@ class AppInstanceAction {
 
     const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(deviceId);
     const device = await DeviceModel.getDevice(deviceId);
+    const container = await AppInstanceModel.getContainer(containerId);
+    const containerDevices = await DeviceModel.getDevicesOfContainer(containerId);
     if (device.device_type_id === 'db') {
       const databaseDevice = new DatabaseDevice(deviceDriverContainer.outer_port);
       await databaseDevice.add(containerId);
+    }
+    if (device.device_type_id === 'certificate') {
+      const domainDevice = containerDevices.find((device) => device.device_type_id === 'domain');
+      if (!domainDevice) {
+        throw new Error('Domain device not found');
+      }
+      const domainDriverContainer = await DeviceModel.getDeviceDriverContainer(domainDevice.id);
+      const certificateDevice = new CertificateDevice(deviceDriverContainer.outer_port);
+      await certificateDevice.add(containerId);
+      const domainDeviceObject = new DomainDevice(domainDriverContainer.outer_port);
+      await domainDeviceObject.add(containerId, container.outer_port);
     }
 
     if (deviceInput.env_parameters) {

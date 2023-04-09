@@ -111,8 +111,10 @@ class DeviceModel {
     const result = (await coreRqlite.query([[`
     SELECT * FROM container_device_domain WHERE device_id = ? AND container_id = ?
   `, deviceId, containerId]])).toArray()[0];
-    if (!result.is_ssl) {
-      result.is_ssl = 0;
+    if (result) {
+      if (!result.is_ssl) {
+        result.is_ssl = 0;
+      }
     }
     return result;
   }

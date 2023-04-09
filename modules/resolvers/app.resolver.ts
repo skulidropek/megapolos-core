@@ -2,7 +2,7 @@ import docker from '../../coreDocker';
 import { AppInput, AppInstanceInput, resolver } from '../../types';
 import AppModel from '../models/app.model';
 import AppInstanceModel from '../models/appInstance.model';
-import { AppInstanceTable, AppTable, ContainerTable, ImageTable } from '../models/tables';
+import { AppInstanceTable, AppTable, ContainerTable, DeviceTable, ImageTable } from '../models/tables';
 import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
 import DeviceModel from '../models/device.model';
@@ -144,6 +144,7 @@ const appModule = createModule({
       type Query {
         getApps: [App]
         getAppInstances: [AppInstance]
+        getContainerDevices(id: String): [Device]
       }
 
       type Mutation {
@@ -199,6 +200,9 @@ const appModule = createModule({
           }
         }
         return results;
+      }),
+      getContainerDevices: resolver<{ id: string }, DeviceTable[]>(async (parent, args, context, info) => {
+        return DeviceModel.getDevicesOfContainer(args.id);
       }),
     },
     Mutation: {

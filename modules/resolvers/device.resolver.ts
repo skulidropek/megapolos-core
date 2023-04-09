@@ -156,7 +156,6 @@ const deviceModule = createModule({
         getContainerDeviceDomain(container_id: String, device_id: String): ContainerDeviceDomain
         getContainerDeviceCertificate(container_id: String, device_id: String): ContainerDeviceCertificate
         getContainerDeviceDb(container_id: String, device_id: String): ContainerDeviceDb
-        getContainerDomain(container_id: String): String
       }
 
       type Mutation {
@@ -221,18 +220,6 @@ const deviceModule = createModule({
       getContainerDeviceDb: resolver<{ container_id: string, device_id: string }, ContainerDeviceDbTable>(async (parent, args, context, info) => {
         const options = await DeviceModel.getDeviceDbOptionsOfContainer(args.device_id, args.container_id);
         return options;
-      }),
-      getContainerDomain: resolver<{ container_id: string }, string>(async (parent, args, context, info) => {
-        const devices = await DeviceModel.getDevicesOfContainer(args.container_id);
-        const domainDevice = devices.find((device) => device.device_type_id === 'domain');
-        if (domainDevice) {
-          const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(domainDevice.id, args.container_id);
-          const domainOption = auxOptions.find((option) => option.device_option_name === 'domain');
-          if (domainOption) {
-            return domainOption.container_option_value;
-          }
-        }
-        return '';
       }),
       getContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceEnvOptionTable[]>(async (parent, args, context, info) => {
         const options = await DeviceModel.getDeviceEnvsOfContainer(args.device_id, args.container_id);
