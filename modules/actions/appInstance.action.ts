@@ -65,7 +65,7 @@ class AppInstanceAction {
         const repositoryDeviceContainer = await DeviceModel.getDeviceDriverContainer(repositoryDevice.id);
         const repositoryDeviceObject = new RepositoryDevice(repositoryDeviceContainer.outer_port);
         const repository = await repositoryDeviceObject.cloneContainer(data.containerId);
-        await builderDeviceObject.build(data.containerId, data.imageName, repository.path, allEnvs);
+        await builderDeviceObject.buildPath(data.containerId, data.imageName, repository.path, allEnvs);
     
         if (repository.path.startsWith(megapolosPath + '/data/') &&
           fsSync.existsSync(repository.path)
@@ -73,7 +73,7 @@ class AppInstanceAction {
           fs.rmdir(repository.path, { recursive: true });
         }
       } else {
-        await builderDeviceObject.buildLocal(data.containerId, data.imageName, allEnvs);
+        await builderDeviceObject.buildContainer(data.containerId, data.imageName, allEnvs);
       }
       await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'building');
     } else {
@@ -123,7 +123,7 @@ class AppInstanceAction {
   
     const envs = await AppInstanceModel.getContainerEnvOptions(data.containerId);
 
-    return [
+    const result = [
       { key: 'MEGAPOLOS', value: '1' },
       { key: 'MEGAPOLOS_TOKEN', value: UserAction.createToken(data.userId) },
       { key: 'MEGAPOLOS_APP_ID', value: data.appId },
@@ -138,6 +138,7 @@ class AppInstanceAction {
       ...envParameters.map((env) => ({ key: env.container_env_name, value: deviceParameters.find(option => option.key === env.device_option_name)?.value })),
       ...envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value })),
     ];
+    return result.filter((env) => env.key);
   }
 
 

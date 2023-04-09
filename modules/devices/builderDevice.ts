@@ -3,17 +3,17 @@ import BaseDevice from './baseDevice';
 import { EnvironmentVariable } from '../../types';
 
 class BuilderDevice extends BaseDevice {
-  async build(containerId: string, image:string, path:string, envs:EnvironmentVariable[]) {
+  async buildPath(containerId: string, image:string, path:string, envs:EnvironmentVariable[]) {
     return this.client.request(gql`
       mutation($containerId: String, $image: String, $path: String, $envs: [EnvironmentVariableInput]) {
-        build($container_id: String, image: $image, path: $path, envs: $envs)
+        buildPath($container_id: String, image: $image, path: $path, envs: $envs)
       }
     `, { image, path, containerId });
   }
-  async buildLocal(containerId: string, image: string, envs:EnvironmentVariable[]) {
+  async buildContainer(containerId: string, image: string, envs:EnvironmentVariable[]) {
     return this.client.request(gql`
       mutation($containerId: String, $image: String, $envs: [EnvironmentVariableInput]) {
-        buildLocal (container_id: $containerId, image: $image, envs: $envs)
+        buildContainer (container_id: $containerId, image: $image, envs: $envs)
       }
     `, { containerId, image, envs });
   }

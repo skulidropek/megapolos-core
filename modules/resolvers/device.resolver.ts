@@ -139,7 +139,7 @@ const deviceModule = createModule({
       input ContainerDeviceDbInput {
         container_id: String
         device_id: String
-
+        db_host: String
         db_name: String
         db_user: String
         db_password: String

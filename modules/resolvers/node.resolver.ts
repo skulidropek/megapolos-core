@@ -14,7 +14,7 @@ import AppInstanceModel from '../models/appInstance.model';
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, {
-      shell: true,
+      shell: 'bash',
     });
     let stdout = '';
     let stderr = '';
