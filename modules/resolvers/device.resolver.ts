@@ -7,7 +7,7 @@ import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
 import { sleep } from '../..';
 import { createModule, gql } from 'graphql-modules';
-import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceAuxOptionTable, DeviceOptionTable, DeviceTable, ContainerDeviceEnvOptionTable, ContainerTable } from '../models/tables';
+import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceAuxOptionTable, DeviceOptionTable, DeviceTable, ContainerDeviceEnvOptionTable, ContainerTable, ContainerDeviceRepositoryTable } from '../models/tables';
 import EventsObserver from '../events/eventsObserver';
 import AppModel from '../models/app.model';
 import DeviceAction from '../actions/device.action';
@@ -146,6 +146,19 @@ const deviceModule = createModule({
         db_protocol: String
       }
 
+      type ContainerDeviceRepository {
+        id: String
+        container_id: String
+        device_id: String
+        repository: String
+      }
+
+      input ContainerDeviceRepositoryInput {
+        container_id: String
+        device_id: String
+        repository: String
+      }
+
       type Query {
         getDevice(id: String): Device
         getDevices: [Device]
@@ -156,6 +169,7 @@ const deviceModule = createModule({
         getContainerDeviceDomain(container_id: String, device_id: String): ContainerDeviceDomain
         getContainerDeviceCertificate(container_id: String, device_id: String): ContainerDeviceCertificate
         getContainerDeviceDb(container_id: String, device_id: String): ContainerDeviceDb
+        getContainerDeviceRepository(container_id: String, device_id: String): ContainerDeviceRepository
       }
 
       type Mutation {
@@ -170,6 +184,7 @@ const deviceModule = createModule({
         setContainerDeviceDomain(container_id: String, device_id: String, domain: ContainerDeviceDomainInput): Boolean
         setContainerDeviceCertificate(container_id: String, device_id: String, certificate: ContainerDeviceCertificateInput): Boolean
         setContainerDeviceDb(container_id: String, device_id: String, db: ContainerDeviceDbInput): Boolean
+        setContainerDeviceRepository(container_id: String, device_id: String, repository: ContainerDeviceRepositoryInput): Boolean
         removeDeviceFromContainer(container_id: String, device_id: String): Boolean        
         createDeviceFromApp(app_id: String): Boolean
       }
@@ -219,6 +234,10 @@ const deviceModule = createModule({
       }),
       getContainerDeviceDb: resolver<{ container_id: string, device_id: string }, ContainerDeviceDbTable>(async (parent, args, context, info) => {
         const options = await DeviceModel.getDeviceDbOptionsOfContainer(args.device_id, args.container_id);
+        return options;
+      }),
+      getContainerDeviceRepository: resolver<{ container_id: string, device_id: string }, ContainerDeviceRepositoryTable>(async (parent, args, context, info) => {
+        const options = await DeviceModel.getDeviceRepositoryOptionsOfContainer(args.device_id, args.container_id);
         return options;
       }),
       getContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceEnvOptionTable[]>(async (parent, args, context, info) => {
@@ -316,6 +335,10 @@ const deviceModule = createModule({
       }),
       setContainerDeviceDb: resolver<{ container_id: string, device_id: string, db: ContainerDeviceDbTable }, boolean>(async (parent, args, context, info) => {
         await DeviceModel.setDeviceDbOptionsOfContainer(args.device_id, args.container_id, args.db);
+        return true;
+      }),
+      setContainerDeviceRepository: resolver<{ container_id: string, device_id: string, repository: ContainerDeviceRepositoryTable }, boolean>(async (parent, args, context, info) => {
+        await DeviceModel.setDeviceRepositoryOptionsOfContainer(args.device_id, args.container_id, args.repository);
         return true;
       }),
       removeDeviceFromContainer: resolver<{ container_id: string, device_id: string }, boolean>(async (parent, args, context, info) => {

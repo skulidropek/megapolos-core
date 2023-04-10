@@ -232,6 +232,16 @@ container_device_db (
 );
 
 CREATE TABLE IF NOT EXISTS
+container_device_repository (
+    id text not null primary key,
+    container_id text not null,
+    device_id text not null,
+    repository text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
+);
+
+CREATE TABLE IF NOT EXISTS
 container_device_env_option (
     id text not null primary key,
     container_id text not null,

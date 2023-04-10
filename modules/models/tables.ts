@@ -172,6 +172,13 @@ export interface ContainerDeviceDbTable {
   db_protocol: string;
 }
 
+export interface ContainerDeviceRepositoryTable {
+  id: string;
+  container_id: string;
+  device_id: string;
+  repository: string;
+}
+
 export interface VolumeTable {
   id: string;
   name: string;

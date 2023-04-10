@@ -1,5 +1,5 @@
 import coreRqlite from '../../coreRqlite';
-import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceEnvOptionTable, ContainerDeviceAuxOptionTable, ContainerTable, DeviceOptionTable, DeviceTable, DriverTable } from './tables';
+import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceEnvOptionTable, ContainerDeviceAuxOptionTable, ContainerTable, DeviceOptionTable, DeviceTable, DriverTable, ContainerDeviceRepositoryTable } from './tables';
 import { v4 as uuidv4 } from 'uuid';
 
 class DeviceModel {
@@ -182,6 +182,30 @@ class DeviceModel {
   static async removeDeviceDbOptionsOfContainer(deviceId: string, containerId: string) {
     return coreRqlite.execute([[`
       DELETE FROM container_device_db WHERE device_id = ? AND container_id = ?
+    `, deviceId, containerId]]);
+  }
+
+  static async getDeviceRepositoryOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceRepositoryTable> {
+    return (await coreRqlite.query([[`
+    SELECT * FROM container_device_repository WHERE device_id = ? AND container_id = ?
+  `, deviceId, containerId]])).toArray()[0];
+  }
+
+  static async setDeviceRepositoryOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceRepositoryTable) {
+    if (await DeviceModel.getDeviceRepositoryOptionsOfContainer(deviceId, containerId)) {
+      await coreRqlite.execute([[`
+        UPDATE container_device_repository SET repository WHERE device_id = ? AND container_id = ?
+      `, options.repository, deviceId, containerId]]);
+    } else {
+      await coreRqlite.execute([[`
+        INSERT INTO container_device_repository (id, container_id, device_id, repository) VALUES (?, ?, ?, ?)
+      `, uuidv4(), containerId, deviceId, options.repository]]);
+    }
+  }
+
+  static async removeDeviceRepositoryOptionsOfContainer(deviceId: string, containerId: string) {
+    return coreRqlite.execute([[`
+      DELETE FROM container_device_repository WHERE device_id = ? AND container_id = ?
     `, deviceId, containerId]]);
   }
 
