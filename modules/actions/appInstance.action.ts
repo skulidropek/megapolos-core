@@ -184,6 +184,9 @@ class AppInstanceAction {
           [data.innerPort + '/tcp']: [{ 
             HostIp: '127.0.0.1',
             HostPort: data.outerPort.toString(),
+          }, {
+            HostIp: '172.17.0.1',
+            HostPort: data.outerPort.toString(),
           }],
         },
         Binds: [
