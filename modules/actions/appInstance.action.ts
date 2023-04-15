@@ -499,15 +499,17 @@ class AppInstanceAction {
     const containers = await AppInstanceModel.getAppInstanceContainers(appInstanceId);
     for (let i in containers) {
       const container = containers[i];
-      try {
-        await docker.getContainer(container.docker_runtime_id).stop();
-      } catch (e) {
-        console.error(e);
-      }
-      try {
-        await docker.getContainer(container.docker_runtime_id).remove();
-      } catch (e) {
-        console.error(e);
+      if (container.docker_runtime_id) {
+        try {
+          await docker.getContainer(container.docker_runtime_id).stop();
+        } catch (e) {
+          console.error(e);
+        }
+        try {
+          await docker.getContainer(container.docker_runtime_id).remove();
+        } catch (e) {
+          console.error(e);
+        }
       }
       const megapolosVolume = megapolosPath + '/volumes/' + container.id;
       if (fsSync.existsSync(megapolosVolume)) {
