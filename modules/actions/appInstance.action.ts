@@ -179,6 +179,7 @@ class AppInstanceAction {
         [`${data.innerPort}/tcp`]: {},
       },
       HostConfig: {
+        ExtraHosts: ['host.docker.internal:host-gateway'],
         PortBindings: {
           [data.innerPort + '/tcp']: [{ 
             HostIp: '127.0.0.1',
