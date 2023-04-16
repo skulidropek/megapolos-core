@@ -22,7 +22,7 @@ class EventsObserver {
           containerId: container.id,
           imageId: container.image_id,
           imageName: image.name,
-          imageRepository: image.repository,
+          imageImage: image.image,
           innerPort: image.inner_port,
           outerPort: container.outer_port,
           userId: appInstance.user_id,

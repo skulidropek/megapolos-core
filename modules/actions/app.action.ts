@@ -19,7 +19,7 @@ class AppAction {
         imageId,
         name: image.name,
         appId,
-        repository: image.repository,
+        image: image.image,
         commitId: '',
         innerPort: image.inner_port,
       });

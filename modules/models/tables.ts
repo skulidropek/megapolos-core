@@ -103,7 +103,7 @@ export interface ImageTable {
   id: string;
   name: string;
   app_id: string;
-  repository: string;
+  image: string;
   inner_port: number;
   has_state: number;
   tags: string;

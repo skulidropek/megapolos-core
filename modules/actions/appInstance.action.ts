@@ -45,7 +45,7 @@ class AppInstanceAction {
   static async createContainer(
     data: {
       containerId: string, imageId: string, imageName: string, imageRepository: string, userId: string,
-      appId: string, appInstanceId: string, innerPort: number, outerPort: number
+      appId: string, appInstanceId: string, innerPort: number, outerPort: number, noRebuild: boolean,
     },
   ):Promise<void> {
     const allEnvs = await AppInstanceAction.getContainerEnvs({
@@ -59,7 +59,7 @@ class AppInstanceAction {
     const devices = await DeviceModel.getDevicesOfContainer(data.containerId);
     const repositoryDevice = devices.find((device) => device.device_type_id === 'repository');
     const builderDevice = devices.find((device) => device.device_type_id === 'builder');
-    if (builderDevice) {
+    if (builderDevice && !data.noRebuild) {
       const builderDeviceContainer = await DeviceModel.getDeviceDriverContainer(builderDevice.id);
       const builderDeviceObject = new BuilderDevice(builderDeviceContainer.outer_port);
       if (repositoryDevice) {
@@ -145,7 +145,7 @@ class AppInstanceAction {
 
   static async createContainerAfterBuild(
     data: {
-      containerId: string, imageId: string, imageName: string, imageRepository: string, userId: string,
+      containerId: string, imageId: string, imageName: string, imageImage: string, userId: string,
       appId: string, appInstanceId: string, innerPort: number, outerPort: number
     },
   ) {
@@ -184,7 +184,7 @@ class AppInstanceAction {
     EventsObserver.listener({ 'type': 'createContainerAfterBuild', data });
     return (docker.createContainer({
       name: (data.containerId + '_' + data.imageName).replace(/[^a-zA-Z0-9]/g, ''),
-      Image: data.imageRepository,
+      Image: data.imageImage,
       Env: allEnvs.filter((env) => env.key !== '' && env.value !== '').
         map((env) => env.key + '=' + env.value),
       ExposedPorts: {
@@ -376,9 +376,9 @@ class AppInstanceAction {
       const containerId = uuidv4();
       let outerPort = await AppInstanceAction.getPort();
       try {
-        docker.getImage(image.repository);
+        docker.getImage(image.image);
       } catch {
-        await docker.pull(image.repository);
+        await docker.pull(image.image);
       }
 
       const imageContainer = input.containers.find((container) => container.image_id === image.id);
@@ -420,9 +420,9 @@ class AppInstanceAction {
       }
 
       await AppInstanceAction.createContainer({
-        containerId, imageId: image.id, imageName: image.repository,
-        imageRepository: image.repository,
-        userId, appId: input.app_id, appInstanceId, innerPort: image.inner_port, outerPort });
+        containerId, imageId: image.id, imageName: image.image,
+        imageRepository: image.image,
+        userId, appId: input.app_id, appInstanceId, innerPort: image.inner_port, outerPort, noRebuild: false });
       // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerRuntimeId);
     }
 

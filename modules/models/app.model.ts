@@ -29,11 +29,11 @@ class AppModel {
     `, appId]])).toArray();
   }
 
-  static async createImage(input: { imageId: string, name: string, appId: string, repository: string, commitId: string, innerPort: number }) {
+  static async createImage(input: { imageId: string, name: string, appId: string, image: string, commitId: string, innerPort: number }) {
     await coreRqlite.execute([[`
-        INSERT INTO image (id, name, app_id, repository, commit_id, inner_port)
+        INSERT INTO image (id, name, app_id, image, commit_id, inner_port)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, input.imageId, input.name, input.appId, input.repository, input.commitId, input.innerPort as any]]);
+      `, input.imageId, input.name, input.appId, input.image, input.commitId, input.innerPort as any]]);
   }
 
   static async removeApp(appId: string) {

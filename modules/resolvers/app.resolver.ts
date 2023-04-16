@@ -9,6 +9,7 @@ import DeviceModel from '../models/device.model';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import VolumeModel from '../models/volume.model';
+import { v4 as uuidv4 } from 'uuid';
 
 const appModule = createModule({
   id: 'app-module',
@@ -28,7 +29,7 @@ const appModule = createModule({
         id: String
         name: String
         app_id: String
-        repository: String
+        image: String
         inner_port: Int
         has_state: Int
         tags: String
@@ -76,7 +77,7 @@ const appModule = createModule({
 
       input ImageInput {
         name: String
-        repository: String
+        image: String
         inner_port: Int
       }
 
@@ -154,7 +155,8 @@ const appModule = createModule({
         startAppInstance(id: String!): Boolean
         stopAppInstance(id: String!): Boolean
         removeAppInstance(id: String!): Boolean
-        updateContainer(id: String!): Boolean
+        updateContainer(id: String! noRebuild: Boolean): Boolean
+        changeContainerEnvs(id: String!, envs: [ContainerParameterInput]): Boolean
       }
     `,
   ],
@@ -236,7 +238,7 @@ const appModule = createModule({
         EventsObserver.listener({ type: 'removeAppInstance', data: args });
         return true;
       }),
-      updateContainer: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+      updateContainer: resolver<{ id: string, noRebuild: boolean }, boolean>(async (parent, args, context, info) => {
         const containerId = args.id;
         const container = await AppInstanceModel.getContainer(containerId);
         const appInstance = await AppInstanceModel.getAppInstance(container.app_instance_id);
@@ -259,16 +261,37 @@ const appModule = createModule({
           appInstanceId: appInstance.id,
           containerId: container.id,
           imageId: container.image_id,
-          imageName: image.repository,
-          imageRepository: image.repository,
+          imageName: image.image,
+          imageRepository: image.image,
           innerPort: image.inner_port,
           outerPort: container.outer_port,
           userId: appInstance.user_id,
+          noRebuild: args.noRebuild,
         });
         // await dockerContainer.start();
   
         // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerContainer.id);
         EventsObserver.listener({ type: 'updateContainer', data: args });
+        return true;
+      }),
+      changeContainerEnvs: resolver<{ id: string, envs: {
+        key: string,
+        value: string,
+      }[] }, boolean>(async (parent, args, context, info) => {
+        console.log(args);
+        await AppInstanceModel.removeContainerEnvOptions(args.id);
+        for (let i in args.envs) {
+          const env = args.envs[i];
+          const envId = uuidv4();
+          console.log(env);
+          await AppInstanceModel.addContainerEnvOption({
+            id: envId,
+            container_id: args.id,
+            container_env_name: env.key,
+            container_env_value: env.value,
+          });
+        }
+        EventsObserver.listener({ type: 'changeContainerEnvs', data: args });
         return true;
       }),
     },

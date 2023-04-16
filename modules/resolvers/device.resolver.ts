@@ -252,7 +252,7 @@ const deviceModule = createModule({
           name: input.name,
           images: [{
             name: input.name,
-            repository: input.image,
+            image: input.image,
             inner_port: input.inner_port,
           }],
         });

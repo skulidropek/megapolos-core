@@ -44,7 +44,7 @@ image (
     id text not null primary key,
     name text not null unique,
     app_id text not null,
-    repository not null, --true statefull/false stateless
+    image not null, --true statefull/false stateless
     inner_port integer not null,
     has_state int not null default 1, -- git branch name or other
     tags text not null default '',

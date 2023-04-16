@@ -5,7 +5,7 @@ export interface AppInput {
   name: string,
   images: [{
     name: string,
-    repository: string,
+    image: string,
     inner_port: number,
   }]
 }
