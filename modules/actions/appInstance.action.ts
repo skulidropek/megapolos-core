@@ -171,7 +171,7 @@ class AppInstanceAction {
 
     EventsObserver.listener({ 'type': 'createContainerAfterBuild', data });
     return (docker.createContainer({
-      name: data.containerId + '_' + data.imageName,
+      name: (data.containerId + '_' + data.imageName).replace(/[^a-zA-Z0-9]/g, ''),
       Image: data.imageRepository,
       Env: allEnvs.filter((env) => env.key !== '' && env.value !== '').
       map((env) => env.key + '=' + env.value),
