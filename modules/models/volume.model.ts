@@ -83,8 +83,8 @@ class VolumeModel {
 
   static async addDeviceBackup(input: Partial<DeviceBackupTable>): Promise<string> {
     await coreRqlite.execute([[`
-        INSERT INTO device_backup (id, name, device_id, container_id, image_id) VALUES (?, ?, ?, ?, ?)
-    `, input.id, input.name, input.device_id, input.container_id, input.image_id]]);
+        INSERT INTO device_backup (id, name, device_id, container_id, image_id, device_name) VALUES (?, ?, ?, ?, ?, ?)
+    `, input.id, input.name, input.device_id, input.container_id, input.image_id, input.device_name]]);
     return input.id;
   }
 
