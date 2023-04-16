@@ -189,6 +189,7 @@ const volumeModule = createModule({
         return true;
       }),
       backupDevice: resolver<{ device_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
+        const device = await DeviceModel.getDevice(args.device_id);
         const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(args.device_id);
         const databaseDevice = new DatabaseDevice(deviceDriverContainer.outer_port);
         const backupId = uuidv4();
@@ -197,6 +198,7 @@ const volumeModule = createModule({
           id: backupId,
           device_id: args.device_id,
           container_id: args.container_id,
+          device_name: device.name,
         });
         return true;
       }),
