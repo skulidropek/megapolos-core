@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import { promisify } from 'util';
+import { v4 as uuidv4 } from 'uuid';
 const exec = promisify(require('child_process').exec);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -10,6 +11,9 @@ import packageFile from '../../package.json';
 import docker from '../../coreDocker';
 import AppInstanceAction from '../actions/appInstance.action';
 import AppInstanceModel from '../models/appInstance.model';
+import { UserTable } from '../models/tables';
+
+const commands = {};
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -80,6 +84,44 @@ function asyncContainerSpawn(command: string, dockerRuntimeId: string, onoutput,
     });
   });
 }
+
+const shellCommand = async (command: string, containerId: string, user: UserTable, commandId?: string): Promise<{ stdout: string, stderr: string }> => {
+  if (!commandId) {
+    commandId = uuidv4();
+  }
+  commands[commandId] = {
+    command,
+    containerId,
+  };
+  if (!containerId) {
+    const osUserId = user.os_user_id;
+    if (!osUserId) {
+      delete commands[commandId];
+      throw new Error('No os user id');
+    }
+    const result = await asyncSpawn(command, (data) => {
+      EventsObserver.listener({ type: 'shellCommandOutput', data: data });
+    }, (data) => {
+      EventsObserver.listener({ type: 'shellCommandError', data: data });
+    });
+
+    // const result = await exec(command,
+    // // , { uid: parseInt(osUserId) }
+    // );
+    delete commands[commandId];
+    return result;
+  } else {
+    const container = await AppInstanceModel.getContainer(containerId);
+    const result = await asyncContainerSpawn(command, container.docker_runtime_id, (data) => {
+      EventsObserver.listener({ type: 'shellCommandOutput', data: data });
+    }, (data) => {
+      EventsObserver.listener({ type: 'shellCommandError', data: data });
+    });
+    delete commands[commandId];
+    return result;
+  }
+};
+
 const nodeModule = createModule({
   id: 'node-module',
   dirname: __dirname,
@@ -92,9 +134,11 @@ const nodeModule = createModule({
 
       type Query {
         version: String
+        getShellCommandStatus(id: String!): String
       }
       type Mutation {
         shellCommand(command: String! containerId: String): ShellCommandResult
+        shellCommandStart(command: String! containerId: String): String
       }
     `,
   ],
@@ -103,37 +147,20 @@ const nodeModule = createModule({
       version: resolver<void, string>(async (parent, args, context, info) => {
         return packageFile.version;
       }),
+      getShellCommandStatus: resolver<{ id: string }, string>(async (parent, args, context, info) => {
+        return commands[args.id] ? 'running' : '';
+      }),
     },
     Mutation: {
-      shellCommand: 
-      resolver<{ command: string, containerId: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
-        const command = args.command;
+      shellCommand: resolver<{ command: string, containerId: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'shellCommandStarted', data: args });
-        if (!args.containerId) {
-          const osUserId = context.user.os_user_id;
-          if (!osUserId) {
-            throw new Error('No os user id');
-          }
-          const result = await asyncSpawn(command, (data) => {
-            EventsObserver.listener({ type: 'shellCommandOutput', data: data });
-          }, (data) => {
-            EventsObserver.listener({ type: 'shellCommandError', data: data });
-          });
-
-          // const result = await exec(command,
-          // // , { uid: parseInt(osUserId) }
-          // );
-          EventsObserver.listener({ type: 'shellCommand', data: args });
-          return result;
-        } else {
-          const container = await AppInstanceModel.getContainer(args.containerId);
-          const result = await asyncContainerSpawn(args.command, container.docker_runtime_id, (data) => {
-            EventsObserver.listener({ type: 'shellCommandOutput', data: data });
-          }, (data) => {
-            EventsObserver.listener({ type: 'shellCommandError', data: data });
-          });
-          return result;
-        }
+        return shellCommand(args.command, args.containerId, context.user);
+      }),
+      shellCommandStart: resolver<{ command: string, containerId: string }, string>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'shellCommandStarted', data: args });
+        const commandId = uuidv4();
+        shellCommand(args.command, args.containerId, context.user, commandId);
+        return commandId;
       }),
     },
   },

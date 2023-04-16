@@ -20,6 +20,7 @@ import DockerEvent from '../events/docker.event';
 import VolumeModel from '../models/volume.model';
 import CertificateDevice from '../devices/certificateDevice';
 
+const isWsl = require('is-wsl');
 const exec =   promisify(require('child_process').exec);
 
 class AppInstanceAction {
@@ -103,15 +104,15 @@ class AppInstanceAction {
       const device = devices[i];
       const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(device.id);
       const deviceObject = new BaseDevice(deviceDriverContainer.outer_port);
-      let deviceOptions: {key: string, value: string}[] = (await DeviceModel.getDeviceAuxOptionsOfContainer(data.containerId, device.id))
-      .map((option) => ({ key: option.device_option_name, value: option.container_option_value }));
+      let deviceOptions: { key: string, value: string }[] = (await DeviceModel.getDeviceAuxOptionsOfContainer(data.containerId, device.id))
+        .map((option) => ({ key: option.device_option_name, value: option.container_option_value }));
       if (device.device_type_id === 'db') {
         const dbOptions = await DeviceModel.getDeviceDbOptionsOfContainer(device.id, data.containerId);
         ['db_host', 'db_user', 'db_password', 'db_name', 'db_protocol'].forEach((key) => {
-        deviceOptions.push({
-          key: key,
-          value: dbOptions[key]
-        })
+          deviceOptions.push({
+            key: key,
+            value: dbOptions[key],
+          });
         });
       }
       deviceParameters = deviceParameters.concat(deviceOptions);
@@ -169,31 +170,36 @@ class AppInstanceAction {
 
     console.log(allEnvs.map((env) => env.key + '=' + env.value));
 
+    const portBindings = [{ 
+      HostIp: '127.0.0.1',
+      HostPort: data.outerPort.toString(),
+    }];
+    if (!isWsl) {
+      portBindings.push({
+        HostIp: '172.17.0.1',
+        HostPort: data.outerPort.toString(),
+      });
+    }
+
     EventsObserver.listener({ 'type': 'createContainerAfterBuild', data });
     return (docker.createContainer({
       name: (data.containerId + '_' + data.imageName).replace(/[^a-zA-Z0-9]/g, ''),
       Image: data.imageRepository,
       Env: allEnvs.filter((env) => env.key !== '' && env.value !== '').
-      map((env) => env.key + '=' + env.value),
+        map((env) => env.key + '=' + env.value),
       ExposedPorts: {
         [`${data.innerPort}/tcp`]: {},
       },
       HostConfig: {
-        ExtraHosts: ['host.docker.internal:host-gateway'],
+        ExtraHosts: isWsl ? undefined : ['host.docker.internal:host-gateway'],
         PortBindings: {
-          [data.innerPort + '/tcp']: [{ 
-            HostIp: '127.0.0.1',
-            HostPort: data.outerPort.toString(),
-          }, {
-            HostIp: '172.17.0.1',
-            HostPort: data.outerPort.toString(),
-          }],
+          [data.innerPort + '/tcp']: portBindings,
         },
         Binds: [
           megapolosVolume + ':/megapolos:rw,rshared',
           ...containerVolumes
-          .filter((volume) => !volume.is_dynamic)
-          .map((volume) => volumes.find((v) => v.id === volume.volume_id).outer_path + ':' + volume.inner_path),
+            .filter((volume) => !volume.is_dynamic)
+            .map((volume) => volumes.find((v) => v.id === volume.volume_id).outer_path + ':' + volume.inner_path),
         ],
       },
     }));
