@@ -144,7 +144,9 @@ const appModule = createModule({
 
       type Query {
         getApps: [App]
+        getApp(id: String): App
         getAppInstances: [AppInstance]
+        getAppInstance(id: String): AppInstance
         getContainerDevices(id: String): [Device]
       }
 
@@ -169,6 +171,12 @@ const appModule = createModule({
           results[i].images = images;
         }
         return results;
+      }),
+      getApp: resolver<{ id: string }, (AppTable & { images?: ImageTable[] })>(async (parent, args, context, info) => {
+        const result:(AppTable & { images?: ImageTable[] }) = await AppModel.getApp(args.id);
+        const images = await AppModel.getImagesOfApp(result.id);
+        result.images = images;
+        return result;
       }),
       getAppInstances: resolver<void, (AppInstanceTable & { containers?: ContainerTable[] })[]>(async (parent, args, context, info) => {
         const results:(AppInstanceTable & { containers?: ContainerTable[] })[] = await AppInstanceModel.getAppInstances();
@@ -202,6 +210,37 @@ const appModule = createModule({
           }
         }
         return results;
+      }),
+      getAppInstance: resolver<{ id: string }, (AppInstanceTable & { containers?: ContainerTable[] })>(async (parent, args, context, info) => {
+        const appInstance:(AppInstanceTable & { containers?: ContainerTable[] }) = await AppInstanceModel.getAppInstance(args.id);
+        const containers: (ContainerTable & { devices?: any, volumes?: any, envs?: any, docker_status?: string })[] = await AppInstanceModel.getAppInstanceContainers(args.id);
+        appInstance.containers = containers;
+        for (let j in containers) {
+          const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
+          containers[j].devices = [];
+          for (let k in devices) {
+            const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, containers[j].id);
+            const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, containers[j].id);
+            containers[j].devices.push({
+              device: devices[k],
+              parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
+              env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
+            });
+          }
+          const volumes = await VolumeModel.getVolumesOfContainer(containers[j].id);
+          containers[j].volumes = volumes;
+          const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
+          containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
+          if (containers[j].docker_runtime_id) {
+            try {
+              const dockerStatus = (await docker.getContainer(containers[j].docker_runtime_id).inspect()).State.Status;
+              containers[j].docker_status = dockerStatus;
+            } catch (e) {
+              containers[j].docker_status = 'not exist';
+            }
+          }
+        }
+        return appInstance;
       }),
       getContainerDevices: resolver<{ id: string }, DeviceTable[]>(async (parent, args, context, info) => {
         return DeviceModel.getDevicesOfContainer(args.id);
