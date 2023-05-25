@@ -1,4 +1,6 @@
 /// <reference> ./rqlite-ts/index.d.ts
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import rqlite from 'rqlite-js';
 import { DataResult, DataResults } from './rqlite-ts/api/results';
 const dataApiClient = new rqlite.DataApiClient('http://localhost:4001');

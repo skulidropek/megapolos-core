@@ -1,3 +1,5 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import pubsub from '../../pubsub';
 import AppInstanceAction from '../actions/appInstance.action';
 import AppModel from '../models/app.model';

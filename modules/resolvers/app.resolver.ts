@@ -1,3 +1,5 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import docker from '../../coreDocker';
 import { AppInput, AppInstanceInput, resolver } from '../../types';
 import AppModel from '../models/app.model';

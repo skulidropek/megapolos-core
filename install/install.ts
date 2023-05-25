@@ -1,3 +1,5 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import { spawnSync } from 'child_process';
 import { writeFileSync, mkdirSync, readFileSync, rmSync, existsSync, rmdirSync } from 'fs';
 import { sleep } from '..';

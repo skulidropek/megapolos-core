@@ -1,3 +1,5 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import decompress from 'decompress';
 import { createModule, gql } from 'graphql-modules';
 import { v4 as uuidv4 } from 'uuid';

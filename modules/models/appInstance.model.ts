@@ -1,3 +1,5 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import coreRqlite from '../../coreRqlite';
 import { AppInstanceTable, AppTable, ContainerDeviceEnvOptionTable, ContainerEnvOptionTable, ContainerTable, ImageTable } from './tables';
 

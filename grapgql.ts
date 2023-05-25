@@ -1,3 +1,5 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { createServer } from 'http';
 import { SubscriptionServer } from 'subscriptions-transport-ws';

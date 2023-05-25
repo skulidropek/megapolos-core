@@ -1,3 +1,5 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import { createModule, gql } from 'graphql-modules';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';

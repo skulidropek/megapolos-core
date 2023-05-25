@@ -1,3 +1,5 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
 import { v4 as uuidv4 } from 'uuid';
 import { AppInput } from '../../types';
 import AppModel from '../models/app.model';
