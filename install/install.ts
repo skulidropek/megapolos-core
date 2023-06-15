@@ -18,17 +18,17 @@ import rqlite from '../coreRqlite';
     ])
 
     exec([
-        // 'curl -L https://github.com/rqlite/rqlite/releases/download/v7.13.1/rqlite-v7.13.1-linux-amd64.tar.gz -o rqlite-v7.13.1-linux-amd64.tar.gz',
-        // 'tar xvfz rqlite-v7.13.1-linux-amd64.tar.gz',
-        // 'ln -s rqlite-v7.13.1-linux-amd64 rqlite',
+        'curl -L https://github.com/rqlite/rqlite/releases/download/v7.13.1/rqlite-v7.13.1-linux-amd64.tar.gz -o rqlite-v7.13.1-linux-amd64.tar.gz',
+        'tar xvfz rqlite-v7.13.1-linux-amd64.tar.gz',
+        'ln -s rqlite-v7.13.1-linux-amd64 rqlite',
         'rqlite/rqlited ~/node.1 > /dev/null &',
-        // 'sudo npm i -g nodemon ts-node',
+        'sudo npm i -g nodemon ts-node',
     ]);
 
-    // mkdirSync(__dirname + '/../config');
-    // writeFileSync(__dirname + '/../config/config.json', `{
-    //     "secret": "test"
-    // }`);
+    mkdirSync(__dirname + '/../config');
+    writeFileSync(__dirname + '/../config/config.json', `{
+        "secret": "test"
+    }`);
 
     const db = readFileSync(__dirname + '/newrqlite.sql').toString('utf-8');
 
