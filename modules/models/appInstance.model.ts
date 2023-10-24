@@ -41,7 +41,7 @@ class AppInstanceModel {
 
   static async updateAppInstanceLifeStatus(appInstanceId: string, lifeStatus: string) {
     await coreRqlite.execute([[
-      'UPDATE app_instance SET life_status = ? WHERE id = ?', lifeStatus, appInstanceId
+      'UPDATE app_instance SET life_status = ? WHERE id = ?', lifeStatus, appInstanceId,
     ]]);
   }
 
