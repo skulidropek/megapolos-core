@@ -14,6 +14,9 @@ import docker from '../../coreDocker';
 import AppInstanceAction from '../actions/appInstance.action';
 import AppInstanceModel from '../models/appInstance.model';
 import { UserTable } from '../models/tables';
+import MegapolosNode from '../../classes/Node';
+import User from '../../classes/User';
+import Container from '../../classes/Container';
 
 const commands = {};
 
@@ -150,19 +153,33 @@ const nodeModule = createModule({
         return packageFile.version;
       }),
       getShellCommandStatus: resolver<{ id: string }, string>(async (parent, args, context, info) => {
-        return commands[args.id] ? 'running' : '';
+        // return commands[args.id] ? 'running' : '';
+        return MegapolosNode.currentNode.commands[args.id].status;
       }),
     },
     Mutation: {
       shellCommand: resolver<{ command: string, containerId: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'shellCommandStarted', data: args });
-        return shellCommand(args.command, args.containerId, context.user);
+        // return shellCommand(args.command, args.containerId, context.user);
+        if (args.containerId) {
+          const container = new Container(args.containerId);
+          return container.shellCommand(args.command).output;
+        } else {
+          return MegapolosNode.currentNode.shellCommand(args.command, new User(context.user.id)).output;
+        }
       }),
       shellCommandStart: resolver<{ command: string, containerId: string }, string>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'shellCommandStarted', data: args });
-        const commandId = uuidv4();
-        shellCommand(args.command, args.containerId, context.user, commandId);
-        return commandId;
+        if (args.containerId) {
+          const container = new Container(args.containerId);
+          const result = container.shellCommand(args.command);
+          return result.id;
+        } else {
+          const result = MegapolosNode.currentNode.shellCommand(args.command, new User(context.user.id));
+          return result.id;
+        }
+        // const commandId = uuidv4();
+        // shellCommand(args.command, args.containerId, context.user, commandId);
       }),
     },
   },

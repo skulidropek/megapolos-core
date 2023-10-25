@@ -11,7 +11,7 @@ class ContainerCreate {
 
   }
 
-  addRepositoy() {
+  addRepository() {
   }
 
   addDb() {
@@ -24,6 +24,9 @@ class ContainerCreate {
 
   build() {
   }
+  
+  update() {
+  }
 
   removeDb() {
   }
@@ -33,4 +36,4 @@ class ContainerCreate {
   
 }
 
-export default ContainerCreate 
+export default ContainerCreate; 
