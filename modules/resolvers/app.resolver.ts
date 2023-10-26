@@ -12,6 +12,7 @@ import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import VolumeModel from '../models/volume.model';
 import { v4 as uuidv4 } from 'uuid';
+import App from '../../classes/App';
 
 const appModule = createModule({
   id: 'app-module',
@@ -250,12 +251,12 @@ const appModule = createModule({
     },
     Mutation: {
       installApp: resolver<{ input: AppInput }, boolean>(async (parent, args, context, info) => {
-        await AppAction.installApp(context.user.id, args.input);
+        await App.installApp(context.user.id, args.input);
         EventsObserver.listener({ type: 'installApp', data: args });
         return true;
       }),
       uninstallApp: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await AppAction.uninstallApp(args.id);
+        await new App(args.id).uninstall();
         EventsObserver.listener({ type: 'uninstallApp', data: args });
         return true;
       }),

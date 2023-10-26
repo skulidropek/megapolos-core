@@ -5,7 +5,7 @@ import BaseDevice from './baseDevice';
 
 class RepositoryDevice extends BaseDevice {
   async cloneContainer(containerId: string): Promise<{ path: string }> {
-    return (await this.client.request(gql`
+    return (await this.request(gql`
       mutation($containerId: String) {
         cloneContainer(container_id: $containerId) {
           path

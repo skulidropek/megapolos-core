@@ -62,6 +62,21 @@ class Container {
       return result;
     })() };
   }
+
+  addVolume() {
+
+  }
+
+  removeVolume() {
+    
+  }
+
+  build() {
+
+  }
+
+  update() {
+  }
 }
 
 export default Container;

@@ -5,7 +5,7 @@ import BaseDevice from './baseDevice';
 
 class DatabaseDevice extends BaseDevice {
   async add(containerId: string) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($containerId: String) {
         addDatabase(containerId: $containerId)
       }
@@ -13,7 +13,7 @@ class DatabaseDevice extends BaseDevice {
   }
 
   async remove(containerId: string) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($containerId: String) {
         removeDatabase(containerId: $containerId)
       }
@@ -21,7 +21,7 @@ class DatabaseDevice extends BaseDevice {
   }
 
   async backup(backupId:string, containerId: string) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($backupId: String, $containerId: String) {
         backupDatabase(backupId: $backupId containerId: $containerId)
       }
@@ -29,7 +29,7 @@ class DatabaseDevice extends BaseDevice {
   }
 
   async restore(backupId: string, containerId: string) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($backupId: String, $containerId: String) {
         restoreDatabase(backupId: $backupId containerId: $containerId)
       }

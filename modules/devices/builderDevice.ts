@@ -6,14 +6,15 @@ import { EnvironmentVariable } from '../../types';
 
 class BuilderDevice extends BaseDevice {
   async buildPath(containerId: string, image:string, path:string, envs:EnvironmentVariable[]) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($containerId: String, $image: String, $path: String, $envs: [EnvironmentVariableInput]) {
         buildPath($container_id: String, image: $image, path: $path, envs: $envs)
       }
     `, { image, path, containerId });
   }
+
   async buildContainer(containerId: string, image: string, envs:EnvironmentVariable[]) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($containerId: String, $image: String, $envs: [EnvironmentVariableInput]) {
         buildContainer (container_id: $containerId, image: $image, envs: $envs)
       }

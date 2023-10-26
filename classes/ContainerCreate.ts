@@ -7,33 +7,23 @@ class ContainerCreate {
     this.container = container;
   }
 
-  addBuilder() {
+  cloneRepository() {
+  }
+
+  createDb() {
 
   }
 
-  addRepository() {
-  }
-
-  addDb() {
+  createDomain() {
 
   }
 
-  addDomain() {
-
+  createCertificate() {
   }
 
   build() {
   }
-  
-  update() {
-  }
 
-  removeDb() {
-  }
-
-  removeDomain() {
-  }
-  
 }
 
 export default ContainerCreate; 

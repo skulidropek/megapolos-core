@@ -5,7 +5,7 @@ import BaseDevice from './baseDevice';
 
 class DomainDevice extends BaseDevice {
   async add(container_id: string, port: number) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($input: DomainInput) {
         addDomain(input: $input)
       }
@@ -13,7 +13,7 @@ class DomainDevice extends BaseDevice {
   }
 
   async remove(containerId: string) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($containerId: String) {
         removeDomain(container_id: $containerId)
       }

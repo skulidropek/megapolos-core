@@ -5,7 +5,7 @@ import BaseDevice from './baseDevice';
 
 class CertificateDevice extends BaseDevice {
   async get(container_id: string) {
-    return this.client.request(gql`
+    return this.request(gql`
       query($containerId: String) {
         getCertificate(container_id: $containerId)
       }
@@ -13,7 +13,7 @@ class CertificateDevice extends BaseDevice {
   }
 
   async add(containerId: string) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($containerId: String) {
         addCertificate(container_id: $containerId)
       }
@@ -21,7 +21,7 @@ class CertificateDevice extends BaseDevice {
   }
 
   async remove(containerId: string) {
-    return this.client.request(gql`
+    return this.request(gql`
       mutation($containerId: String) {
         removeCertificate(container_id: $containerId)
       }

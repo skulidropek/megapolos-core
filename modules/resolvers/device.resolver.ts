@@ -212,9 +212,7 @@ const deviceModule = createModule({
       getDeviceManifest: resolver<{ id: string }, Manifest>(async (parent, args, context, info) => {
         const deviceId = args.id;
         
-        const driverContainer = await DeviceModel.getDeviceDriverContainer(deviceId);
-        
-        const device = new BaseDevice(driverContainer.outer_port);
+        const device = new BaseDevice(deviceId);
         return device.getManifest();
       }),
       getDeviceOptions: resolver<{ device_id: string }, DeviceOptionTable[]>(async (parent, args, context, info) => {
@@ -326,8 +324,7 @@ const deviceModule = createModule({
       setContainerDeviceDomain: resolver<{ container_id: string, device_id: string, domain: ContainerDeviceDomainTable }, boolean>(async (parent, args, context, info) => {
         await DeviceModel.setDeviceDomainOptionsOfContainer(args.device_id, args.container_id, args.domain);
         const container = await AppInstanceModel.getContainer(args.container_id);
-        const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(args.device_id);
-        const domainDevice = new DomainDevice(deviceDriverContainer.outer_port);
+        const domainDevice = new DomainDevice(args.device_id);
         await domainDevice.add(args.container_id, container.outer_port);
         return true;
       }),

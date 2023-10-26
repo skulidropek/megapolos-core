@@ -31,19 +31,21 @@ export interface ContainerVolumeInput {
   is_dynamic: boolean,
 }
 
+export interface ContainerInput {
+  image_id: string,
+  fixed_outer_port: number,
+  devices: ContainerDeviceInput[]
+  envs: {
+    key: string,
+    value: string,
+  }[],
+  volumes: ContainerVolumeInput[],
+}
+
 export interface AppInstanceInput {
   app_id: string,
   name: string,
-  containers: {
-    image_id: string,
-    fixed_outer_port: number,
-    devices: ContainerDeviceInput[]
-    envs: {
-      key: string,
-      value: string,
-    }[],
-    volumes: ContainerVolumeInput[],
-  }[]
+  containers: ContainerInput[]
 }
 
 export interface UserInput {

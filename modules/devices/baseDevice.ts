@@ -1,6 +1,9 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { gql, GraphQLClient } from 'graphql-request';
+import DeviceModel from '../models/device.model';
+import { DeviceTable, DriverTable } from '../models/tables';
+import Container from '../../classes/Container';
 
 export interface Manifest {
   name: string;
@@ -11,17 +14,44 @@ export interface Manifest {
 }
 
 class BaseDevice {
-  client: GraphQLClient;
+  client: Promise<GraphQLClient>;
+
+  id: string;
+
   port: number;
 
-  constructor(port: number) {
-    this.port = port;
+  constructor(id: string) {
+    this.id = id;
+    this.client = DeviceModel.getDeviceDriverContainer(this.id).then((device) => {
+      this.port = device.outer_port;
+      return new GraphQLClient(`http://localhost:${this.port}/graphql`);
+    });
+  }
 
-    this.client = new GraphQLClient(`http://localhost:${port}/graphql`);
+  async getDriver(): Promise<DriverTable> {
+    const data = await this.getData();
+    return DeviceModel.getDriver(data.driver_id);
+  }
+
+  async getData(): Promise<DeviceTable> {
+    return DeviceModel.getDevice(this.id);
+  }
+
+  async getDriverContainer(): Promise<Container> {
+    const container = await DeviceModel.getDeviceDriverContainer(this.id);
+    return new Container(container.id);
+  }
+  
+  async remove() {
+    
+  }
+
+  async request(query: string, variables?: any): Promise<any> {
+    return (await this.client).request(query, variables);
   }
 
   async getManifest():Promise<Manifest> {
-    return (await this.client.request(gql`
+    return (await this.request(gql`
       query {
         getManifest {
           name
@@ -44,7 +74,7 @@ class BaseDevice {
 
   async getEnvFieldsValues(containerId: string):Promise<{ key: string, value: string }[]> {
     try {
-    return (await this.client.request(gql`
+      return (await this.request(gql`
       query($containerId: String) {
         getContainerOptionsEnv(containerId: $containerId) {
           key

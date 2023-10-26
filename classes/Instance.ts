@@ -1,6 +1,16 @@
+import { AppInstanceInput } from '../types';
 import Container from './Container';
 
 class Instance {
+  id: string;
+
+  constructor(id: string) {
+    this.id = id;
+  }
+  
+  static async createInstance(input: AppInstanceInput): Promise<Instance> {
+  }
+
   start() {
     const containers = this.getContainers();
     containers.forEach(container => {

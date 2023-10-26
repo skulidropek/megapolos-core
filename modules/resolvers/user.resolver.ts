@@ -8,6 +8,7 @@ import { resolver, UserInput } from '../../types';
 import { UserTable } from '../models/tables';
 import UserModel from '../models/user.model';
 import EventsObserver from '../events/eventsObserver';
+import User from '../../classes/User';
 
 const userModule = createModule({
   id: 'user-module',
@@ -44,22 +45,16 @@ const userModule = createModule({
   resolvers: {
     Query: {
       getUsers: resolver<void, (UserTable & { token?: String })[]>(async (parent, args, context, info) => {
-        const results:(UserTable & { token?: String })[] = await UserModel.getUsers();
-        results.forEach((result) => {
-          result.token = jwt.sign({ id: result.id }, config.secret);
-        });
-        return results;
+        return User.getUsersWithToken();
       }),
       getMe: resolver<void, UserTable>(async (parent, args, context, info) => {
-        const results = await UserModel.getUserById(context.user.id);
+        const results = await new User(context.user.id).getData();
         return results;
       }),
     },
     Mutation: {
       addUser: resolver<{ input: UserInput }, boolean>(async (parent, args, context, info) => {
-        const id = uuidv4();
-        await UserModel.createUser({ id, name: args.input.name, groupUserId: 'name' });
-        EventsObserver.listener({ type: 'addUser', data: args });
+        await User.createUser({ name: args.input.name, groupUserId: 'name' });
         return true;
       }),
     },
