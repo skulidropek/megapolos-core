@@ -2,6 +2,8 @@
 
 import { gql } from 'graphql-request';
 import BaseDevice from './baseDevice';
+import DeviceModel from '../models/device.model';
+import { ContainerDeviceCertificateTable } from '../models/tables';
 
 class CertificateDevice extends BaseDevice {
   async get(container_id: string) {
@@ -26,6 +28,14 @@ class CertificateDevice extends BaseDevice {
         removeCertificate(container_id: $containerId)
       }
     `, { containerId });
+  }
+
+  getCertificateOptionsOfContainer(containerId: string): Promise<ContainerDeviceCertificateTable> {
+    return DeviceModel.getDeviceCertificateOptionsOfContainer(this.id, containerId);
+  }
+
+  setCertificateOptionsOfContainer(containerId: string, options: ContainerDeviceCertificateTable): Promise<void> {
+    return DeviceModel.setDeviceCertificateOptionsOfContainer(this.id, containerId, options);
   }
 }
 

@@ -20,6 +20,9 @@ class BuilderDevice extends BaseDevice {
       }
     `, { containerId, image, envs });
   }
+  
+  getOptionsOfContainer(containerId: string) {
+  }
 }
 
 export default BuilderDevice;

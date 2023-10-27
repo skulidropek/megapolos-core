@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import User from './User';
 import docker from '../coreDocker';
 import Container from './Container';
-import BaseProcess from './BaseProcess';
+import BaseProcess, { ProcessStatus } from './BaseProcess';
 
 class ContainerProcess extends BaseProcess {
   user: User;
@@ -16,7 +16,7 @@ class ContainerProcess extends BaseProcess {
   }
 
   async start(): Promise<void> {
-    this.status = 'running';
+    this.status = ProcessStatus.Running;
     return new Promise(async (resolve, reject) => {
       (await this.container.getDockerContainer()).exec({
         Cmd: ['bash', '-c', '--', this.command],
@@ -37,12 +37,12 @@ class ContainerProcess extends BaseProcess {
             this.onoutput(data.toString());
           });
           stream.on('error', (data) => {
-            this.status = 'error';
+            this.status = ProcessStatus.Error;
             this.stderr += data.toString();
             this.onerror(data.toString());
           });
           stream.on('end', (data) => {
-            this.status = 'finished';
+            this.status = ProcessStatus.Finished;
             console.log(data);
             resolve();
           });

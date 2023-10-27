@@ -6,6 +6,11 @@ import EventsObserver from '../modules/events/eventsObserver';
 import ContainerProcess from './ContainerProcess';
 import MegapolosNode from './Node';
 
+export enum ContainerLifeStatus {
+  Stopped = 'stopped',
+  Running = 'running',
+}
+
 class Container {
   id: string;
 

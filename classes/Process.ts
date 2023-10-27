@@ -17,7 +17,7 @@ class Process extends BaseProcess {
   }
 
   async start(): Promise<void> {
-    this.status = 'running';
+    this.status = ProcessStatus.Running;
     return new Promise((resolve, reject) => {
       const child = spawn(this.command, {
         shell: 'bash',
@@ -32,7 +32,7 @@ class Process extends BaseProcess {
       });
       child.on('close', (code) => {
         if (code) {
-          this.status = 'error';
+          this.status = ProcessStatus.Error;
           this.code = code;
           reject({
             stdout: this.stdout,
@@ -40,7 +40,7 @@ class Process extends BaseProcess {
             code,
           });
         } else {
-          this.status = 'finished';
+          this.status = ProcessStatus.Finished;
           resolve();
         }
       });

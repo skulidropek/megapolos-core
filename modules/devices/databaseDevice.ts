@@ -2,6 +2,8 @@
 
 import { gql } from 'graphql-request';
 import BaseDevice from './baseDevice';
+import DeviceModel from '../models/device.model';
+import { ContainerDeviceDbTable } from '../models/tables';
 
 class DatabaseDevice extends BaseDevice {
   async add(containerId: string) {
@@ -34,6 +36,14 @@ class DatabaseDevice extends BaseDevice {
         restoreDatabase(backupId: $backupId containerId: $containerId)
       }
     `, { backupId, containerId });
+  }
+
+  getDbOptionsOfContainer(containerId: string): Promise<ContainerDeviceDbTable> {
+    return DeviceModel.getDeviceDbOptionsOfContainer(this.id, containerId);
+  }
+
+  setDbOptionsOfContainer(containerId: string, options: ContainerDeviceDbTable): Promise<void> {
+    return DeviceModel.setDeviceDbOptionsOfContainer(this.id, containerId, options);
   }
 }
 

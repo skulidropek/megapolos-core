@@ -1,3 +1,10 @@
+export enum ProcessStatus {
+  Init = 'init',
+  Running = 'running',
+  Finished = 'finished',
+  Error = 'error',
+}
+
 abstract class BaseProcess {
   command: string;
 
@@ -7,7 +14,7 @@ abstract class BaseProcess {
 
   stderr: string = '';
 
-  status = 'init';
+  status:ProcessStatus = ProcessStatus.Init;
 
   onoutput: (data: string) => void;
 

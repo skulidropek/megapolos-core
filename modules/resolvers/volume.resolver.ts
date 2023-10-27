@@ -14,6 +14,8 @@ import AdmZip from 'adm-zip';
 import AppInstanceAction from '../actions/appInstance.action';
 import DeviceModel from '../models/device.model';
 import DatabaseDevice from '../devices/databaseDevice';
+import BaseDevice from '../devices/baseDevice';
+import Volume from '../../classes/Volume';
 
 const volumeModule = createModule({
   id: 'volume-module',
@@ -181,19 +183,18 @@ const volumeModule = createModule({
         return true;
       }),
       setDeviceBackupVolume: resolver<{ device_id: string, volume_id: string }, boolean>(async (parent, args, context, info) => {
-        await VolumeModel.setDeviceBackupVolume(args.device_id, args.volume_id);
+        await new BaseDevice(args.device_id).setBackupVolume(new Volume(args.volume_id));
         EventsObserver.listener({ type: 'setDeviceBackupVolume', data: args });
         return true;
       }),
       removeDeviceBackupVolume: resolver<{ device_id: string }, boolean>(async (parent, args, context, info) => {
-        await VolumeModel.removeDeviceBackupVolume(args.device_id);
+        await new BaseDevice(args.device_id).removeBackupVolume();
         EventsObserver.listener({ type: 'removeDeviceBackupVolume', data: args });
         return true;
       }),
       backupDevice: resolver<{ device_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
-        const device = await DeviceModel.getDevice(args.device_id);
-        const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(args.device_id);
-        const databaseDevice = new DatabaseDevice(deviceDriverContainer.outer_port);
+        const databaseDevice = new DatabaseDevice(args.device_id);
+        const device = await databaseDevice.getData();
         const backupId = uuidv4();
         await databaseDevice.backup(backupId, args.container_id);
         await VolumeModel.addDeviceBackup({
@@ -205,8 +206,7 @@ const volumeModule = createModule({
         return true;
       }),
       restoreDeviceBackup: resolver<{ device_id: string, backup_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
-        const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(args.device_id);
-        const databaseDevice = new DatabaseDevice(deviceDriverContainer.outer_port);
+        const databaseDevice = new DatabaseDevice(args.device_id);
         await databaseDevice.restore(args.backup_id, args.container_id);
         return true;
       }),

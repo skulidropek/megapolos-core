@@ -9,6 +9,11 @@ import DockerEvent from './docker.event';
 import { MegapolosEvent } from './event';
 
 class EventsObserver {
+
+  static async getIterator() {
+    return pubsub.asyncIterator(['EVENT']);
+  }
+
   static async listener<T = MegapolosEvent>(event: T) {
     pubsub.publish('EVENT', { event });
     switch ((event as MegapolosEvent).type) {

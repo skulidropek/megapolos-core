@@ -2,8 +2,10 @@
 
 import { gql, GraphQLClient } from 'graphql-request';
 import DeviceModel from '../models/device.model';
-import { DeviceTable, DriverTable } from '../models/tables';
+import { ContainerDeviceAuxOptionTable, ContainerDeviceEnvOptionTable, DeviceOptionTable, DeviceTable, DriverTable } from '../models/tables';
 import Container from '../../classes/Container';
+import Volume from '../../classes/Volume';
+import VolumeModel from '../models/volume.model';
 
 export interface Manifest {
   name: string;
@@ -44,6 +46,38 @@ class BaseDevice {
   
   async remove() {
     
+  }
+
+  getOptions():Promise<DeviceOptionTable[]> {
+    return DeviceModel.getDeviceOptions(this.id);
+  }
+
+  setOptions(options:{ key: string, value:string }[]):Promise<void> {
+    return DeviceModel.setDeviceOptions(this.id, options);
+  }
+
+  getContainerAuxOptions(containerId:string):Promise<ContainerDeviceAuxOptionTable[]> {
+    return DeviceModel.getDeviceAuxOptionsOfContainer(this.id, containerId);
+  }
+
+  setContainerAuxOptions(containerId:string, options:{ key: string, value:string }[]):Promise<void> {
+    return DeviceModel.setDeviceAuxOptionsOfContainer(this.id, containerId, options);
+  }
+
+  getContainerEnvOptions(containerId:string):Promise<ContainerDeviceEnvOptionTable[]> {
+    return DeviceModel.getDeviceEnvsOfContainer(this.id, containerId);
+  }
+
+  setContainerEnvOptions(containerId:string, options:{ key: string, value:string }[]):Promise<void> {
+    return DeviceModel.setDeviceAuxOptionsOfContainer(this.id, containerId, options);
+  }
+
+  async setBackupVolume(volume: Volume):Promise<boolean> {
+    return VolumeModel.setDeviceBackupVolume(this.id, volume.id);
+  }
+
+  async removeBackupVolume():Promise<boolean> {
+    return VolumeModel.removeDeviceBackupVolume(this.id);
   }
 
   async request(query: string, variables?: any): Promise<any> {

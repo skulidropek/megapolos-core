@@ -54,7 +54,7 @@ const eventModule = createModule({
     Subscription: {
       event: {
         subscribe() {
-          return pubsub.asyncIterator(['EVENT']);
+          return EventsObserver.getIterator();
         },
       },
     },

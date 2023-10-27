@@ -2,6 +2,8 @@
 
 import { gql } from 'graphql-request';
 import BaseDevice from './baseDevice';
+import DeviceModel from '../models/device.model';
+import { ContainerDeviceRepositoryTable } from '../models/tables';
 
 class RepositoryDevice extends BaseDevice {
   async cloneContainer(containerId: string): Promise<{ path: string }> {
@@ -12,6 +14,14 @@ class RepositoryDevice extends BaseDevice {
         }
       }
     `, { containerId })).cloneContainer;
+  }
+
+  getRepositoryOptionsOfContainer(containerId: string): Promise<ContainerDeviceRepositoryTable> {
+    return DeviceModel.getDeviceRepositoryOptionsOfContainer(this.id, containerId);
+  }
+
+  setRepositoryOptionsOfContainer(containerId: string, options: ContainerDeviceRepositoryTable): Promise<void> {
+    return DeviceModel.setDeviceRepositoryOptionsOfContainer(this.id, containerId, options);
   }
 }
 

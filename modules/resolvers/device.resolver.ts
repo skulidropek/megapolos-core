@@ -14,6 +14,9 @@ import EventsObserver from '../events/eventsObserver';
 import AppModel from '../models/app.model';
 import DeviceAction from '../actions/device.action';
 import DomainDevice from '../devices/domainDevice';
+import CertificateDevice from '../devices/certificateDevice';
+import DatabaseDevice from '../devices/databaseDevice';
+import RepositoryDevice from '../devices/repositoryDevice';
 
 const deviceModule = createModule({
   id: 'device-module',
@@ -216,32 +219,31 @@ const deviceModule = createModule({
         return device.getManifest();
       }),
       getDeviceOptions: resolver<{ device_id: string }, DeviceOptionTable[]>(async (parent, args, context, info) => {
-        const deviceId = args.device_id;
-        const options = await DeviceModel.getDeviceOptions(deviceId);
+        const options = new BaseDevice(args.device_id).getOptions();
         return options;
       }),
       getContainerDeviceAuxOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceAuxOptionTable[]>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceAuxOptionsOfContainer(args.device_id, args.container_id);
+        const options = new BaseDevice(args.device_id).getContainerAuxOptions(args.container_id);
         return options;
       }),
       getContainerDeviceDomain: resolver<{ container_id: string, device_id: string }, ContainerDeviceDomainTable>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceDomainOptionsOfContainer(args.device_id, args.container_id);
+        const options = await new DomainDevice(args.device_id).getDomainOptionsOfContainer(args.container_id);
         return options;
       }),
       getContainerDeviceCertificate: resolver<{ container_id: string, device_id: string }, ContainerDeviceCertificateTable>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceCertificateOptionsOfContainer(args.device_id, args.container_id);
+        const options = await new CertificateDevice(args.device_id).getCertificateOptionsOfContainer(args.container_id);
         return options;
       }),
       getContainerDeviceDb: resolver<{ container_id: string, device_id: string }, ContainerDeviceDbTable>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceDbOptionsOfContainer(args.device_id, args.container_id);
+        const options = await new DatabaseDevice(args.device_id).getDbOptionsOfContainer(args.container_id);
         return options;
       }),
       getContainerDeviceRepository: resolver<{ container_id: string, device_id: string }, ContainerDeviceRepositoryTable>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceRepositoryOptionsOfContainer(args.device_id, args.container_id);
+        const options = await new RepositoryDevice(args.device_id).getRepositoryOptionsOfContainer(args.container_id);
         return options;
       }),
       getContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceEnvOptionTable[]>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceEnvsOfContainer(args.device_id, args.container_id);
+        const options = new BaseDevice(args.device_id).getContainerEnvOptions(args.container_id);
         return options;
       }),
     },
@@ -289,7 +291,7 @@ const deviceModule = createModule({
         return true;
       }),
       setDeviceOptions: resolver<{ id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceOptions(args.id, args.options);
+        await new BaseDevice(args.id).setOptions(args.options);
         return true;
       }),
       setDeviceVirtual: resolver<{ id: string, is_virtual: number, virtual_device_container_id: string }, boolean>(async (parent, args, context, info) => {
@@ -314,30 +316,29 @@ const deviceModule = createModule({
         return true;
       }),
       setContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceEnvOptionsOfContainer(args.device_id, args.container_id, args.options);
+        await new BaseDevice(args.device_id).setContainerEnvOptions(args.container_id, args.options); 
         return true;
       }),
       setContainerDeviceAuxOptions: resolver<{ container_id: string, device_id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceAuxOptionsOfContainer(args.device_id, args.container_id, args.options);
+        await new BaseDevice(args.device_id).setContainerAuxOptions(args.container_id, args.options);
         return true;
       }),
       setContainerDeviceDomain: resolver<{ container_id: string, device_id: string, domain: ContainerDeviceDomainTable }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceDomainOptionsOfContainer(args.device_id, args.container_id, args.domain);
-        const container = await AppInstanceModel.getContainer(args.container_id);
         const domainDevice = new DomainDevice(args.device_id);
-        await domainDevice.add(args.container_id, container.outer_port);
+        await domainDevice.setDomainOptionsOfContainer(args.container_id, args.domain);
+        await domainDevice.add(args.container_id);
         return true;
       }),
       setContainerDeviceCertificate: resolver<{ container_id: string, device_id: string, certificate: ContainerDeviceCertificateTable }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceCertificateOptionsOfContainer(args.device_id, args.container_id, args.certificate);
+        await new CertificateDevice(args.device_id).setCertificateOptionsOfContainer(args.container_id, args.certificate);
         return true;
       }),
       setContainerDeviceDb: resolver<{ container_id: string, device_id: string, db: ContainerDeviceDbTable }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceDbOptionsOfContainer(args.device_id, args.container_id, args.db);
+        await new DatabaseDevice(args.device_id).setDbOptionsOfContainer(args.container_id, args.db);
         return true;
       }),
       setContainerDeviceRepository: resolver<{ container_id: string, device_id: string, repository: ContainerDeviceRepositoryTable }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceRepositoryOptionsOfContainer(args.device_id, args.container_id, args.repository);
+        await new RepositoryDevice(args.device_id).setRepositoryOptionsOfContainer(args.container_id, args.repository);
         return true;
       }),
       removeDeviceFromContainer: resolver<{ container_id: string, device_id: string }, boolean>(async (parent, args, context, info) => {
