@@ -6,6 +6,7 @@ import AppInstanceAction from './modules/actions/appInstance.action';
 
 import graphqlServer from './grapgql';
 import MegapolosNode from './classes/Node';
+import User from './classes/User';
 
 if (process.getuid() != 0) {
   console.error('You must run this app as root');
@@ -19,10 +20,10 @@ exec('mount --make-shared /');
 (async () => {
   MegapolosNode.createCurrentNode();
 
-  await AppInstanceAction.dockerEvents();
-  await AppInstanceAction.restoreContainers();
+  await MegapolosNode.currentNode.dockerEvents();
+  await MegapolosNode.currentNode.restoreContainers();
 
-  await UserAction.createRoot();
+  await User.createRootUser();
 
   graphqlServer();
 })();

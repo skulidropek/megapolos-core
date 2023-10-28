@@ -545,53 +545,6 @@ class AppInstanceAction {
     EventsObserver.listener({ 'type': 'removeAppInstance', data:{ appInstanceId } });
   }
 
-  static async dockerEvents() {
-    docker.getEvents({}, function (err, data) {
-      if (err) {
-        console.error(err.message);
-      } else {
-        data.on('data', function (chunk) {
-          EventsObserver.listener<DockerEvent>({
-            type: 'DockerEvent',
-            data: JSON.parse(chunk.toString('utf8')),
-          });           
-        });
-      } 
-    });
-
-    EventsObserver.listener({ 'type': 'dockerEvents' });
-  }
-
-  static async restoreContainers() {
-    const containers = await AppInstanceModel.getContainers();
-    for (let i in containers) {
-      const container = containers[i];
-      try {
-        if (!container.docker_runtime_id) {
-          continue;
-        }
-        const containerInfo = await docker.getContainer(container.docker_runtime_id).inspect();
-        if (container.life_status === 'running' && !containerInfo.State.Running) {
-          try {
-            await docker.getContainer(container.docker_runtime_id).start();
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        if (container.life_status === 'stopped' && containerInfo.State.Running) {
-          try {
-            await docker.getContainer(container.docker_runtime_id).stop();
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    EventsObserver.listener({ 'type': 'restoreContainers' });
-  }
 }
 
 export default AppInstanceAction;

@@ -13,6 +13,8 @@ import EventsObserver from '../events/eventsObserver';
 import VolumeModel from '../models/volume.model';
 import { v4 as uuidv4 } from 'uuid';
 import App from '../../classes/App';
+import Instance from '../../classes/Instance';
+import Container from '../../classes/Container';
 
 const appModule = createModule({
   id: 'app-module',
@@ -266,12 +268,12 @@ const appModule = createModule({
         return true;
       }),
       startAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.startAppInstance(args.id);
+        await new Instance(args.id).start();
         EventsObserver.listener({ type: 'startAppInstance', data: args });
         return true;
       }),
       stopAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.stopAppInstance(args.id);
+        await new Instance(args.id).stop();
         EventsObserver.listener({ type: 'stopAppInstance', data: args });
         return true;
       }),
@@ -321,18 +323,7 @@ const appModule = createModule({
         value: string,
       }[] }, boolean>(async (parent, args, context, info) => {
         console.log(args);
-        await AppInstanceModel.removeContainerEnvOptions(args.id);
-        for (let i in args.envs) {
-          const env = args.envs[i];
-          const envId = uuidv4();
-          console.log(env);
-          await AppInstanceModel.addContainerEnvOption({
-            id: envId,
-            container_id: args.id,
-            container_env_name: env.key,
-            container_env_value: env.value,
-          });
-        }
+        await new Container(args.id).changeEnvs(args.envs);
         EventsObserver.listener({ type: 'changeContainerEnvs', data: args });
         return true;
       }),

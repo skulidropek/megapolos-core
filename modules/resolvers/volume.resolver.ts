@@ -16,6 +16,7 @@ import DeviceModel from '../models/device.model';
 import DatabaseDevice from '../devices/databaseDevice';
 import BaseDevice from '../devices/baseDevice';
 import Volume from '../../classes/Volume';
+import DeviceBackup from '../../classes/DeviceBackup';
 
 const volumeModule = createModule({
   id: 'volume-module',
@@ -82,36 +83,20 @@ const volumeModule = createModule({
         return volumes;
       }),
       getDeviceBackups: resolver<{ device_name: string }, DeviceBackupTable[]>(async (parent, args, context, info) => {
-        const backups = await VolumeModel.getDeviceBackups(args.device_name);
+        const backups = (await DeviceBackup.getBackups(args.device_name)).map((backup) => backup.getData());
         return backups;
       }),
     },
     Mutation: {
       addVolume: resolver<{ input: Partial<VolumeTable> }, boolean>(async (parent, args, context, info) => {
-        const id = uuidv4();
-        args.input.id = id;
-        
-        if (args.input.type === 'auto' || args.input.type === 'dynamic_auto') {
-          const megapolosVolume = megapolosPath + '/volumes/' + id;
-          if (!fsSync.existsSync(megapolosVolume)) {
-            await fs.mkdir(megapolosVolume);
-          }
-          args.input.outer_path = megapolosVolume;
-        }
-        await VolumeModel.addVolume(args.input);
+        Volume.addVolume(args.input);
         EventsObserver.listener({ type: 'addVolume', data: args });
         return true;
       }),
       deleteVolume: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         const id = args.id;
-        const volume = await VolumeModel.getVolume(id);
-        if (volume.type === 'auto' || volume.type === 'dynamic_auto') {
-          const megapolosVolume = megapolosPath + '/volumes/' + id;
-          if (fsSync.existsSync(megapolosVolume)) {
-            await fs.rmdir(megapolosVolume, { recursive: true });
-          }
-        }
-        await VolumeModel.deleteVolume(id);
+        const volume = new Volume(id);
+        await volume.delete();
         EventsObserver.listener({ type: 'deleteVolume', data: args });
         return true;
       }),
@@ -194,15 +179,7 @@ const volumeModule = createModule({
       }),
       backupDevice: resolver<{ device_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
         const databaseDevice = new DatabaseDevice(args.device_id);
-        const device = await databaseDevice.getData();
-        const backupId = uuidv4();
-        await databaseDevice.backup(backupId, args.container_id);
-        await VolumeModel.addDeviceBackup({
-          id: backupId,
-          device_id: args.device_id,
-          container_id: args.container_id,
-          device_name: device.name,
-        });
+        await databaseDevice.backup(args.container_id);
         return true;
       }),
       restoreDeviceBackup: resolver<{ device_id: string, backup_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {

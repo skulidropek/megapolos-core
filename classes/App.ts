@@ -34,6 +34,10 @@ class App {
     return Instance.createInstance({ app_id: this.id, name, containers });
   }
 
+  async removeInstances(): Promise<void> {
+    
+  }
+
   async getInstances(): Promise<Instance[]> {
     return (await AppInstanceModel.getAppInstances(this.id)).map((instance) => new Instance(instance.id));
   }
@@ -47,6 +51,7 @@ class App {
   }
 
   async uninstall() {
+    await this.removeInstances();
     const images = await this.getImages();
     for (let i in images) {
       await images[i].remove();

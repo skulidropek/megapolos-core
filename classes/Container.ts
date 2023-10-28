@@ -18,16 +18,56 @@ class Container {
     this.id = id;
   }
 
-  start() {
-
+  async start() {
+    const container = await this.getData();
+    try {
+      await docker.getContainer(container.docker_runtime_id).start();
+    } catch (e) {
+      console.error(e);
+    }
+        
+    await AppInstanceModel.updateContainerLifeStatus(container.id, 'running');
   }
 
-  stop() {
-
+  async stop() {
+    const container = await this.getData();
+    try {
+      await docker.getContainer(container.docker_runtime_id).stop();
+    } catch (e) {
+      console.error(e);
+    }
+      
+    await AppInstanceModel.updateContainerLifeStatus(container.id, 'stopped');
   }
 
   remove() {
 
+  }
+
+  async restore() {
+    const container = await this.getData();
+    try {
+      if (!container.docker_runtime_id) {
+        return;
+      }
+      const containerInfo = await docker.getContainer(container.docker_runtime_id).inspect();
+      if (container.life_status === 'running' && !containerInfo.State.Running) {
+        try {
+          await docker.getContainer(container.docker_runtime_id).start();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (container.life_status === 'stopped' && containerInfo.State.Running) {
+        try {
+          await docker.getContainer(container.docker_runtime_id).stop();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   getData(): Promise<ContainerTable> {
@@ -40,6 +80,24 @@ class Container {
 
   getDevices() {
     
+  }
+
+  async changeEnvs(input: {
+    key: string,
+    value: string,
+  }[]) {
+    await AppInstanceModel.removeContainerEnvOptions(this.id);
+    for (let i in input) {
+      const env = input[i];
+      const envId = uuidv4();
+      console.log(env);
+      await AppInstanceModel.addContainerEnvOption({
+        id: envId,
+        container_id: this.id,
+        container_env_name: env.key,
+        container_env_value: env.value,
+      });
+    }
   }
 
   shellCommand(command: string): { id: string, output: Promise<{ stdout: string, stderr: string }> } {

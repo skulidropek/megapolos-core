@@ -1,9 +1,11 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
+import { v4 as uuidv4 } from 'uuid';
 import { gql } from 'graphql-request';
 import BaseDevice from './baseDevice';
 import DeviceModel from '../models/device.model';
 import { ContainerDeviceDbTable } from '../models/tables';
+import VolumeModel from '../models/volume.model';
 
 class DatabaseDevice extends BaseDevice {
   async add(containerId: string) {
@@ -22,12 +24,20 @@ class DatabaseDevice extends BaseDevice {
     `, { containerId });
   }
 
-  async backup(backupId:string, containerId: string) {
-    return this.request(gql`
+  async backup(containerId: string) {
+    const backupId = uuidv4();
+    await this.request(gql`
       mutation($backupId: String, $containerId: String) {
         backupDatabase(backupId: $backupId containerId: $containerId)
       }
     `, { backupId, containerId });
+    await VolumeModel.addDeviceBackup({
+      id: backupId,
+      device_id: this.id,
+      container_id: containerId,
+      device_name: (await this.getData()).name,
+    });
+    return backupId;
   }
 
   async restore(backupId: string, containerId: string) {

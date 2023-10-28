@@ -6,6 +6,7 @@ import { ContainerDeviceAuxOptionTable, ContainerDeviceEnvOptionTable, DeviceOpt
 import Container from '../../classes/Container';
 import Volume from '../../classes/Volume';
 import VolumeModel from '../models/volume.model';
+import DeviceBackup from '../../classes/DeviceBackup';
 
 export interface Manifest {
   name: string;
@@ -28,6 +29,10 @@ class BaseDevice {
       this.port = device.outer_port;
       return new GraphQLClient(`http://localhost:${this.port}/graphql`);
     });
+  }
+
+  static getDevices(): Promise<BaseDevice[]> {
+    return DeviceModel.getDevices().then((devices) => devices.map((device) => new BaseDevice(device.id)));
   }
 
   async getDriver(): Promise<DriverTable> {
@@ -70,6 +75,10 @@ class BaseDevice {
 
   setContainerEnvOptions(containerId:string, options:{ key: string, value:string }[]):Promise<void> {
     return DeviceModel.setDeviceAuxOptionsOfContainer(this.id, containerId, options);
+  }
+
+  setVirtual(is_virtual: number, virtual_device_container_id: string):Promise<void> {  
+    return DeviceModel.setDeviceVirtual(this.id, is_virtual, is_virtual ? virtual_device_container_id : null);
   }
 
   async setBackupVolume(volume: Volume):Promise<boolean> {

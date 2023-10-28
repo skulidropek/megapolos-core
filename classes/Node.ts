@@ -4,6 +4,10 @@ import EventsObserver from '../modules/events/eventsObserver';
 import User from './User';
 import Process from './Process';
 import BaseProcess from './BaseProcess';
+import AppInstanceModel from '../modules/models/appInstance.model';
+import Container from './Container';
+import docker from '../coreDocker';
+import DockerEvent from '../modules/events/docker.event';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -45,6 +49,33 @@ class MegapolosNode {
 
   static createCurrentNode() {
     MegapolosNode.currentNode = new MegapolosNode();
+  }
+
+  async restoreContainers() {
+    const containers = await AppInstanceModel.getContainers();
+    for (let i in containers) {
+      const container = new Container(containers[i].id);
+      await container.restore();
+    }
+
+    EventsObserver.listener({ 'type': 'restoreContainers' });
+  }
+
+  async dockerEvents() {
+    docker.getEvents({}, function (err, data) {
+      if (err) {
+        console.error(err.message);
+      } else {
+        data.on('data', function (chunk) {
+          EventsObserver.listener<DockerEvent>({
+            type: 'DockerEvent',
+            data: JSON.parse(chunk.toString('utf8')),
+          });           
+        });
+      } 
+    });
+
+    EventsObserver.listener({ 'type': 'dockerEvents' });
   }
   
   shellCommand(command: string, user: User): { id: string, output: Promise<{ stdout: string, stderr: string }> } {

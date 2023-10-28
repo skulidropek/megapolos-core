@@ -198,17 +198,20 @@ const deviceModule = createModule({
   resolvers: {
     Query: {
       getDevice: resolver<{ id: string }, (DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable })>(async (parent, args, context, info) => {
-        const device: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = await DeviceModel.getDevice(args.id);
-        device.options = await DeviceModel.getDeviceOptions(device.id);
-        device.driver_container = await DeviceModel.getDeviceDriverContainer(device.id);
-        return device;
+        const device = new BaseDevice(args.id);
+        const result: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = await device.getData();
+        result.options = await device.getOptions();
+        result.driver_container = await (await device.getDriverContainer()).getData();
+        return result;
       }),
       getDevices: resolver<void, (DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable })[]>(async (parent, args, context, info) => {
-        const results = await DeviceModel.getDevices() as (DeviceTable & { options: DeviceOptionTable[] })[];
-        for (const k in results) {
-          const device: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = results[k];
-          device.options = await DeviceModel.getDeviceOptions(device.id);
-          device.driver_container = await DeviceModel.getDeviceDriverContainer(device.id);
+        const results: (DeviceTable & { options: DeviceOptionTable[] })[] = [];
+        const devices = await BaseDevice.getDevices();
+        for (const k in devices) {
+          const device = new BaseDevice(devices[k].id);
+          const result: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = await device.getData();
+          result.options = await device.getOptions();
+          result.driver_container = await (await device.getDriverContainer()).getData();
         }
         return results;
       }),
@@ -295,7 +298,7 @@ const deviceModule = createModule({
         return true;
       }),
       setDeviceVirtual: resolver<{ id: string, is_virtual: number, virtual_device_container_id: string }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceVirtual(args.id, args.is_virtual, args.is_virtual ? args.virtual_device_container_id : null);
+        await new BaseDevice(args.id).setVirtual(args.is_virtual, args.virtual_device_container_id);
         return true;
       }),
       addDeviceToContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
