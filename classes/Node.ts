@@ -8,6 +8,7 @@ import AppInstanceModel from '../modules/models/appInstance.model';
 import Container from './Container';
 import docker from '../coreDocker';
 import DockerEvent from '../modules/events/docker.event';
+import { megapolosPath } from '..';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -49,6 +50,16 @@ class MegapolosNode {
 
   static createCurrentNode() {
     MegapolosNode.currentNode = new MegapolosNode();
+  }
+
+  getMegapolosPath() {
+    return megapolosPath;
+  }
+
+  validatePath(path: string) {
+    if (!path.startsWith(this.getMegapolosPath())) {
+      throw new Error('Invalid path');
+    }
   }
 
   async restoreContainers() {

@@ -1,22 +1,14 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import decompress from 'decompress';
 import { createModule, gql } from 'graphql-modules';
-import { v4 as uuidv4 } from 'uuid';
 import { ContainerVolumeInput, resolver } from '../../types';
 import EventsObserver from '../events/eventsObserver';
-import VolumeModel from '../models/volume.model';
 import { ContainerVolumeTable, DeviceBackupTable, VolumeTable } from '../models/tables';
-import { megapolosPath } from '../..';
-import { promises as fs } from 'fs';
-import fsSync from 'fs';
-import AdmZip from 'adm-zip';
-import AppInstanceAction from '../actions/appInstance.action';
-import DeviceModel from '../models/device.model';
 import DatabaseDevice from '../devices/databaseDevice';
 import BaseDevice from '../devices/baseDevice';
 import Volume from '../../classes/Volume';
 import DeviceBackup from '../../classes/DeviceBackup';
+import Container from '../../classes/Container';
 
 const volumeModule = createModule({
   id: 'volume-module',
@@ -79,11 +71,11 @@ const volumeModule = createModule({
   resolvers: {
     Query: {
       getVolumes: resolver<void, VolumeTable[]>(async (parent, args, context, info) => {
-        const volumes = await VolumeModel.getVolumes();
+        const volumes = Promise.all((await Volume.getVolumes()).map((volume) => volume.getData()));
         return volumes;
       }),
       getDeviceBackups: resolver<{ device_name: string }, DeviceBackupTable[]>(async (parent, args, context, info) => {
-        const backups = (await DeviceBackup.getBackups(args.device_name)).map((backup) => backup.getData());
+        const backups = Promise.all((await DeviceBackup.getBackups(args.device_name)).map((backup) => backup.getData()));
         return backups;
       }),
     },
@@ -101,70 +93,29 @@ const volumeModule = createModule({
         return true;
       }),
       addVolumeToContainer: resolver<{ container_id: string, input: ContainerVolumeInput }, ContainerVolumeTable>(async (parent, args, context, info) => {
-        const containerVolume = await AppInstanceAction.addVolumeToContainer(args.container_id, args.input);
+        const containerVolume = await new Volume(args.input.volume).addToContainer(new Container(args.container_id), args.input);
         EventsObserver.listener({ type: 'addVolumeToContainer', data: args });
         return containerVolume;
       }),
       removeVolumeFromContainer: resolver<{ container_id: string, volume_id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.removeVolumeFromContainer(args.container_id, args.volume_id);
+        await new Volume(args.volume_id).removeFromContainer(new Container(args.container_id));
         EventsObserver.listener({ type: 'removeVolumeFromContainer', data: args });
         return true;
       }),
       uploadFileToVolume: resolver<{ volume_id: string, file: { filename: string, data: string } }, boolean>(async (parent, args, context, info) => {
         console.log(args.file.filename, args.file.data.slice(0, 100));
-        const volume = await VolumeModel.getVolume(args.volume_id);
-        if (!volume) {
-          throw new Error('Volume not found');
-        }
-        await fs.writeFile(volume.outer_path + '/' + args.file.filename, args.file.data, 'base64');
+        new Volume(args.volume_id).uploadFile(args.file.filename, args.file.data);
         return true;
       }),
       uploadDeviceBackup: resolver<{ device_id: string, name: string, file: { filename: string, data: string } }, boolean>(async (parent, args, context, info) => {
-        const device = await DeviceModel.getDevice(args.device_id);
-        const volume = await VolumeModel.getVolume(device.backup_volume_id);
-        if (!volume) {
-          throw new Error('Volume not found');
-        }
-        const backupId = uuidv4();
-        const backupArchivePath = volume.outer_path + '/' + backupId + '.zip';
-        const backupPath = volume.outer_path + '/' + backupId;
-        await fs.writeFile(backupArchivePath, args.file.data, 'base64');
-        await fs.mkdir(backupPath);
-        await decompress(backupArchivePath, backupPath);
-        await fs.unlink(backupArchivePath);
-        await VolumeModel.addDeviceBackup({
-          id: backupId,
-          device_id: args.device_id,
-          name: args.name,
-        });
+        DeviceBackup.upload(args.device_id, args.name, args.file.filename, args.file.data);
         return true;
       }),
       downloadDeviceBackup: resolver<{ backup_id: string }, string>(async (parent, args, context, info) => {
-        const backup = await VolumeModel.getDeviceBackup(args.backup_id);
-        const device = await DeviceModel.getDevice(backup.device_id);
-        const volume = await VolumeModel.getVolume(device.backup_volume_id);
-        if (!volume) {
-          throw new Error('Volume not found');
-        }
-        const backupPath = volume.outer_path + '/' + backup.id;
-        const zip = new AdmZip();
-        zip.addLocalFolder(backupPath);
-        const zipData = zip.toBuffer();
-        return zipData.toString('base64');
+        return new DeviceBackup(args.backup_id).download();
       }),
       removeDeviceBackup: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        const backup = await VolumeModel.getDeviceBackup(args.id);
-        const device = await DeviceModel.getDevice(backup.device_id);
-        const volume = await VolumeModel.getVolume(device.backup_volume_id);
-        if (!volume) {
-          throw new Error('Volume not found');
-        }
-        const backupPath = volume.outer_path + '/' + backup.id;
-        if (!backupPath.startsWith(megapolosPath)) {
-          throw new Error('Invalid backup path');
-        }
-        await fs.rmdir(backupPath, { recursive: true });
-        await VolumeModel.deleteDeviceBackup(args.id);
+        await new DeviceBackup(args.id).remove();
         return true;
       }),
       setDeviceBackupVolume: resolver<{ device_id: string, volume_id: string }, boolean>(async (parent, args, context, info) => {

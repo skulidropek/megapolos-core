@@ -5,13 +5,11 @@ import { AppInput, AppInstanceInput, resolver } from '../../types';
 import AppModel from '../models/app.model';
 import AppInstanceModel from '../models/appInstance.model';
 import { AppInstanceTable, AppTable, ContainerTable, DeviceTable, ImageTable } from '../models/tables';
-import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
 import DeviceModel from '../models/device.model';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import VolumeModel from '../models/volume.model';
-import { v4 as uuidv4 } from 'uuid';
 import App from '../../classes/App';
 import Instance from '../../classes/Instance';
 import Container from '../../classes/Container';
@@ -170,18 +168,18 @@ const appModule = createModule({
   resolvers: {
     Query: {
       getApps: resolver<void, (AppTable & { images?: ImageTable[] })[]>(async (parent, args, context, info) => {
-        const results:(AppTable & { images?: ImageTable[] })[] = await AppModel.getApps();
-        for (let i in results) {
-          const images = await AppModel.getImagesOfApp(results[i].id);
-          results[i].images = images;
+        const apps = await App.getApps();
+        const results:(AppTable & { images?: ImageTable[] })[] = [];
+        for (let i in apps) {
+          const app = apps[i];
+          const result:(AppTable & { images?: ImageTable[] }) = await app.getDataWithImages();
+          results.push(result);
         }
         return results;
       }),
       getApp: resolver<{ id: string }, (AppTable & { images?: ImageTable[] })>(async (parent, args, context, info) => {
-        const result:(AppTable & { images?: ImageTable[] }) = await AppModel.getApp(args.id);
-        const images = await AppModel.getImagesOfApp(result.id);
-        result.images = images;
-        return result;
+        const app = new App(args.id);
+        return app.getDataWithImages();
       }),
       getAppInstances: resolver<void, (AppInstanceTable & { containers?: ContainerTable[] })[]>(async (parent, args, context, info) => {
         const results:(AppInstanceTable & { containers?: ContainerTable[] })[] = await AppInstanceModel.getAppInstances();
@@ -248,7 +246,7 @@ const appModule = createModule({
         return appInstance;
       }),
       getContainerDevices: resolver<{ id: string }, DeviceTable[]>(async (parent, args, context, info) => {
-        return DeviceModel.getDevicesOfContainer(args.id);
+        return Promise.all((await new Container(args.id).getDevices()).map((device) => device.getData()));
       }),
     },
     Mutation: {

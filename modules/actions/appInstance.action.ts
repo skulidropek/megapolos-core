@@ -21,6 +21,7 @@ import EventsObserver from '../events/eventsObserver';
 import DockerEvent from '../events/docker.event';
 import VolumeModel from '../models/volume.model';
 import CertificateDevice from '../devices/certificateDevice';
+import MegapolosNode from '../../classes/Node';
 
 const isWsl = require('is-wsl');
 const exec =   promisify(require('child_process').exec);
@@ -70,7 +71,7 @@ class AppInstanceAction {
         const repository = await repositoryDeviceObject.cloneContainer(data.containerId);
         await builderDeviceObject.buildPath(data.containerId, data.imageName, repository.path, allEnvs);
     
-        if (repository.path.startsWith(megapolosPath + '/data/') &&
+        if (repository.path.startsWith(MegapolosNode.currentNode.getMegapolosPath() + '/data/') &&
           fsSync.existsSync(repository.path)
         ) {
           fs.rmdir(repository.path, { recursive: true });
@@ -136,8 +137,8 @@ class AppInstanceAction {
       { key: 'MEGAPOLOS_APP_INSTANCE_ID', value: data.appInstanceId },
       { key: 'MEGAPOLOS_CONTAINER_ID', value: data.containerId },
       { key: 'MEGAPOLOS_IMAGE_ID', value: data.imageId },
-      { key: 'MEGAPOLOS_PATH_DATA', value: megapolosPath + '/data' },
-      { key: 'MEGAPOLOS_PATH_VOLUME', value: megapolosPath + '/volumes/' + data.containerId },
+      { key: 'MEGAPOLOS_PATH_DATA', value: MegapolosNode.currentNode.getMegapolosPath() + '/data' },
+      { key: 'MEGAPOLOS_PATH_VOLUME', value: MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + data.containerId },
       ...envParameters.map((env) => ({ key: env.container_env_name, value: deviceParameters.find(option => option.key === env.device_option_name)?.value })),
       ...envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value })),
     ];
@@ -153,7 +154,7 @@ class AppInstanceAction {
   ) {
     await AppInstanceModel.updateContainerLifeStatus(data.containerId, 'stopped');
 
-    const megapolosVolume = megapolosPath + '/volumes/' + data.containerId;
+    const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + data.containerId;
 
     if (!fsSync.existsSync(megapolosVolume)) {
       await fs.mkdir(megapolosVolume);
@@ -437,7 +438,7 @@ class AppInstanceAction {
     const volume = await VolumeModel.getVolume(volumeInput.volume);
     const volumeContainerId = uuidv4();
     if (volumeInput.is_dynamic) {
-      const volumePath = megapolosPath + '/volumes/' + containerId + '/' + volumeContainerId;
+      const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + containerId + '/' + volumeContainerId;
       await fs.mkdir(volumePath);
       await exec(`mount --bind ${volume.outer_path} ${volumePath}`);
     }
@@ -455,7 +456,7 @@ class AppInstanceAction {
   static async removeVolumeFromContainer(containerId: string, volumeId: string) {
     const volumeContainer = await VolumeModel.getVolumeOfContainer(containerId, volumeId);
     if (volumeContainer.is_dynamic) {
-      const volumePath = megapolosPath + '/volumes/' + containerId + '/' + volumeContainer.id;
+      const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + containerId + '/' + volumeContainer.id;
       try {
         await exec(`umount ${volumePath}`);
       } catch (e) {
@@ -519,7 +520,7 @@ class AppInstanceAction {
           console.error(e);
         }
       }
-      const megapolosVolume = megapolosPath + '/volumes/' + container.id;
+      const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id;
       if (fsSync.existsSync(megapolosVolume)) {
         await fs.rmdir(megapolosVolume, { recursive: true });
       }

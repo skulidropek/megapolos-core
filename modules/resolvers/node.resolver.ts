@@ -1,9 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { spawn } from 'child_process';
-import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
-const exec = promisify(require('child_process').exec);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { resolver } from '../../types';
@@ -11,7 +9,6 @@ import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import packageFile from '../../package.json';
 import docker from '../../coreDocker';
-import AppInstanceAction from '../actions/appInstance.action';
 import AppInstanceModel from '../models/appInstance.model';
 import { UserTable } from '../models/tables';
 import MegapolosNode from '../../classes/Node';

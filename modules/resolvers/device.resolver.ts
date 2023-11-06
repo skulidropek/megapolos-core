@@ -1,13 +1,11 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { v4 as uuidv4 } from 'uuid';
 import { ContainerDeviceInput, DeviceInput, resolver } from '../../types';
 import DeviceModel from '../models/device.model';
 import AppInstanceModel from '../models/appInstance.model';
 import BaseDevice, { Manifest } from '../devices/baseDevice';
 import AppAction from '../actions/app.action';
 import AppInstanceAction from '../actions/appInstance.action';
-import { sleep } from '../..';
 import { createModule, gql } from 'graphql-modules';
 import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceAuxOptionTable, DeviceOptionTable, DeviceTable, ContainerDeviceEnvOptionTable, ContainerTable, ContainerDeviceRepositoryTable } from '../models/tables';
 import EventsObserver from '../events/eventsObserver';

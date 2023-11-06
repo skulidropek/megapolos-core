@@ -5,6 +5,8 @@ import { ContainerTable } from '../modules/models/tables';
 import EventsObserver from '../modules/events/eventsObserver';
 import ContainerProcess from './ContainerProcess';
 import MegapolosNode from './Node';
+import BaseDevice from '../modules/devices/baseDevice';
+import DeviceModel from '../modules/models/device.model';
 
 export enum ContainerLifeStatus {
   Stopped = 'stopped',
@@ -78,8 +80,8 @@ class Container {
     return docker.getContainer((await this.getData()).docker_runtime_id);
   }
 
-  getDevices() {
-    
+  async getDevices():Promise<BaseDevice[]> {
+    return (await DeviceModel.getDevicesOfContainer(this.id)).map((device) => new BaseDevice(device.id));
   }
 
   async changeEnvs(input: {

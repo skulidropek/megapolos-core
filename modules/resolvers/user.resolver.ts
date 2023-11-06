@@ -1,13 +1,8 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
-import config from '../../config/config.json';
 import { resolver, UserInput } from '../../types';
 import { UserTable } from '../models/tables';
-import UserModel from '../models/user.model';
-import EventsObserver from '../events/eventsObserver';
 import User from '../../classes/User';
 
 const userModule = createModule({

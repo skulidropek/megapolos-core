@@ -5,6 +5,7 @@ import Image from './Image';
 import Instance from './Instance';
 import EventsObserver from '../modules/events/eventsObserver';
 import AppInstanceModel from '../modules/models/appInstance.model';
+import { AppTable, ImageTable } from '../modules/models/tables';
 
 class App {
   id: string;
@@ -29,6 +30,21 @@ class App {
     EventsObserver.listener({ 'type': 'installApp', data: { userId, input } });
     return new App(appId);
   }
+
+  static async getApps(): Promise<App[]> {
+    return (await AppModel.getApps()).map((app) => new App(app.id));
+  }
+
+  getData(): Promise<AppTable> {
+    return AppModel.getApp(this.id);
+  }
+
+  async getDataWithImages(): Promise<AppTable & { images?: ImageTable[] }> {
+    const result:(AppTable & { images?: ImageTable[] }) = await this.getData();
+    const images = (await this.getImages()).map(image => image.getData());
+    result.images = await Promise.all(images);
+    return result;
+  }
   
   createInstance(name: string, containers: ContainerInput[]): Promise<Instance> {
     return Instance.createInstance({ app_id: this.id, name, containers });
@@ -39,7 +55,7 @@ class App {
   }
 
   async getInstances(): Promise<Instance[]> {
-    return (await AppInstanceModel.getAppInstances(this.id)).map((instance) => new Instance(instance.id));
+    return (await AppInstanceModel.getAppInstances()).map((instance) => new Instance(instance.id));
   }
 
   async getImages(): Promise<Image[]> {
