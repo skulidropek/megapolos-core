@@ -89,6 +89,7 @@ class Volume {
     const volumeContainer = await VolumeModel.getVolumeOfContainer(container.id, this.id);
     if (volumeContainer.is_dynamic) {
       const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id + '/' + volumeContainer.id;
+      MegapolosNode.currentNode.validatePath(volumePath);
       try {
         await exec(`umount ${volumePath}`);
       } catch (e) {

@@ -6,6 +6,7 @@ import BaseDevice from './baseDevice';
 import DeviceModel from '../models/device.model';
 import { ContainerDeviceDbTable } from '../models/tables';
 import VolumeModel from '../models/volume.model';
+import { ContainerDeviceInput } from '../../types';
 
 class DatabaseDevice extends BaseDevice {
   async add(containerId: string) {
@@ -46,6 +47,16 @@ class DatabaseDevice extends BaseDevice {
         restoreDatabase(backupId: $backupId containerId: $containerId)
       }
     `, { backupId, containerId });
+  }
+
+  async addToContainer(containerId: string, input: ContainerDeviceInput): Promise<void> {
+    await super.addToContainer(containerId, input);
+    await this.add(containerId);
+  }
+
+  async removeFromContainer(containerId: string): Promise<void> {
+    this.remove(containerId);
+    await super.removeFromContainer(containerId);
   }
 
   getDbOptionsOfContainer(containerId: string): Promise<ContainerDeviceDbTable> {

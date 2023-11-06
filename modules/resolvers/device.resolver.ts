@@ -300,19 +300,12 @@ const deviceModule = createModule({
         return true;
       }),
       addDeviceToContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
-        const container = await AppInstanceModel.getContainer(args.container_id);
-        const appInstance = await AppInstanceModel.getAppInstance(container.app_instance_id);
-        await AppInstanceAction.addDeviceToContainer(
-          args.container_id,
-          args.input.id,
-          appInstance.user_id,
-          args.input,
-        );
+        await (await BaseDevice.getDeviceWithType(args.input.id)).addToContainer(args.container_id, args.input);
         EventsObserver.listener({ type: 'addDeviceToContainer', data: args });
         return true;
       }),
       editDeviceOfContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
-        AppInstanceAction.updateDeviceToContainer(args.container_id, args.input.id, args.input);
+        await (await BaseDevice.getDeviceWithType(args.input.id)).setContainerOptions(args.container_id, args.input);
         EventsObserver.listener({ type: 'editDeviceOfContainer', data: args });
         return true;
       }),
@@ -343,7 +336,7 @@ const deviceModule = createModule({
         return true;
       }),
       removeDeviceFromContainer: resolver<{ container_id: string, device_id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.removeDeviceFromContainer(args.container_id, args.device_id);
+        await (await BaseDevice.getDeviceWithType(args.device_id)).removeFromContainer(args.container_id);
         EventsObserver.listener({ type: 'removeDeviceFromContainer', data: args });
         console.log(args);
         return true;

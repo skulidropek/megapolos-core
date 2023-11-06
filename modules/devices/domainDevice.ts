@@ -25,6 +25,11 @@ class DomainDevice extends BaseDevice {
     `, { containerId });
   }
 
+  async removeFromContainer(containerId: string): Promise<void> {
+    this.remove(containerId);
+    await super.removeFromContainer(containerId);
+  }
+
   getDomainOptionsOfContainer(containerId: string): Promise<ContainerDeviceDomainTable> {
     return DeviceModel.getDeviceDomainOptionsOfContainer(this.id, containerId);
   }

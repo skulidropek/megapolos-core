@@ -84,6 +84,16 @@ class Container {
     return (await DeviceModel.getDevicesOfContainer(this.id)).map((device) => new BaseDevice(device.id));
   }
 
+  async getDeviceOfType(type: string): Promise<BaseDevice> {
+    const containerDevices = await DeviceModel.getDevicesOfContainer(this.id);
+    const device = containerDevices.find((_device) => _device.device_type_id === type);
+    if (device) {
+      return new BaseDevice(device.id);
+    }
+    return undefined;
+  }
+      
+
   async changeEnvs(input: {
     key: string,
     value: string,
