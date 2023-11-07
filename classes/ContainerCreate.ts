@@ -17,6 +17,7 @@ import DatabaseDevice from '../modules/devices/databaseDevice';
 import RepositoryDevice from '../modules/devices/repositoryDevice';
 import BuilderDevice from '../modules/devices/builderDevice';
 import EventsObserver from '../modules/events/eventsObserver';
+import BaseDeviceWithType from '../modules/devices/BaseDeviceWithType';
 
 const isWsl = require('is-wsl');
 
@@ -49,7 +50,7 @@ class ContainerCreate {
     this.imageData = await image.getData();
     this.app = await image.getApp();
     this.appData = await this.app.getData();
-    this.user = await this.app.getUser();
+    this.user = await this.instance.getUser();
     this.userData = await this.user.getData();
 
     await this.pullImage();
@@ -94,7 +95,7 @@ class ContainerCreate {
     if (this.input) {
       for (let j in this.input.devices) {
         const deviceInput = this.input.devices[j];
-        const device = BaseDevice.getDeviceWithType(deviceInput.id);
+        const device = BaseDeviceWithType.getDeviceWithType(deviceInput.id);
         await (await device).addToContainer(this.container.id, deviceInput);
       }
     }
@@ -128,10 +129,10 @@ class ContainerCreate {
       this.imageData = await this.image.getData();
       this.app = await this.image.getApp();
       this.appData = await this.app.getData();
-      this.user = await this.app.getUser();
-      this.userData = await this.user.getData();
       this.instance = await container.getInstance();
       this.instanceData = await this.instance.getData();
+      this.user = await this.instance.getUser();
+      this.userData = await this.user.getData();
     }
 
     this.buildContainer(noRebuild);
@@ -140,8 +141,8 @@ class ContainerCreate {
   async buildContainer(noRebuild: boolean):Promise<void> {
     const allEnvs = await this.getContainerEnvs();
 
-    const repositoryDevice:RepositoryDevice = this.container.getDeviceOfType('repository') as RepositoryDevice;
-    const builderDevice:BuilderDevice = this.container.getDeviceOfType('builder') as BuilderDevice;
+    const repositoryDevice:RepositoryDevice = await this.container.getDeviceOfType('repository') as unknown as RepositoryDevice;
+    const builderDevice:BuilderDevice = await this.container.getDeviceOfType('builder') as unknown as BuilderDevice;
     if (builderDevice && !noRebuild) {
       if (repositoryDevice) {
         const repository = await repositoryDevice.cloneContainer(this.container.id);
@@ -180,10 +181,10 @@ class ContainerCreate {
       this.imageData = await this.image.getData();
       this.app = await this.image.getApp();
       this.appData = await this.app.getData();
-      this.user = await this.app.getUser();
-      this.userData = await this.user.getData();
       this.instance = await container.getInstance();
       this.instanceData = await this.instance.getData();
+      this.user = await this.instance.getUser();
+      this.userData = await this.user.getData();
     }
 
     const containerData = await this.container.getData();
@@ -226,7 +227,8 @@ class ContainerCreate {
         [`${this.imageData.inner_port}/tcp`]: {},
       },
       HostConfig: {
-        ExtraHosts: isWsl ? undefined : ['host.docker.internal:host-gateway'],
+        // ExtraHosts: isWsl ? undefined : ['host.docker.internal:host-gateway'],
+        ExtraHosts: ['host.docker.internal:host-gateway'],
         PortBindings: {
           [this.imageData.inner_port + '/tcp']: portBindings,
         },
@@ -270,7 +272,7 @@ class ContainerCreate {
     console.log(deviceParameters);
 
     const containerDevice = await this.container.getDeviceOfDriver();
-    const containerDeviceData = await containerDevice.getData();
+    const containerDeviceData = await containerDevice?.getData();
   
     const envs = await this.container.getEnvs();
 

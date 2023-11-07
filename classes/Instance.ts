@@ -56,6 +56,11 @@ class Instance {
     return AppInstanceModel.getAppInstance(this.id);
   }
 
+  async getUser():Promise<User> {
+    const data = await this.getData();
+    return new User(data.user_id);
+  }
+
   async getDataWithContainers(): Promise<AppInstanceResult> {
     const appInstance:AppInstanceResult = await AppInstanceModel.getAppInstance(this.id);
     appInstance.containers = await AppInstanceModel.getAppInstanceContainers(this.id);
@@ -124,7 +129,7 @@ class Instance {
 
     await new User(data.user_id).remove();
 
-    EventsObserver.listener({ 'type': 'removeAppInstance', data:{ appInstanceId } });
+    EventsObserver.listener({ 'type': 'removeAppInstance', data:{ appInstanceId: this.id } });
   }
 
   async getContainers(): Promise<Container[]> {

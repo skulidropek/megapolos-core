@@ -106,26 +106,6 @@ class BaseDevice {
     return DeviceModel.getDevices().then((devices) => devices.map((device) => new BaseDevice(device.id)));
   }
 
-  static async getDeviceWithType(id: string): Promise<BaseDevice> {
-    const data = await DeviceModel.getDevice(id);
-    if (data.device_type_id === 'db') {
-      return new DatabaseDevice(id);
-    } 
-    if (data.device_type_id === 'domain') {
-      return new DomainDevice(id);
-    } 
-    if (data.device_type_id === 'certificate') {
-      return new CertificateDevice(id);
-    } 
-    if (data.device_type_id === 'repository') {
-      return new RepositoryDevice(id);
-    } 
-    if (data.device_type_id === 'builder') {
-      return new BuilderDevice(id);
-    }
-    return new BaseDevice(id);
-  }
-
   async getDriver(): Promise<DriverTable> {
     const data = await this.getData();
     return DeviceModel.getDriver(data.driver_id);

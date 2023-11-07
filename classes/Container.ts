@@ -14,6 +14,7 @@ import ContainerCreate from './ContainerCreate';
 import { ContainerInput } from '../types';
 import Volume from './Volume';
 import VolumeModel from '../modules/models/volume.model';
+import BaseDeviceWithType from '../modules/devices/BaseDeviceWithType';
 
 export enum ContainerLifeStatus {
   Stopped = 'stopped',
@@ -127,7 +128,7 @@ class Container {
     const containerDevices = await DeviceModel.getDevicesOfContainer(this.id);
     const device = containerDevices.find((_device) => _device.device_type_id === type);
     if (device) {
-      return new BaseDevice(device.id);
+      return BaseDeviceWithType.getDeviceWithType(device.id);
     }
     return undefined;
   }
@@ -201,7 +202,7 @@ class Container {
 
   async getDeviceOfDriver(): Promise<BaseDevice> {
     const data = await DeviceModel.getDeviceFromContainer(this.id);
-    return new BaseDevice(data.id);
+    return data ? new BaseDevice(data.id) : undefined;
   }
 
   async getVolumes(): Promise<{containerVolume: ContainerVolumeTable, volume: Volume}[]> {

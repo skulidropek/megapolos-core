@@ -114,6 +114,7 @@ class MegapolosNode {
       this.commands[commandId] = process;
       const osUserId = (await (user.getData())).os_user_id;
       if (!osUserId) {
+        console.log(await (user.getData()));
         throw new Error('No os user id');
       }
       process.onoutput = (data) => {

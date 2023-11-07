@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import User from './User';
-import BaseProcess from './BaseProcess';
+import BaseProcess, { ProcessStatus } from './BaseProcess';
 
 class Process extends BaseProcess {
 
