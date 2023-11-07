@@ -36,8 +36,10 @@
     "graphql-ws": "^5.11.2",
     "is-wsl": "^2.2.0",
     "jsonwebtoken": "^8.5.1",
+    "knex": "^3.0.1",
+    "knex-rqlite": "^2.0.3",
     "node-fetch": "^3.3.0",
-    "rqlite-js": "^2.5.5",
+    "rqlite-js": "2.5.5",
     "subscriptions-transport-ws": "^0.11.0",
     "uuid": "^9.0.0",
     "ws": "^8.11.0"
