@@ -1,11 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import EventsObserver from '../modules/events/eventsObserver';
 import AppInstanceModel from '../modules/models/appInstance.model';
-import { AppInstanceInput } from '../types';
+import { AppInstanceInput, AppInstanceResult } from '../types';
 import Container from './Container';
 import App from './App';
 import User from './User';
 import ContainerCreate from './ContainerCreate';
+import DeviceModel from '../modules/models/device.model';
+import VolumeModel from '../modules/models/volume.model';
+import docker from '../coreDocker';
 
 class Instance {
   id: string;
@@ -45,8 +48,44 @@ class Instance {
     return appInstanceId;
   }
 
+  static async getInstances(): Promise<Instance[]> {
+    return (await AppInstanceModel.getAppInstances()).map((appInstance) => new Instance(appInstance.id));
+  }
+
   async getData() {
     return AppInstanceModel.getAppInstance(this.id);
+  }
+
+  async getDataWithContainers(): Promise<AppInstanceResult> {
+    const appInstance:AppInstanceResult = await AppInstanceModel.getAppInstance(this.id);
+    appInstance.containers = await AppInstanceModel.getAppInstanceContainers(this.id);
+    const containers = appInstance.containers;
+    for (let j in containers) {
+      const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
+      containers[j].devices = [];
+      for (let k in devices) {
+        const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, containers[j].id);
+        const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, containers[j].id);
+        containers[j].devices.push({
+          device: devices[k],
+          parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
+          env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
+        });
+      }
+      const volumes = await VolumeModel.getVolumesOfContainer(containers[j].id);
+      containers[j].volumes = volumes;
+      const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
+      containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
+      if (containers[j].docker_runtime_id) {
+        try {
+          const dockerStatus = (await docker.getContainer(containers[j].docker_runtime_id).inspect()).State.Status;
+          containers[j].docker_status = dockerStatus;
+        } catch (e) {
+          containers[j].docker_status = 'not exist';
+        }
+      }
+    }
+    return appInstance;
   }
 
   async start() {
@@ -74,10 +113,18 @@ class Instance {
   }
 
   async remove() {
+    const data = await this.getData();
+
     const containers = await this.getContainers();
     containers.forEach(container => {
       container.remove();
     });
+
+    await AppInstanceModel.removeAppInstance(this.id);
+
+    await new User(data.user_id).remove();
+
+    EventsObserver.listener({ 'type': 'removeAppInstance', data:{ appInstanceId } });
   }
 
   async getContainers(): Promise<Container[]> {

@@ -47,12 +47,15 @@ class App {
     return result;
   }
   
-  createInstance(name: string, containers: ContainerInput[]): Promise<Instance> {
-    return Instance.createInstance({ app_id: this.id, name, containers });
+  createInstance(name: string, containers: ContainerInput[], isDevice = false): Promise<Instance> {
+    return Instance.createInstance({ app_id: this.id, name, containers }, isDevice);
   }
 
   async removeInstances(): Promise<void> {
-    
+    const instances = await this.getInstances();
+    for (let i in instances) {
+      await instances[i].remove();
+    }
   }
 
   async getInstances(): Promise<Instance[]> {

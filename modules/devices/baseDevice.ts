@@ -8,13 +8,15 @@ import Container from '../../classes/Container';
 import Volume from '../../classes/Volume';
 import VolumeModel from '../models/volume.model';
 import DeviceBackup from '../../classes/DeviceBackup';
-import { ContainerDeviceInput } from '../../types';
+import { ContainerDeviceInput, DeviceInput } from '../../types';
 import EventsObserver from '../events/eventsObserver';
 import DatabaseDevice from './databaseDevice';
 import DomainDevice from './domainDevice';
 import CertificateDevice from './certificateDevice';
 import BuilderDevice from './builderDevice';
 import RepositoryDevice from './repositoryDevice';
+import App from '../../classes/App';
+import { sleep } from '../..';
 
 export interface Manifest {
   name: string;
@@ -37,6 +39,67 @@ class BaseDevice {
       this.port = device.outer_port;
       return new GraphQLClient(`http://localhost:${this.port}/graphql`);
     });
+  }
+
+  static async createDevice(userId:string, input: DeviceInput): Promise<BaseDevice> {
+    const app = await App.installApp(userId, {
+      name: input.name,
+      images: [{
+        name: input.name,
+        image: input.image,
+        inner_port: input.inner_port,
+      }],
+    });
+    const images = await app.getImages();
+    const appInstance = await app.createInstance(input.name, [{
+      devices: [],
+      envs: [],
+      volumes: [],
+      fixed_outer_port: 0,
+      image_id: images[0].id,
+    }], true);
+    await appInstance.start();
+
+    return BaseDevice.createDeviceFromApp(app);
+  }
+
+  static async createDeviceFromApp(app: App): Promise<BaseDevice> {
+    const deviceId = uuidv4();
+    const driverId = uuidv4();
+
+    const appData = await app.getData();
+
+    await DeviceModel.createDriver({
+      id: driverId,
+      name: appData.name,
+      app_id: app.id,
+    });
+    await DeviceModel.createDevice({
+      id: deviceId,
+      name: appData.name,
+      device_type_id: '',
+      node_id: '',
+      driver_id: driverId,
+    });
+    const device = new BaseDevice(deviceId);
+    let manifest: Manifest | undefined;
+    for (let i = 0; i < 10; i++) {
+      try {
+        manifest = await device.getManifest();
+        break;
+      } catch (e) {
+        await sleep(1000);
+      }
+    }
+    if (!manifest) {
+      throw new Error('Failed to get manifest');
+    }
+    if (manifest.type) {
+      await DeviceModel.updateDeviceType(deviceId, manifest.type);
+    }
+    EventsObserver.listener({ type: 'createDevice', data: app.id });
+
+    return device;
   }
 
   static getDevices(): Promise<BaseDevice[]> {
@@ -77,10 +140,6 @@ class BaseDevice {
     return new Container(container.id);
   }
   
-  // async remove() {
-    
-  // }
-
   getOptions():Promise<DeviceOptionTable[]> {
     return DeviceModel.getDeviceOptions(this.id);
   }
@@ -230,6 +289,13 @@ class BaseDevice {
       console.error(e);
       return [];
     }
+  }
+
+  async removeDevice():Promise<void> {
+    const driver = await this.getDriver();
+    await new App(this.id).uninstall();
+    await DeviceModel.removeDevice(this.id);
+    await DeviceModel.removeDriver(driver.id);
   }
 
 }

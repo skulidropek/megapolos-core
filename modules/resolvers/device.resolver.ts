@@ -1,20 +1,15 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { ContainerDeviceInput, DeviceInput, resolver } from '../../types';
-import DeviceModel from '../models/device.model';
-import AppInstanceModel from '../models/appInstance.model';
 import BaseDevice, { Manifest } from '../devices/baseDevice';
-import AppAction from '../actions/app.action';
-import AppInstanceAction from '../actions/appInstance.action';
 import { createModule, gql } from 'graphql-modules';
 import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceAuxOptionTable, DeviceOptionTable, DeviceTable, ContainerDeviceEnvOptionTable, ContainerTable, ContainerDeviceRepositoryTable } from '../models/tables';
 import EventsObserver from '../events/eventsObserver';
-import AppModel from '../models/app.model';
-import DeviceAction from '../actions/device.action';
 import DomainDevice from '../devices/domainDevice';
 import CertificateDevice from '../devices/certificateDevice';
 import DatabaseDevice from '../devices/databaseDevice';
 import RepositoryDevice from '../devices/repositoryDevice';
+import App from '../../classes/App';
 
 const deviceModule = createModule({
   id: 'device-module',
@@ -250,44 +245,13 @@ const deviceModule = createModule({
     },
     Mutation: {
       addDevice: resolver<{ input: DeviceInput }, boolean>(async (parent, args, context, info) => {
-        const input = args.input;
-        const appId = await AppAction.installApp(context.user.id, {
-          name: input.name,
-          images: [{
-            name: input.name,
-            image: input.image,
-            inner_port: input.inner_port,
-          }],
-        });
-        const images = await AppModel.getImagesOfApp(appId);
-        const appInstanceId = await AppInstanceAction.createAppInstance({
-          app_id: appId,
-          name: input.name,
-          containers: [{
-            devices: [],
-            envs: [],
-            volumes: [],
-            fixed_outer_port: 0,
-            image_id: images[0].id,
-          }],
-        }, true);
-        await AppInstanceAction.startAppInstance(appInstanceId);
-
-        await DeviceAction.createDevice(appId);
+        await BaseDevice.createDevice(context.user.id, args.input);
         EventsObserver.listener({ type: 'addDevice', data: args });
         return true;
       }),
       removeDevice: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         const deviceId = args.id;
-        const device = await DeviceModel.getDevice(deviceId);
-        const driver = await DeviceModel.getDriver(device.driver_id);
-        const appInstance = await AppInstanceModel.getFirstAppInstanceOfApp(driver.app_id);
-        if (appInstance) {
-          await AppInstanceAction.removeAppInstance(appInstance.id, true);
-        }
-        await AppAction.uninstallApp(driver.app_id);
-        await DeviceModel.removeDevice(deviceId);
-        await DeviceModel.removeDriver(device.driver_id);
+        await new BaseDevice(deviceId).removeDevice();
         EventsObserver.listener({ type: 'removeDevice', data: args });
         return true;
       }),
@@ -342,7 +306,7 @@ const deviceModule = createModule({
         return true;
       }),
       createDeviceFromApp: resolver<{ app_id: string }, boolean>(async (parent, args, context, info) => {
-        await DeviceAction.createDevice(args.app_id);
+        await BaseDevice.createDeviceFromApp(new App(args.app_id));
         EventsObserver.listener({ type: 'createDeviceFromApp', data: args });
         return true;
       }),

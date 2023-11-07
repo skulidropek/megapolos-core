@@ -1,8 +1,6 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { exec } from 'child_process';
-import UserAction from './modules/actions/user.action';
-import AppInstanceAction from './modules/actions/appInstance.action';
 
 import graphqlServer from './grapgql';
 import MegapolosNode from './classes/Node';

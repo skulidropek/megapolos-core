@@ -7,7 +7,6 @@ import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { createApplication } from 'graphql-modules';
 import config from './config/config.json';
-import UserModel from './modules/models/user.model';
 import { Context } from './types';
 import userModule from './modules/resolvers/user.resolver';
 import nodeModule from './modules/resolvers/node.resolver';
@@ -15,6 +14,7 @@ import appModule from './modules/resolvers/app.resolver';
 import deviceModule from './modules/resolvers/device.resolver';
 import eventModule from './modules/resolvers/event.resolver';
 import volumeModule from './modules/resolvers/volume.resolver';
+import User from './classes/User';
 
 const graphqlServer = async () => {
   try {
@@ -41,12 +41,13 @@ const graphqlServer = async () => {
         } catch (err) {
           throw new Error('Unauthorized');
         }
-        const user = await UserModel.getUserById(decoded.id);
+        const user = new User(decoded.id);
+        const userData = await user.getData();
 
-        if (!user) {
+        if (!userData) {
           throw new Error('Unauthorized');
         } else {
-          return { user };
+          return { user: userData };
         }
       },
     });

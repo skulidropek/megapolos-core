@@ -64,6 +64,19 @@ class User {
   createToken(): string {
     return jwt.sign({ id: this.id }, config.secret);
   }
+
+  async remove():Promise<void> {
+    const data = await this.getData();
+    await UserModel.removeUser(this.id);
+  
+    if (data.os_user_id) {
+      try {
+        await exec(`userdel -r ${this.id.replace(/-/g, '')}`);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
 }
 
 export default User;

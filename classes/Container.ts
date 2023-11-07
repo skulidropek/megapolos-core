@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import docker from '../coreDocker';
+import { promises as fs } from 'fs';
+import fsSync from 'fs';import docker from '../coreDocker';
 import AppInstanceModel from '../modules/models/appInstance.model';
 import { ContainerDeviceEnvOptionTable, ContainerEnvOptionTable, ContainerTable, ContainerVolumeTable } from '../modules/models/tables';
 import EventsObserver from '../modules/events/eventsObserver';
@@ -60,8 +61,32 @@ class Container {
     await this.updateLifeStatus('stopped');
   }
 
-  remove() {
-
+  async remove():Promise<void> {
+    const data = await this.getData();
+    if (data.docker_runtime_id) {
+      try {
+        await this.stop();
+      } catch (e) {
+        console.error(e);
+      }
+      try {
+        await (await this.getDockerContainer()).remove();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
+    if (fsSync.existsSync(megapolosVolume)) {
+      MegapolosNode.currentNode.validatePath(megapolosVolume);
+      await fs.rmdir(megapolosVolume, { recursive: true });
+    }
+  
+    const devices = await this.getDevices();
+    for (let i in devices) {
+      const device = devices[i];
+      await device.removeFromContainer(this.id);
+    }
+    await AppInstanceModel.deleteContainer(this.id);
   }
 
   async restore() {

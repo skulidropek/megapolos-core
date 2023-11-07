@@ -1,15 +1,9 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import docker from '../../coreDocker';
-import { AppInput, AppInstanceInput, resolver } from '../../types';
-import AppModel from '../models/app.model';
-import AppInstanceModel from '../models/appInstance.model';
-import { AppInstanceTable, AppTable, ContainerTable, DeviceTable, ImageTable } from '../models/tables';
-import AppInstanceAction from '../actions/appInstance.action';
-import DeviceModel from '../models/device.model';
+import { AppInput, AppInstanceInput, AppInstanceResult, resolver } from '../../types';
+import { AppTable, DeviceTable, ImageTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
-import VolumeModel from '../models/volume.model';
 import App from '../../classes/App';
 import Instance from '../../classes/Instance';
 import Container from '../../classes/Container';
@@ -181,69 +175,12 @@ const appModule = createModule({
         const app = new App(args.id);
         return app.getDataWithImages();
       }),
-      getAppInstances: resolver<void, (AppInstanceTable & { containers?: ContainerTable[] })[]>(async (parent, args, context, info) => {
-        const results:(AppInstanceTable & { containers?: ContainerTable[] })[] = await AppInstanceModel.getAppInstances();
-        for (let i in results) {
-          const containers: (ContainerTable & { devices?: any, volumes?: any, envs?: any, docker_status?: string })[] = await AppInstanceModel.getAppInstanceContainers(results[i].id);
-          results[i].containers = containers;
-          for (let j in containers) {
-            const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
-            containers[j].devices = [];
-            for (let k in devices) {
-              const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, containers[j].id);
-              const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, containers[j].id);
-              containers[j].devices.push({
-                device: devices[k],
-                parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
-                env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
-              });
-            }
-            const volumes = await VolumeModel.getVolumesOfContainer(containers[j].id);
-            containers[j].volumes = volumes;
-            const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
-            containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
-            if (containers[j].docker_runtime_id) {
-              try {
-                const dockerStatus = (await docker.getContainer(containers[j].docker_runtime_id).inspect()).State.Status;
-                containers[j].docker_status = dockerStatus;
-              } catch (e) {
-                containers[j].docker_status = 'not exist';
-              }
-            }
-          }
-        }
+      getAppInstances: resolver<void, AppInstanceResult[]>(async (parent, args, context, info) => {
+        const results:AppInstanceResult[] = await Promise.all((await Instance.getInstances()).map((instance) => instance.getDataWithContainers()));
         return results;
       }),
-      getAppInstance: resolver<{ id: string }, (AppInstanceTable & { containers?: ContainerTable[] })>(async (parent, args, context, info) => {
-        const appInstance:(AppInstanceTable & { containers?: ContainerTable[] }) = await AppInstanceModel.getAppInstance(args.id);
-        const containers: (ContainerTable & { devices?: any, volumes?: any, envs?: any, docker_status?: string })[] = await AppInstanceModel.getAppInstanceContainers(args.id);
-        appInstance.containers = containers;
-        for (let j in containers) {
-          const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
-          containers[j].devices = [];
-          for (let k in devices) {
-            const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, containers[j].id);
-            const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, containers[j].id);
-            containers[j].devices.push({
-              device: devices[k],
-              parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
-              env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
-            });
-          }
-          const volumes = await VolumeModel.getVolumesOfContainer(containers[j].id);
-          containers[j].volumes = volumes;
-          const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
-          containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
-          if (containers[j].docker_runtime_id) {
-            try {
-              const dockerStatus = (await docker.getContainer(containers[j].docker_runtime_id).inspect()).State.Status;
-              containers[j].docker_status = dockerStatus;
-            } catch (e) {
-              containers[j].docker_status = 'not exist';
-            }
-          }
-        }
-        return appInstance;
+      getAppInstance: resolver<{ id: string }, AppInstanceResult>(async (parent, args, context, info) => {
+        return new Instance(args.id).getDataWithContainers();
       }),
       getContainerDevices: resolver<{ id: string }, DeviceTable[]>(async (parent, args, context, info) => {
         return Promise.all((await new Container(args.id).getDevices()).map((device) => device.getData()));
@@ -276,7 +213,7 @@ const appModule = createModule({
         return true;
       }),
       removeAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.removeAppInstance(args.id);
+        await new Instance(args.id).remove();
         EventsObserver.listener({ type: 'removeAppInstance', data: args });
         return true;
       }),

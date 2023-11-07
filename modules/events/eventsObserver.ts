@@ -3,9 +3,6 @@
 import Container from '../../classes/Container';
 import ContainerCreate from '../../classes/ContainerCreate';
 import pubsub from '../../pubsub';
-import AppInstanceAction from '../actions/appInstance.action';
-import AppModel from '../models/app.model';
-import AppInstanceModel from '../models/appInstance.model';
 import { BuildEndedEvent } from './build.event';
 import DockerEvent from './docker.event';
 import { MegapolosEvent } from './event';
