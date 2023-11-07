@@ -261,7 +261,7 @@ const appModule = createModule({
         return true;
       }),
       createAppInstance: resolver<{ input: AppInstanceInput }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.createAppInstance(args.input);
+        await Instance.createInstance(args.input);
         EventsObserver.listener({ type: 'createAppInstance', data: args });
         return true;
       }),
@@ -281,38 +281,7 @@ const appModule = createModule({
         return true;
       }),
       updateContainer: resolver<{ id: string, noRebuild: boolean }, boolean>(async (parent, args, context, info) => {
-        const containerId = args.id;
-        const container = await AppInstanceModel.getContainer(containerId);
-        const appInstance = await AppInstanceModel.getAppInstance(container.app_instance_id);
-        const image = await AppModel.getImage(container.image_id);
-        const dockerRuntimeId = container.docker_runtime_id;
-        if (dockerRuntimeId) {
-          try {
-            await docker.getContainer(dockerRuntimeId).stop();
-          } catch (e) {
-            console.error(e);
-          }
-          try {
-            await docker.getContainer(dockerRuntimeId).remove();
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        await AppInstanceAction.createContainer({
-          appId: appInstance.app_id,
-          appInstanceId: appInstance.id,
-          containerId: container.id,
-          imageId: container.image_id,
-          imageName: image.image,
-          imageRepository: image.image,
-          innerPort: image.inner_port,
-          outerPort: container.outer_port,
-          userId: appInstance.user_id,
-          noRebuild: args.noRebuild,
-        });
-        // await dockerContainer.start();
-  
-        // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerContainer.id);
+        await new Container(args.id).update(args.noRebuild);
         EventsObserver.listener({ type: 'updateContainer', data: args });
         return true;
       }),

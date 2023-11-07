@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import AppModel from '../modules/models/app.model';
 import { ImageTable } from '../modules/models/tables';
+import App from './App';
 
 class Image {
   id: string;
@@ -29,6 +30,11 @@ class Image {
   remove() {
     return AppModel.removeImage(this.id);
   }    
+
+  async getApp(): Promise<App> {
+    const data = await this.getData();
+    return new App(data.app_id);
+  }
 }
 
 export default Image;

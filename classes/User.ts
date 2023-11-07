@@ -2,6 +2,9 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { UserTable } from '../modules/models/tables';
 import UserModel from '../modules/models/user.model';
+import { promisify } from 'util';
+
+const exec =   promisify(require('child_process').exec);
 
 import config from '../config/config.json';
 
@@ -12,9 +15,24 @@ class User {
     this.id = id;
   }
 
-  static async createUser(input: { name: string, groupUserId: string }):Promise<User> {
+  static async createUser(input: { name: string, groupUserId: string }, isDevice = false):Promise<User> {
     const id = uuidv4();
-    await UserModel.createUser({ id, name: input.name, groupUserId: input.groupUserId });
+    let linuxUserId = '';
+    if (isDevice) {
+      await exec(`useradd -m -s /bin/bash ${id.replace(/-/g, '')}`);
+      linuxUserId = (await exec('cat /etc/passwd')).stdout.
+        split('\n').
+        filter((user) => user.startsWith(id.replace(/-/g, ''))).
+        join('\n').
+        split(':')[2];
+    }
+  
+    await UserModel.createUser({
+      id,
+      name: input.name,
+      groupUserId: isDevice ? 'device' : 'app',
+      osUserId: linuxUserId,
+    });
     return new User(id);
   }
 

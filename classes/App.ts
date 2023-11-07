@@ -6,6 +6,7 @@ import Instance from './Instance';
 import EventsObserver from '../modules/events/eventsObserver';
 import AppInstanceModel from '../modules/models/appInstance.model';
 import { AppTable, ImageTable } from '../modules/models/tables';
+import User from './User';
 
 class App {
   id: string;
@@ -60,6 +61,11 @@ class App {
 
   async getImages(): Promise<Image[]> {
     return (await AppModel.getImagesOfApp(this.id)).map((image) => new Image(image.id));
+  }
+
+  async getUser(): Promise<User> {
+    const data = await this.getData();
+    return new User(data.owner_user_id);
   }
 
   addImage(image: { name: string, image: string, inner_port: number }): Promise<Image> {

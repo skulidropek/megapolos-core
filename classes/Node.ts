@@ -52,6 +52,24 @@ class MegapolosNode {
     MegapolosNode.currentNode = new MegapolosNode();
   }
 
+  async getPort() {
+    const usedPorts = (await AppInstanceModel.getUsedPorts()).map((app) => app.outer_port);
+    for (let i = 10000; i < 20000; i++) {
+      if (!usedPorts.includes(i)) {
+        return i;
+      }
+    }
+    throw new Error('No available port');
+  }
+
+  async checkPort(port: number) {
+    const usedPorts = (await AppInstanceModel.getUsedPorts()).map((app) => app.outer_port);
+    if (usedPorts.includes(port)) {
+      throw new Error('No available port');
+    }
+    return true; 
+  }
+
   getMegapolosPath() {
     return megapolosPath;
   }
