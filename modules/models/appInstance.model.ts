@@ -1,91 +1,77 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import coreRqlite from '../../coreRqlite';
-import { AppInstanceTable, AppTable, ContainerDeviceEnvOptionTable, ContainerEnvOptionTable, ContainerTable, ImageTable } from './tables';
+import { knex } from '../../coreRqlite';
+import { AppInstanceTable, ContainerEnvOptionTable, ContainerTable } from './tables';
 
 class AppInstanceModel {
   static async createAppInstance(input: Partial<AppInstanceTable>) {
-    await coreRqlite.execute([[`
-    INSERT INTO app_instance (id, name, user_id, life_status, app_instance_url, app_id, instance_type_id, deploy_strategy_id, remove_strategy_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, input.id, input.name, input.user_id, input.life_status, 
-    input.app_instance_url, input.app_id, input.instance_type_id, 
-    input.deploy_strategy_id, input.remove_strategy_id]]);
+    await knex.table<AppInstanceTable>('app_instance').insert(input);
   }
 
   static async getAppInstance(appInstanceId: string):Promise<AppInstanceTable> {
-    return (await coreRqlite.query([['SELECT * FROM app_instance WHERE id = ?', appInstanceId]])).toArray()[0];
+    return knex<AppInstanceTable>('app_instance').select('app_instance.*').where('app_instance.id', appInstanceId).first();
   }
 
   static async getFirstAppInstanceOfApp(appId: string):Promise<AppInstanceTable> {
-    return (await coreRqlite.query([[`
-      SELECT * FROM app_instance WHERE app_id = ?
-    `, appId]])).toArray()[0];
+    return knex<AppInstanceTable>('app_instance').select('app_instance.*').where('app_instance.app_id', appId).first();
   }
 
   static async getAppInstances():Promise<AppInstanceTable[]> {
-    return (await coreRqlite.query('SELECT * FROM app_instance')).toArray();
+    return knex<AppInstanceTable>('app_instance').select('app_instance.*');
   }
 
   static async getAppInstanceContainers(appInstanceId: string):Promise<ContainerTable[]> {
-    return (await coreRqlite.query([['SELECT * FROM container WHERE app_instance_id = ?', appInstanceId]])).toArray();
+    return knex<ContainerTable>('container').select('container.*').where('container.app_instance_id', appInstanceId);
   }
 
   static async getContainer(containerId: string):Promise<ContainerTable> {
-    return (await coreRqlite.query([['SELECT * FROM container WHERE id = ?', containerId]])).toArray()[0];
+    return knex<ContainerTable>('container').select('container.*').where('container.id', containerId).first();
   }
 
   static async getContainers():Promise<ContainerTable[]> {
-    return (await coreRqlite.query([['SELECT * FROM container']])).toArray();
+    return knex<ContainerTable>('container').select('container.*');
   }
 
   static async updateAppInstanceLifeStatus(appInstanceId: string, lifeStatus: string) {
-    await coreRqlite.execute([[
-      'UPDATE app_instance SET life_status = ? WHERE id = ?', lifeStatus, appInstanceId
-    ]]);
+    return knex<AppInstanceTable>('app_instance').update({ life_status: lifeStatus }).where('id', appInstanceId);
   }
 
   static async getContainerEnvOptions(containerId: string):Promise<ContainerEnvOptionTable[]> {
-    return (await coreRqlite.query([['SELECT * FROM container_env_option WHERE container_id = ?', containerId]])).toArray();
+    return knex<ContainerEnvOptionTable>('container_env_option')
+      .select('container_env_option.*')
+      .where('container_env_option.container_id', containerId);
   }
 
   static async addContainerEnvOption(input: Partial<ContainerEnvOptionTable>) {
-    await coreRqlite.execute([[`
-      INSERT INTO container_env_option (id, container_id, container_env_name, container_env_value)
-      VALUES (?, ?, ?, ?)
-    `, input.id, input.container_id, input.container_env_name, input.container_env_value]]);
+    await knex<ContainerEnvOptionTable>('container_env_option').insert(input);
   }
 
   static async removeContainerEnvOptions(containerId: string) {
-    await coreRqlite.execute([['DELETE FROM container_env_option WHERE container_id = ?', containerId]]);
+    await knex<ContainerEnvOptionTable>('container_env_option').delete().where('container_id', containerId);
   }
 
   static async createContainer(input: Partial<ContainerTable>) {
-    await coreRqlite.execute([[`
-        INSERT INTO container (id, docker_runtime_id, name, image_id, node_id, outer_port, app_instance_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, input.id, input.docker_runtime_id, input.name, input.image_id, input.node_id, input.outer_port as any, input.app_instance_id]]);
+    await knex<ContainerTable>('container').insert(input);
   }
 
   static async updateContainerLifeStatus(containerId: string, lifeStatus: string) {
-    await coreRqlite.execute([['UPDATE container SET life_status = ? WHERE id = ?', lifeStatus, containerId]]);
+    await knex<ContainerTable>('container').update({ life_status: lifeStatus }).where('id', containerId);
   }
 
   static async updateContainerDockerRuntimeId(containerId: string, dockerRuntimeId: string) {
-    await coreRqlite.execute([['UPDATE container SET docker_runtime_id = ? WHERE id = ?', dockerRuntimeId, containerId]]);
+    await knex<ContainerTable>('container').update({ docker_runtime_id: dockerRuntimeId }).where('id', containerId);
   }
 
   static async deleteContainer(containerId: string) {
-    await coreRqlite.execute([['DELETE FROM container WHERE id = ?', containerId]]);
+    await knex<ContainerTable>('container').delete().where('id', containerId);
   }
 
   static async getUsedPorts():Promise<ContainerTable[]> {
-    return (await coreRqlite.query('SELECT outer_port FROM container')).toArray();
+    return knex<ContainerTable>('container').select('container.outer_port');
   }
 
   static async removeAppInstance(appInstanceId: string) {
-    await coreRqlite.execute([[
-      'DELETE FROM app_instance WHERE id = ?', appInstanceId]]);
+    await knex<AppInstanceTable>('app_instance').delete().where('id', appInstanceId);
   }
 
 }

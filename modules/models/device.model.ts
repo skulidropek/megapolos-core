@@ -1,118 +1,119 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import coreRqlite from '../../coreRqlite';
-import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceEnvOptionTable, ContainerDeviceAuxOptionTable, ContainerTable, DeviceOptionTable, DeviceTable, DriverTable, ContainerDeviceRepositoryTable } from './tables';
+import { knex } from '../../coreRqlite';
+import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceEnvOptionTable, ContainerDeviceAuxOptionTable, ContainerTable, DeviceOptionTable, DeviceTable, DriverTable, ContainerDeviceRepositoryTable, ContainerDeviceTable } from './tables';
 import { v4 as uuidv4 } from 'uuid';
 
 class DeviceModel {
   static async createDevice(input: Partial<DeviceTable>) {
-    await coreRqlite.execute([[`
-      INSERT INTO device (id, name, device_type_id, node_id, driver_id) VALUES (?, ?, ?, ?, ?)
-    `, input.id, input.name, input.device_type_id, input.node_id, input.driver_id]]);
+    await knex<DeviceTable>('device').insert(input);
   }
 
   static async createDriver(input: DriverTable) {
-    await coreRqlite.execute([[`
-    INSERT INTO driver (id, name, app_id) VALUES (?, ?, ?)
-  `, input.id, input.name, input.app_id]]);
+    await knex<DriverTable>('driver').insert(input);
   }
 
   static async getDeviceDriverContainer(deviceId: string):Promise<(ContainerTable)> {
-    return (await coreRqlite.query([[`
-        SELECT c.* FROM device d
-        LEFT JOIN driver dr ON d.driver_id = dr.id
-        LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
-        LEFT JOIN container c ON ai.id = c.app_instance_id
-        WHERE d.id = ?
-        LIMIT 1
-      `, deviceId]])).toArray()[0];
+    return knex<ContainerTable>('container').select('container.*')
+      .from('device')
+      .leftJoin('driver', 'device.driver_id', 'driver.id')
+      .leftJoin('app_instance', 'driver.app_id', 'app_instance.app_id')
+      .leftJoin('container', 'app_instance.id', 'container.app_instance_id')
+      .where('device.id', deviceId)
+      .limit(1)
+      .first();
   }
 
   static async getDevice(deviceId: string):Promise<DeviceTable> {
-    return (await coreRqlite.query([[`
-      SELECT * FROM device WHERE id = ?
-    `, deviceId]])).toArray()[0];
+    return knex<DeviceTable>('device').select('device.*').where('device.id', deviceId).first();
   }
 
   static async getDevices():Promise<DeviceTable[]> {
-    return (await coreRqlite.query('SELECT * FROM device')).toArray();
+    return knex<DeviceTable>('device').select('device.*');
   }
 
   static async getDriver(driverId: string):Promise<DriverTable> {
-    return (await coreRqlite.query([[`
-      SELECT * FROM driver WHERE id = ?
-    `, driverId]])).toArray()[0];
+    return knex<DriverTable>('driver').select('driver.*').where('driver.id', driverId).first();
   }
 
   static async addEnvToContainer(input: ContainerDeviceEnvOptionTable) {
-    await coreRqlite.execute([[`
-          INSERT INTO container_device_env_option (id, container_id, device_id, device_option_name, container_env_name)
-          VALUES (?, ?, ?, ?, ?)
-        `, input.id, input.container_id, input.device_id, input.device_option_name, input.container_env_name]]);
+    await knex<ContainerDeviceEnvOptionTable>('container_device_env_option').insert(input);
   }
 
   static async addAuxOptionToContainer(input: ContainerDeviceAuxOptionTable) {
-    await coreRqlite.execute([[`
-          INSERT INTO container_device_option (id, container_id, device_id, device_option_name, container_option_value)
-          VALUES (?, ?, ?, ?, ?)
-        `, input.id, input.container_id, input.device_id, input.device_option_name, input.container_option_value]]);
+    await knex<ContainerDeviceAuxOptionTable>('container_device_aux_option').insert(input);
   }
 
   static async getDeviceOptions(deviceId: string):Promise<DeviceOptionTable[]> {
-    return (await coreRqlite.query([[`
-      SELECT * FROM device_option WHERE device_id = ?
-    `, deviceId]])).toArray();
+    return knex.select('device_option.*').from('device_option').where('device_option.device_id', deviceId);
   }
 
   static async setDeviceOptions(deviceId: string, options: { key: string, value: string }[]) {
-    await coreRqlite.execute([[`
-      DELETE FROM device_option WHERE device_id = ?
-    `, deviceId]]);
-    await coreRqlite.execute(options.map(option => [`
-        INSERT INTO device_option (id, device_id, device_option_name, device_option_value) VALUES (?, ?, ?, ?)
-      `, uuidv4(), deviceId, option.key, option.value]));
+    await knex<DeviceOptionTable>('device_option').delete().where('device_id', deviceId);
+    await knex<DeviceOptionTable>('device_option').insert(options.map(option => ({
+      id: uuidv4(),
+      device_id: deviceId,
+      device_option_name: option.key,
+      device_option_value: option.value,
+    })));
   }
 
   static async setDeviceVirtual(deviceId: string, isVirtual: number, virtualDeviceContainerId: string) {
-    await coreRqlite.execute([[`
-      UPDATE device SET is_virtual = ?, virtual_device_container_id = ? WHERE id = ?
-    `, isVirtual.toString(), virtualDeviceContainerId, deviceId]]);
+    await knex<DeviceTable>('device').update({ is_virtual: isVirtual, 
+      virtual_device_container_id: virtualDeviceContainerId,
+    }).where('id', deviceId);
   }
 
   static async getEnvOfContainer(containerId: string):Promise<ContainerDeviceEnvOptionTable[]> {
-    return (await coreRqlite.query([[`
-    SELECT * FROM container_device_env_option WHERE container_id = ?
-  `, containerId]])).toArray();
+    return knex<ContainerDeviceEnvOptionTable>('container_device_env_option')
+      .select('container_device_env_option.*')
+      .where('container_device_env_option.container_id', containerId);
   }
 
   static async getDeviceAuxOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceAuxOptionTable[]> {
-    return (await coreRqlite.query([[`
-    SELECT * FROM container_device_aux_option WHERE device_id = ? AND container_id = ?
-  `, deviceId, containerId]])).toArray();
+    return knex<ContainerDeviceAuxOptionTable>('container_device_aux_option')
+      .select('container_device_aux_option.*')
+      .where({
+        container_id: containerId,
+        device_id: deviceId,
+      });
   }
 
   static async setDeviceAuxOptionsOfContainer(deviceId: string, containerId: string, options: { key: string, value: string }[]) {
-    await coreRqlite.execute([[`
-      DELETE FROM container_device_aux_option WHERE device_id = ? AND container_id = ?
-    `, deviceId, containerId]]);
-    await coreRqlite.execute(options.map(option => [`
-        INSERT INTO container_device_aux_option (id, container_id, device_id, device_option_name, container_option_value) VALUES (?, ?, ?, ?, ?)
-      `, uuidv4(), containerId, deviceId, option.key, option.value]));
+    await knex<ContainerDeviceAuxOptionTable>('container_device_aux_option').delete().where({
+      container_id: containerId,
+      device_id: deviceId,
+    });
+    await knex<ContainerDeviceAuxOptionTable>('container_device_aux_option').insert(options.map(option => ({
+      id: uuidv4(),
+      container_id: containerId,
+      device_id: deviceId,
+      device_option_name: option.key,
+      container_option_value: option.value,
+    })));
   }
 
   static async setDeviceEnvOptionsOfContainer(deviceId: string, containerId: string, options: { key: string, value: string }[]) {
-    await coreRqlite.execute([[`
-      DELETE FROM container_device_env_option WHERE device_id = ? AND container_id = ?
-    `, deviceId, containerId]]);
-    await coreRqlite.execute(options.map(option => [`
-        INSERT INTO container_device_env_option (id, container_id, device_id, device_option_name, container_env_name) VALUES (?, ?, ?, ?, ?)
-      `, uuidv4(), containerId, deviceId, option.key, option.value]));
+    await knex<ContainerDeviceEnvOptionTable>('container_device_env_option').delete().where({
+      container_id: containerId,
+      device_id: deviceId,
+    });
+    await knex<ContainerDeviceEnvOptionTable>('container_device_env_option').insert(options.map(option => ({
+      id: uuidv4(),
+      container_id: containerId,
+      device_id: deviceId,
+      device_option_name: option.key,
+      container_env_name: option.value,
+    })));
   }
 
   static async getDeviceDomainOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceDomainTable> {
-    const result = (await coreRqlite.query([[`
-    SELECT * FROM container_device_domain WHERE device_id = ? AND container_id = ?
-  `, deviceId, containerId]])).toArray()[0];
+    const result = await knex
+      .select<ContainerDeviceDomainTable>('container_device_domain.*')
+      .where({
+        container_id: containerId,
+        device_id: deviceId,
+      }).first();
     if (result) {
       if (!result.is_ssl) {
         result.is_ssl = 0;
@@ -123,133 +124,162 @@ class DeviceModel {
 
   static async setDeviceDomainOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceDomainTable) {
     if (await DeviceModel.getDeviceDomainOptionsOfContainer(deviceId, containerId)) {
-      await coreRqlite.execute([[`
-      UPDATE container_device_domain SET domain = ?, is_ssl = ? WHERE device_id = ? AND container_id = ?
-    `, options.domain, options.is_ssl?.toString() || '', deviceId, containerId]]);
+      await knex <ContainerDeviceDomainTable>('container_device_domain').update({
+        domain: options.domain,
+        is_ssl: options.is_ssl || 0,
+      }).where({
+        device_id: deviceId,
+        container_id: containerId,
+      });
     } else {
-      await coreRqlite.execute([[`
-      INSERT INTO container_device_domain (id, container_id, device_id, domain, is_ssl) VALUES (?, ?, ?, ?, ?)
-    `, uuidv4(), containerId, deviceId, options.domain, options.is_ssl?.toString() || '']]);
+      await knex<ContainerDeviceDomainTable>('container_device_domain').insert({
+        id: uuidv4(),
+        container_id: containerId,
+        device_id: deviceId,
+        domain: options.domain,
+        is_ssl: options.is_ssl || 0,
+      });
     }
   }
 
   static async removeDeviceDomainOptionsOfContainer(deviceId: string, containerId: string) {
-    await coreRqlite.execute([[`
-      DELETE FROM container_device_domain WHERE device_id = ? AND container_id = ?
-    `, deviceId, containerId]]);
+    await knex<ContainerDeviceDomainTable>('container_device_domain').delete().where({
+      device_id: deviceId,
+      container_id: containerId,
+    });
   }
 
   static async getDeviceCertificateOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceCertificateTable> {
-    return (await coreRqlite.query([[`
-    SELECT * FROM container_device_certificate WHERE device_id = ? AND container_id = ?
-  `, deviceId, containerId]])).toArray()[0];
+    return knex<ContainerDeviceCertificateTable>('container_device_certificate')
+      .select('container_device_certificate.*')
+      .where({
+        container_id: containerId,
+        device_id: deviceId,
+      }).first();
   }
 
   static async setDeviceCertificateOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceCertificateTable) {
     if (await DeviceModel.getDeviceCertificateOptionsOfContainer(deviceId, containerId)) {
-      await coreRqlite.execute([[`
-      UPDATE container_device_certificate SET private_key_path = ?, public_key_path = ? WHERE device_id = ? AND container_id = ?
-    `, options.private_key_path, options.public_key_path, deviceId, containerId]]);
+      await knex<ContainerDeviceCertificateTable>('container_device_certificate').update({
+        private_key_path: options.private_key_path,
+        public_key_path: options.public_key_path,
+      }).where({
+        device_id: deviceId,
+        container_id: containerId,
+      });
     } else {
-      await coreRqlite.execute([[`
-      INSERT INTO container_device_certificate (id, container_id, device_id, private_key_path, public_key_path) VALUES (?, ?, ?, ?, ?)
-    `, uuidv4(), containerId, deviceId, options.private_key_path, options.public_key_path]]);
+      await knex<ContainerDeviceCertificateTable>('container_device_certificate').insert({
+        id: uuidv4(),
+        container_id: containerId,
+        device_id: deviceId,
+        private_key_path: options.private_key_path,
+        public_key_path: options.public_key_path,
+      });
     }
   }
 
   static async removeDeviceCertificateOptionsOfContainer(deviceId: string, containerId: string) {
-    await coreRqlite.execute([[`
-      DELETE FROM container_device_certificate WHERE device_id = ? AND container_id = ?
-    `, deviceId, containerId]]);
+    await knex<ContainerDeviceCertificateTable>('container_device_certificate').delete().where({
+      device_id: deviceId,
+      container_id: containerId,
+    });
   }
 
   static async getDeviceDbOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceDbTable> {
-    return (await coreRqlite.query([[`
-    SELECT * FROM container_device_db WHERE device_id = ? AND container_id = ?
-  `, deviceId, containerId]])).toArray()[0];
+    return knex<ContainerDeviceDbTable>('container_device_db')
+      .select('container_device_db.*')
+      .where({
+        container_id: containerId,
+        device_id: deviceId,
+      }).first();
   }
 
   static async setDeviceDbOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceDbTable) {
     if (await DeviceModel.getDeviceDbOptionsOfContainer(deviceId, containerId)) {
-      await coreRqlite.execute([[`
-      UPDATE container_device_db SET db_host = ?, db_name = ?, db_user = ?, db_password = ?, db_protocol = ? WHERE device_id = ? AND container_id = ?
-    `, options.db_host, options.db_name, options.db_user, options.db_password, options.db_protocol, deviceId, containerId]]);
+      await knex<ContainerDeviceDbTable>('container_device_db').update(options).where({
+        device_id: deviceId,
+        container_id: containerId,
+      });
     } else {
-      await coreRqlite.execute([[`
-      INSERT INTO container_device_db (id, container_id, device_id, db_host, db_name, db_user, db_password, db_protocol) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, uuidv4(), containerId, deviceId, options.db_host, options.db_name, options.db_user, options.db_password, options.db_protocol]]);
+      await knex<ContainerDeviceDbTable>('container_device_db').insert(options);
     }
   }
 
   static async removeDeviceDbOptionsOfContainer(deviceId: string, containerId: string) {
-    return coreRqlite.execute([[`
-      DELETE FROM container_device_db WHERE device_id = ? AND container_id = ?
-    `, deviceId, containerId]]);
+    await knex<ContainerDeviceDbTable>('container_device_db').delete().where({
+      device_id: deviceId,
+      container_id: containerId,
+    });
   }
 
   static async getDeviceRepositoryOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceRepositoryTable> {
-    return (await coreRqlite.query([[`
-    SELECT * FROM container_device_repository WHERE device_id = ? AND container_id = ?
-  `, deviceId, containerId]])).toArray()[0];
+    return knex<ContainerDeviceRepositoryTable>('container_device_repository')
+      .select('container_device_repository.*')
+      .where({
+        container_id: containerId,
+        device_id: deviceId,
+      }).first();
   }
 
   static async setDeviceRepositoryOptionsOfContainer(deviceId: string, containerId: string, options: ContainerDeviceRepositoryTable) {
     if (await DeviceModel.getDeviceRepositoryOptionsOfContainer(deviceId, containerId)) {
-      await coreRqlite.execute([[`
-        UPDATE container_device_repository SET repository WHERE device_id = ? AND container_id = ?
-      `, options.repository, deviceId, containerId]]);
+      await knex<ContainerDeviceRepositoryTable>('container_device_repository').update(options).where({
+        device_id: deviceId,
+        container_id: containerId,
+      });
     } else {
-      await coreRqlite.execute([[`
-        INSERT INTO container_device_repository (id, container_id, device_id, repository) VALUES (?, ?, ?, ?)
-      `, uuidv4(), containerId, deviceId, options.repository]]);
+      await knex<ContainerDeviceRepositoryTable>('container_device_repository').insert(options);
     }
   }
 
   static async removeDeviceRepositoryOptionsOfContainer(deviceId: string, containerId: string) {
-    return coreRqlite.execute([[`
-      DELETE FROM container_device_repository WHERE device_id = ? AND container_id = ?
-    `, deviceId, containerId]]);
+    await knex<ContainerDeviceRepositoryTable>('container_device_repository').delete().where({
+      device_id: deviceId,
+      container_id: containerId,
+    });
   }
 
   static async getDeviceEnvsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceEnvOptionTable[]> {
-    return (await coreRqlite.query([[`
-    SELECT * FROM container_device_env_option WHERE device_id = ? AND container_id = ?
-  `, deviceId, containerId]])).toArray();
+    return knex<ContainerDeviceEnvOptionTable>('container_device_env_option')
+      .select('container_device_env_option.*')
+      .where({
+        container_id: containerId,
+        device_id: deviceId,
+      });
   }
 
 
   static async getDevicesOfContainer(containerId: string):Promise<(DeviceTable)[]> {
-    return (await coreRqlite.query([[`
-    SELECT d.*
-    FROM device d
-    LEFT JOIN container_device cd ON d.id = cd.device_id
-    LEFT JOIN driver dr ON d.driver_id = dr.id
-    LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
-    LEFT JOIN container c ON ai.id = c.app_instance_id
-    WHERE cd.container_id = ?
-  `, containerId]])).toArray();
+    return knex<DeviceTable>('device').select('device.*')
+      .leftJoin('container_device', 'device.id', 'container_device.device_id')
+      .leftJoin('driver', 'device.driver_id', 'driver.id')
+      .leftJoin('app_instance', 'driver.app_id', 'app_instance.app_id')
+      .leftJoin('container', 'app_instance.id', 'container.app_instance_id')
+      .where('container_device.container_id', containerId);
   }
 
   static async getDeviceFromContainer(containerId: string):Promise<DeviceTable> {
-    return (await coreRqlite.query([[`
-  SELECT d.* FROM device d
-  LEFT JOIN driver dr ON d.driver_id = dr.id
-  LEFT JOIN app_instance ai ON dr.app_id = ai.app_id
-  LEFT JOIN container c ON ai.id = c.app_instance_id
-  WHERE c.id = ?
-`, containerId]])).toArray()[0];
+    return knex<DeviceTable>('device').select('device.*')
+      .leftJoin('driver', 'device.driver_id', 'driver.id')
+      .leftJoin('app_instance', 'driver.app_id', 'app_instance.app_id')
+      .leftJoin('container', 'app_instance.id', 'container.app_instance_id')
+      .where('container.id', containerId)
+      .first();
   }
 
   static async addDeviceToContainer(input: { containerDeviceId: string, containerId: string, deviceId: string }) {
-    await coreRqlite.execute([[`
-        INSERT INTO container_device (id, container_id, device_id)
-        VALUES (?, ?, ?)
-      `, input.containerDeviceId, input.containerId, input.deviceId]]);
+    await knex<ContainerDeviceTable>('container_device').insert({
+      id: input.containerDeviceId,
+      container_id: input.containerId,
+      device_id: input.deviceId,
+    });
   }  
 
   static async removeDeviceFromContainer(input: { containerId: string, deviceId: string }) {
-    await coreRqlite.execute([['DELETE FROM container_device WHERE container_id = ? AND device_id = ?', 
-      input.containerId, input.deviceId]]);
+    await knex<ContainerDeviceTable>('container_device').delete().where({
+      container_id: input.containerId,
+      device_id: input.deviceId,
+    });
     const device = await DeviceModel.getDevice(input.deviceId);
     if (device.device_type_id === 'domain') {
       await DeviceModel.removeDeviceDomainOptionsOfContainer(input.deviceId, input.containerId);
@@ -260,47 +290,49 @@ class DeviceModel {
     if (device.device_type_id === 'certificate') {
       await DeviceModel.removeDeviceCertificateOptionsOfContainer(input.deviceId, input.containerId);
     }
-    await coreRqlite.execute([['DELETE FROM container_device_aux_option WHERE container_id = ? AND device_id = ?',
-      input.containerId, input.deviceId]]);
-    await coreRqlite.execute([['DELETE FROM container_device_env_option WHERE container_id = ? AND device_id = ?',
-      input.containerId, input.deviceId]]);
+    await knex<ContainerDeviceAuxOptionTable>('container_device_aux_option').delete().where({
+      container_id: input.containerId,
+      device_id: input.deviceId,
+    });
+    await knex<ContainerDeviceEnvOptionTable>('container_device_env_option').delete().where({
+      container_id: input.containerId,
+      device_id: input.deviceId,
+    });
   }
 
   static async removeOptionsOfDeviceFromContainer(input: { containerId: string, deviceId: string }) {
-    await coreRqlite.execute([['DELETE FROM container_device_option WHERE container_id = ? AND device_id = ?',
-      input.containerId, input.deviceId]]);
-    await coreRqlite.execute([['DELETE FROM container_device_env_option WHERE container_id = ? AND device_id = ?',
-      input.containerId, input.deviceId]]);
+    await knex<ContainerDeviceAuxOptionTable>('container_device_aux_option').delete().where({
+      container_id: input.containerId,
+      device_id: input.deviceId,
+    });
+    await knex<ContainerDeviceEnvOptionTable>('container_device_env_option').delete().where({
+      container_id: input.containerId,
+      device_id: input.deviceId,
+    });
   }
 
   static async removeDevicesFromContainer(containerId: string) {
-    await coreRqlite.execute([['DELETE FROM container_device WHERE container_id = ?', containerId]]);
+    await knex<ContainerDeviceTable>('container_device').delete().where('container_id', containerId);
   }
 
   static async removeEnvsFromContainer(containerId: string) {
-    await coreRqlite.execute([['DELETE FROM container_device_env_option WHERE container_id = ?', containerId]]);
+    await knex<ContainerDeviceEnvOptionTable>('container_device_env_option').delete().where('container_id', containerId);
   }
 
   static async removeOptionsFromContainer(containerId: string) {
-    await coreRqlite.execute([['DELETE FROM container_device_option WHERE container_id = ?', containerId]]);
+    await knex<ContainerDeviceAuxOptionTable>('container_device_aux_option').delete().where('container_id', containerId);
   }
 
   static async removeDevice(deviceId: string) {
-    await coreRqlite.execute([[`
-      DELETE FROM device WHERE id = ?
-    `, deviceId]]);
+    await knex<DeviceTable>('device').delete().where('id', deviceId);
   }
 
   static async removeDriver(driverId: string) {
-    coreRqlite.execute([[`
-      DELETE FROM driver WHERE id = ?
-    `, driverId]]);
+    await knex<DriverTable>('driver').delete().where('id', driverId);
   }
 
   static async updateDeviceType(deviceId: string, deviceTypeId: string) {
-    await coreRqlite.execute([[`
-      UPDATE device SET device_type_id = ? WHERE id = ?
-    `, deviceTypeId, deviceId]]);
+    await knex<DeviceTable>('device').update({ device_type_id: deviceTypeId }).where('id', deviceId);
   }
 }
 

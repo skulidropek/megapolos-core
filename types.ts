@@ -1,7 +1,8 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { PubSub } from 'graphql-subscriptions';
-import { UserTable } from './modules/models/tables';
+import { AppInstanceTable, ContainerTable, ContainerVolumeTable, DeviceTable, UserTable } from './modules/models/tables';
+import EventsObserver from './modules/events/eventsObserver';
 
 export interface AppInput {
   name: string,
@@ -31,19 +32,21 @@ export interface ContainerVolumeInput {
   is_dynamic: boolean,
 }
 
+export interface ContainerInput {
+  image_id: string,
+  fixed_outer_port: number,
+  devices: ContainerDeviceInput[]
+  envs: {
+    key: string,
+    value: string,
+  }[],
+  volumes: ContainerVolumeInput[],
+}
+
 export interface AppInstanceInput {
   app_id: string,
   name: string,
-  containers: {
-    image_id: string,
-    fixed_outer_port: number,
-    devices: ContainerDeviceInput[]
-    envs: {
-      key: string,
-      value: string,
-    }[],
-    volumes: ContainerVolumeInput[],
-  }[]
+  containers: ContainerInput[]
 }
 
 export interface UserInput {
@@ -81,5 +84,20 @@ export interface EnvironmentVariable {
   key: string;
   value: string;
 }
+
+export type AppInstanceResult = (AppInstanceTable & 
+{
+  containers?: (ContainerTable & {
+    volumes?: ContainerVolumeTable[]
+    envs?: { key: string, value: string }[]
+    devices?: {
+      device: DeviceTable
+      parameters: { key: string, value: string }[]
+      env_parameters: { key: string, value: string }[]
+    }[]
+    docker_status?: string
+  })[]
+}
+);
 
 export default {};

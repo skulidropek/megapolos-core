@@ -1,19 +1,16 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { v4 as uuidv4 } from 'uuid';
 import { ContainerDeviceInput, DeviceInput, resolver } from '../../types';
-import DeviceModel from '../models/device.model';
-import AppInstanceModel from '../models/appInstance.model';
 import BaseDevice, { Manifest } from '../devices/baseDevice';
-import AppAction from '../actions/app.action';
-import AppInstanceAction from '../actions/appInstance.action';
-import { sleep } from '../..';
 import { createModule, gql } from 'graphql-modules';
 import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceAuxOptionTable, DeviceOptionTable, DeviceTable, ContainerDeviceEnvOptionTable, ContainerTable, ContainerDeviceRepositoryTable } from '../models/tables';
 import EventsObserver from '../events/eventsObserver';
-import AppModel from '../models/app.model';
-import DeviceAction from '../actions/device.action';
 import DomainDevice from '../devices/domainDevice';
+import CertificateDevice from '../devices/certificateDevice';
+import DatabaseDevice from '../devices/databaseDevice';
+import RepositoryDevice from '../devices/repositoryDevice';
+import App from '../../classes/App';
+import BaseDeviceWithType from '../devices/BaseDeviceWithType';
 
 const deviceModule = createModule({
   id: 'device-module',
@@ -195,162 +192,123 @@ const deviceModule = createModule({
   resolvers: {
     Query: {
       getDevice: resolver<{ id: string }, (DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable })>(async (parent, args, context, info) => {
-        const device: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = await DeviceModel.getDevice(args.id);
-        device.options = await DeviceModel.getDeviceOptions(device.id);
-        device.driver_container = await DeviceModel.getDeviceDriverContainer(device.id);
-        return device;
+        const device = new BaseDevice(args.id);
+        const result: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = await device.getData();
+        result.options = await device.getOptions();
+        result.driver_container = await (await device.getDriverContainer()).getData();
+        return result;
       }),
       getDevices: resolver<void, (DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable })[]>(async (parent, args, context, info) => {
-        const results = await DeviceModel.getDevices() as (DeviceTable & { options: DeviceOptionTable[] })[];
-        for (const k in results) {
-          const device: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = results[k];
-          device.options = await DeviceModel.getDeviceOptions(device.id);
-          device.driver_container = await DeviceModel.getDeviceDriverContainer(device.id);
+        const results: (DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable })[] = [];
+        const devices = await BaseDevice.getDevices();
+        for (const k in devices) {
+          const device = new BaseDevice(devices[k].id);
+          const result: DeviceTable & { options?: DeviceOptionTable[], driver_container?: ContainerTable } = await device.getData();
+          result.options = await device.getOptions();
+          result.driver_container = await (await device.getDriverContainer()).getData();
+          results.push(result);
         }
         return results;
       }),
       getDeviceManifest: resolver<{ id: string }, Manifest>(async (parent, args, context, info) => {
         const deviceId = args.id;
         
-        const driverContainer = await DeviceModel.getDeviceDriverContainer(deviceId);
-        
-        const device = new BaseDevice(driverContainer.outer_port);
+        const device = new BaseDevice(deviceId);
         return device.getManifest();
       }),
       getDeviceOptions: resolver<{ device_id: string }, DeviceOptionTable[]>(async (parent, args, context, info) => {
-        const deviceId = args.device_id;
-        const options = await DeviceModel.getDeviceOptions(deviceId);
+        const options = new BaseDevice(args.device_id).getOptions();
         return options;
       }),
       getContainerDeviceAuxOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceAuxOptionTable[]>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceAuxOptionsOfContainer(args.device_id, args.container_id);
+        const options = new BaseDevice(args.device_id).getContainerAuxOptions(args.container_id);
         return options;
       }),
       getContainerDeviceDomain: resolver<{ container_id: string, device_id: string }, ContainerDeviceDomainTable>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceDomainOptionsOfContainer(args.device_id, args.container_id);
+        const options = await new DomainDevice(args.device_id).getDomainOptionsOfContainer(args.container_id);
         return options;
       }),
       getContainerDeviceCertificate: resolver<{ container_id: string, device_id: string }, ContainerDeviceCertificateTable>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceCertificateOptionsOfContainer(args.device_id, args.container_id);
+        const options = await new CertificateDevice(args.device_id).getCertificateOptionsOfContainer(args.container_id);
         return options;
       }),
       getContainerDeviceDb: resolver<{ container_id: string, device_id: string }, ContainerDeviceDbTable>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceDbOptionsOfContainer(args.device_id, args.container_id);
+        const options = await new DatabaseDevice(args.device_id).getDbOptionsOfContainer(args.container_id);
         return options;
       }),
       getContainerDeviceRepository: resolver<{ container_id: string, device_id: string }, ContainerDeviceRepositoryTable>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceRepositoryOptionsOfContainer(args.device_id, args.container_id);
+        const options = await new RepositoryDevice(args.device_id).getRepositoryOptionsOfContainer(args.container_id);
         return options;
       }),
       getContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceEnvOptionTable[]>(async (parent, args, context, info) => {
-        const options = await DeviceModel.getDeviceEnvsOfContainer(args.device_id, args.container_id);
+        const options = new BaseDevice(args.device_id).getContainerEnvOptions(args.container_id);
         return options;
       }),
     },
     Mutation: {
       addDevice: resolver<{ input: DeviceInput }, boolean>(async (parent, args, context, info) => {
-        const input = args.input;
-        const appId = await AppAction.installApp(context.user.id, {
-          name: input.name,
-          images: [{
-            name: input.name,
-            image: input.image,
-            inner_port: input.inner_port,
-          }],
-        });
-        const images = await AppModel.getImagesOfApp(appId);
-        const appInstanceId = await AppInstanceAction.createAppInstance({
-          app_id: appId,
-          name: input.name,
-          containers: [{
-            devices: [],
-            envs: [],
-            volumes: [],
-            fixed_outer_port: 0,
-            image_id: images[0].id,
-          }],
-        }, true);
-        await AppInstanceAction.startAppInstance(appInstanceId);
-
-        await DeviceAction.createDevice(appId);
+        await BaseDevice.createDevice(context.user.id, args.input);
         EventsObserver.listener({ type: 'addDevice', data: args });
         return true;
       }),
       removeDevice: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         const deviceId = args.id;
-        const device = await DeviceModel.getDevice(deviceId);
-        const driver = await DeviceModel.getDriver(device.driver_id);
-        const appInstance = await AppInstanceModel.getFirstAppInstanceOfApp(driver.app_id);
-        if (appInstance) {
-          await AppInstanceAction.removeAppInstance(appInstance.id, true);
-        }
-        await AppAction.uninstallApp(driver.app_id);
-        await DeviceModel.removeDevice(deviceId);
-        await DeviceModel.removeDriver(device.driver_id);
+        await new BaseDevice(deviceId).removeDevice();
         EventsObserver.listener({ type: 'removeDevice', data: args });
         return true;
       }),
       setDeviceOptions: resolver<{ id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceOptions(args.id, args.options);
+        await new BaseDevice(args.id).setOptions(args.options);
         return true;
       }),
       setDeviceVirtual: resolver<{ id: string, is_virtual: number, virtual_device_container_id: string }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceVirtual(args.id, args.is_virtual, args.is_virtual ? args.virtual_device_container_id : null);
+        await new BaseDevice(args.id).setVirtual(args.is_virtual, args.virtual_device_container_id);
         return true;
       }),
       addDeviceToContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
-        const container = await AppInstanceModel.getContainer(args.container_id);
-        const appInstance = await AppInstanceModel.getAppInstance(container.app_instance_id);
-        await AppInstanceAction.addDeviceToContainer(
-          args.container_id,
-          args.input.id,
-          appInstance.user_id,
-          args.input,
-        );
+        await (await BaseDeviceWithType.getDeviceWithType(args.input.id)).addToContainer(args.container_id, args.input);
         EventsObserver.listener({ type: 'addDeviceToContainer', data: args });
         return true;
       }),
       editDeviceOfContainer: resolver<{ container_id: string, input: ContainerDeviceInput }, boolean>(async (parent, args, context, info) => {
-        AppInstanceAction.updateDeviceToContainer(args.container_id, args.input.id, args.input);
+        await (await BaseDeviceWithType.getDeviceWithType(args.input.id)).setContainerOptions(args.container_id, args.input);
         EventsObserver.listener({ type: 'editDeviceOfContainer', data: args });
         return true;
       }),
       setContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceEnvOptionsOfContainer(args.device_id, args.container_id, args.options);
+        await new BaseDeviceWithType(args.device_id).setContainerEnvOptions(args.container_id, args.options); 
         return true;
       }),
       setContainerDeviceAuxOptions: resolver<{ container_id: string, device_id: string, options: { key: string, value: string }[] }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceAuxOptionsOfContainer(args.device_id, args.container_id, args.options);
+        await new BaseDevice(args.device_id).setContainerAuxOptions(args.container_id, args.options);
         return true;
       }),
       setContainerDeviceDomain: resolver<{ container_id: string, device_id: string, domain: ContainerDeviceDomainTable }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceDomainOptionsOfContainer(args.device_id, args.container_id, args.domain);
-        const container = await AppInstanceModel.getContainer(args.container_id);
-        const deviceDriverContainer = await DeviceModel.getDeviceDriverContainer(args.device_id);
-        const domainDevice = new DomainDevice(deviceDriverContainer.outer_port);
-        await domainDevice.add(args.container_id, container.outer_port);
+        const domainDevice = new DomainDevice(args.device_id);
+        await domainDevice.setDomainOptionsOfContainer(args.container_id, args.domain);
+        await domainDevice.add(args.container_id);
         return true;
       }),
       setContainerDeviceCertificate: resolver<{ container_id: string, device_id: string, certificate: ContainerDeviceCertificateTable }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceCertificateOptionsOfContainer(args.device_id, args.container_id, args.certificate);
+        await new CertificateDevice(args.device_id).setCertificateOptionsOfContainer(args.container_id, args.certificate);
         return true;
       }),
       setContainerDeviceDb: resolver<{ container_id: string, device_id: string, db: ContainerDeviceDbTable }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceDbOptionsOfContainer(args.device_id, args.container_id, args.db);
+        await new DatabaseDevice(args.device_id).setDbOptionsOfContainer(args.container_id, args.db);
         return true;
       }),
       setContainerDeviceRepository: resolver<{ container_id: string, device_id: string, repository: ContainerDeviceRepositoryTable }, boolean>(async (parent, args, context, info) => {
-        await DeviceModel.setDeviceRepositoryOptionsOfContainer(args.device_id, args.container_id, args.repository);
+        await new RepositoryDevice(args.device_id).setRepositoryOptionsOfContainer(args.container_id, args.repository);
         return true;
       }),
       removeDeviceFromContainer: resolver<{ container_id: string, device_id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.removeDeviceFromContainer(args.container_id, args.device_id);
+        await (await BaseDeviceWithType.getDeviceWithType(args.device_id)).removeFromContainer(args.container_id);
         EventsObserver.listener({ type: 'removeDeviceFromContainer', data: args });
         console.log(args);
         return true;
       }),
       createDeviceFromApp: resolver<{ app_id: string }, boolean>(async (parent, args, context, info) => {
-        await DeviceAction.createDevice(args.app_id);
+        await BaseDevice.createDeviceFromApp(new App(args.app_id));
         EventsObserver.listener({ type: 'createDeviceFromApp', data: args });
         return true;
       }),

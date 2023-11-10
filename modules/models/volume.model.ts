@@ -1,99 +1,77 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { v4 as uuidv4 } from 'uuid';
-import coreRqlite from '../../coreRqlite';
-import { ContainerVolumeTable, DeviceBackupTable, VolumeTable } from './tables';
+import { knex } from '../../coreRqlite';
+import { ContainerVolumeTable, DeviceBackupTable, DeviceTable, VolumeTable } from './tables';
 
 class VolumeModel {
   static async getVolumes(): Promise<VolumeTable[]> {
-    return (await coreRqlite.query([[`
-        SELECT * FROM volume
-    `]])).toArray();
+    return knex<VolumeTable>('volume').select('volume.*');
   }
 
   static async getVolume(id: string): Promise<VolumeTable> {
-    return (await coreRqlite.query([[`
-        SELECT * FROM volume WHERE id = ?
-    `, id]])).toArray()[0];
+    return knex<VolumeTable>('volume').select('volume.*').where('volume.id', id).first();
   }
 
   static async addVolume(input: Partial<VolumeTable>):Promise<string> {
-    await coreRqlite.execute([[`
-        INSERT INTO volume (id, name, type, outer_path) VALUES (?, ?, ?, ?)
-    `, input.id, input.name, input.type, input.outer_path]]);
+    await knex<VolumeTable>('volume').insert(input);
     return input.id;
   }
 
   static async deleteVolume(id: string): Promise<boolean> {
-    await coreRqlite.execute([[`
-        DELETE FROM volume WHERE id = ?
-    `, id]]);
+    await knex<VolumeTable>('volume').delete().where('id', id);
     return true;
   }
 
   static async getVolumesOfContainer(containerId: string): Promise<ContainerVolumeTable[]> {
-    return (await coreRqlite.query([[`
-        SELECT * FROM container_volume WHERE container_id = ?
-    `, containerId]])).toArray();
+    return knex<ContainerVolumeTable>('container_volume').select('container_volume.*').where('container_volume.container_id', containerId);
   }
 
   static async getVolumeOfContainer(containerId: string, volumeId: string): Promise<ContainerVolumeTable> {
-    return (await coreRqlite.query([[`
-        SELECT * FROM container_volume WHERE container_id = ? AND volume_id = ?
-    `, containerId, volumeId]])).toArray()[0];
+    return knex<ContainerVolumeTable>('container_volume').
+      select('container_volume.*').where({
+        container_id: containerId,
+        volume_id: volumeId,
+      }).first();
   }
 
   static async addVolumeToContainer(input: Partial<ContainerVolumeTable>): Promise<boolean> {
-    await coreRqlite.execute([[`
-        INSERT INTO container_volume (id, name, container_id, volume_id, inner_path, is_dynamic) VALUES (?, ?, ?, ?, ?, ?)
-    `, input.id, input.name, input.container_id, input.volume_id, input.inner_path, input.is_dynamic.toString()]]);
+    await knex<ContainerVolumeTable>('container_volume').insert(input);
     return true;
   }
 
   static async removeVolumeFromContainer(containerId: string, volumeId: string): Promise<boolean> {
-    await coreRqlite.execute([[`
-        DELETE FROM container_volume WHERE container_id = ? AND volume_id = ?
-    `, containerId, volumeId]]);
+    await knex<ContainerVolumeTable>('container_volume').delete().where({
+      container_id: containerId,
+      volume_id: volumeId,
+    });
     return true;
   }
 
   static async getDeviceBackups(deviceName: string): Promise<DeviceBackupTable[]> {
-    return (await coreRqlite.query([[`
-        SELECT * FROM device_backup WHERE device_name = ?
-    `, deviceName]])).toArray();
+    return knex<DeviceBackupTable>('device_backup').select('device_backup.*').where('device_backup.device_name', deviceName);
   }
 
   static async getDeviceBackup(id: string): Promise<DeviceBackupTable> {
-    return (await coreRqlite.query([[`
-        SELECT * FROM device_backup WHERE id = ?
-    `, id]])).toArray()[0];
+    return knex<DeviceBackupTable>('device_backup').select('device_backup.*').where('device_backup.id', id).first();
   }
 
   static async setDeviceBackupVolume(deviceId: string, volumeId: string): Promise<boolean> {
-    await coreRqlite.execute([[`
-        UPDATE device SET backup_volume_id = ? WHERE id = ?
-    `, volumeId, deviceId]]);
+    await knex<DeviceTable>('device').update({ backup_volume_id: volumeId }).where('id', deviceId);
     return true;
   }
 
   static async removeDeviceBackupVolume(deviceId: string): Promise<boolean> {
-    await coreRqlite.execute([[`
-        UPDATE device SET backup_volume_id = NULL WHERE id = ?
-    `, deviceId]]);
+    await knex<DeviceTable>('device').update({ backup_volume_id: null }).where('id', deviceId);
     return true;
   }
 
   static async addDeviceBackup(input: Partial<DeviceBackupTable>): Promise<string> {
-    await coreRqlite.execute([[`
-        INSERT INTO device_backup (id, name, device_id, container_id, image_id, device_name) VALUES (?, ?, ?, ?, ?, ?)
-    `, input.id, input.name, input.device_id, input.container_id, input.image_id, input.device_name]]);
+    await knex<DeviceBackupTable>('device_backup').insert(input);
     return input.id;
   }
 
   static async deleteDeviceBackup(id: string): Promise<boolean> {
-    await coreRqlite.execute([[`
-        DELETE FROM device_backup WHERE id = ?
-    `, id]]);
+    await knex<DeviceBackupTable>('device_backup').delete().where('id', id);
     return true;
   }
 }

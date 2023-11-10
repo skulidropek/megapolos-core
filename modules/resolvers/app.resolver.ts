@@ -1,17 +1,12 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import docker from '../../coreDocker';
-import { AppInput, AppInstanceInput, resolver } from '../../types';
-import AppModel from '../models/app.model';
-import AppInstanceModel from '../models/appInstance.model';
-import { AppInstanceTable, AppTable, ContainerTable, DeviceTable, ImageTable } from '../models/tables';
-import AppAction from '../actions/app.action';
-import AppInstanceAction from '../actions/appInstance.action';
-import DeviceModel from '../models/device.model';
+import { AppInput, AppInstanceInput, AppInstanceResult, resolver } from '../../types';
+import { AppTable, DeviceTable, ImageTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
-import VolumeModel from '../models/volume.model';
-import { v4 as uuidv4 } from 'uuid';
+import App from '../../classes/App';
+import Instance from '../../classes/Instance';
+import Container from '../../classes/Container';
 
 const appModule = createModule({
   id: 'app-module',
@@ -150,6 +145,7 @@ const appModule = createModule({
         getAppInstances: [AppInstance]
         getAppInstance(id: String): AppInstance
         getContainerDevices(id: String): [Device]
+        getContainerLog(id: String): String
       }
 
       type Mutation {
@@ -167,151 +163,66 @@ const appModule = createModule({
   resolvers: {
     Query: {
       getApps: resolver<void, (AppTable & { images?: ImageTable[] })[]>(async (parent, args, context, info) => {
-        const results:(AppTable & { images?: ImageTable[] })[] = await AppModel.getApps();
-        for (let i in results) {
-          const images = await AppModel.getImagesOfApp(results[i].id);
-          results[i].images = images;
+        const apps = await App.getApps();
+        const results:(AppTable & { images?: ImageTable[] })[] = [];
+        for (let i in apps) {
+          const app = apps[i];
+          const result:(AppTable & { images?: ImageTable[] }) = await app.getDataWithImages();
+          results.push(result);
         }
         return results;
       }),
       getApp: resolver<{ id: string }, (AppTable & { images?: ImageTable[] })>(async (parent, args, context, info) => {
-        const result:(AppTable & { images?: ImageTable[] }) = await AppModel.getApp(args.id);
-        const images = await AppModel.getImagesOfApp(result.id);
-        result.images = images;
-        return result;
+        const app = new App(args.id);
+        return app.getDataWithImages();
       }),
-      getAppInstances: resolver<void, (AppInstanceTable & { containers?: ContainerTable[] })[]>(async (parent, args, context, info) => {
-        const results:(AppInstanceTable & { containers?: ContainerTable[] })[] = await AppInstanceModel.getAppInstances();
-        for (let i in results) {
-          const containers: (ContainerTable & { devices?: any, volumes?: any, envs?: any, docker_status?: string })[] = await AppInstanceModel.getAppInstanceContainers(results[i].id);
-          results[i].containers = containers;
-          for (let j in containers) {
-            const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
-            containers[j].devices = [];
-            for (let k in devices) {
-              const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, containers[j].id);
-              const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, containers[j].id);
-              containers[j].devices.push({
-                device: devices[k],
-                parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
-                env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
-              });
-            }
-            const volumes = await VolumeModel.getVolumesOfContainer(containers[j].id);
-            containers[j].volumes = volumes;
-            const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
-            containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
-            if (containers[j].docker_runtime_id) {
-              try {
-                const dockerStatus = (await docker.getContainer(containers[j].docker_runtime_id).inspect()).State.Status;
-                containers[j].docker_status = dockerStatus;
-              } catch (e) {
-                containers[j].docker_status = 'not exist';
-              }
-            }
-          }
-        }
+      getAppInstances: resolver<void, AppInstanceResult[]>(async (parent, args, context, info) => {
+        const results:AppInstanceResult[] = await Promise.all((await Instance.getInstances()).map((instance) => instance.getDataWithContainers()));
         return results;
       }),
-      getAppInstance: resolver<{ id: string }, (AppInstanceTable & { containers?: ContainerTable[] })>(async (parent, args, context, info) => {
-        const appInstance:(AppInstanceTable & { containers?: ContainerTable[] }) = await AppInstanceModel.getAppInstance(args.id);
-        const containers: (ContainerTable & { devices?: any, volumes?: any, envs?: any, docker_status?: string })[] = await AppInstanceModel.getAppInstanceContainers(args.id);
-        appInstance.containers = containers;
-        for (let j in containers) {
-          const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
-          containers[j].devices = [];
-          for (let k in devices) {
-            const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, containers[j].id);
-            const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, containers[j].id);
-            containers[j].devices.push({
-              device: devices[k],
-              parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
-              env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
-            });
-          }
-          const volumes = await VolumeModel.getVolumesOfContainer(containers[j].id);
-          containers[j].volumes = volumes;
-          const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
-          containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
-          if (containers[j].docker_runtime_id) {
-            try {
-              const dockerStatus = (await docker.getContainer(containers[j].docker_runtime_id).inspect()).State.Status;
-              containers[j].docker_status = dockerStatus;
-            } catch (e) {
-              containers[j].docker_status = 'not exist';
-            }
-          }
-        }
-        return appInstance;
+      getAppInstance: resolver<{ id: string }, AppInstanceResult>(async (parent, args, context, info) => {
+        return new Instance(args.id).getDataWithContainers();
       }),
       getContainerDevices: resolver<{ id: string }, DeviceTable[]>(async (parent, args, context, info) => {
-        return DeviceModel.getDevicesOfContainer(args.id);
+        return Promise.all((await new Container(args.id).getDevices()).map((device) => device.getData()));
+      }),
+      getContainerLog: resolver<{ id: string }, string>(async (parent, args, context, info) => {
+        return new Container(args.id).getDockerLog();
       }),
     },
     Mutation: {
       installApp: resolver<{ input: AppInput }, boolean>(async (parent, args, context, info) => {
-        await AppAction.installApp(context.user.id, args.input);
+        await App.installApp(context.user.id, args.input);
         EventsObserver.listener({ type: 'installApp', data: args });
         return true;
       }),
       uninstallApp: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await AppAction.uninstallApp(args.id);
+        await new App(args.id).uninstall();
         EventsObserver.listener({ type: 'uninstallApp', data: args });
         return true;
       }),
       createAppInstance: resolver<{ input: AppInstanceInput }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.createAppInstance(args.input);
+        await Instance.createInstance(args.input);
         EventsObserver.listener({ type: 'createAppInstance', data: args });
         return true;
       }),
       startAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.startAppInstance(args.id);
+        await new Instance(args.id).start();
         EventsObserver.listener({ type: 'startAppInstance', data: args });
         return true;
       }),
       stopAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.stopAppInstance(args.id);
+        await new Instance(args.id).stop();
         EventsObserver.listener({ type: 'stopAppInstance', data: args });
         return true;
       }),
       removeAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await AppInstanceAction.removeAppInstance(args.id);
+        await new Instance(args.id).remove();
         EventsObserver.listener({ type: 'removeAppInstance', data: args });
         return true;
       }),
       updateContainer: resolver<{ id: string, noRebuild: boolean }, boolean>(async (parent, args, context, info) => {
-        const containerId = args.id;
-        const container = await AppInstanceModel.getContainer(containerId);
-        const appInstance = await AppInstanceModel.getAppInstance(container.app_instance_id);
-        const image = await AppModel.getImage(container.image_id);
-        const dockerRuntimeId = container.docker_runtime_id;
-        if (dockerRuntimeId) {
-          try {
-            await docker.getContainer(dockerRuntimeId).stop();
-          } catch (e) {
-            console.error(e);
-          }
-          try {
-            await docker.getContainer(dockerRuntimeId).remove();
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        await AppInstanceAction.createContainer({
-          appId: appInstance.app_id,
-          appInstanceId: appInstance.id,
-          containerId: container.id,
-          imageId: container.image_id,
-          imageName: image.image,
-          imageRepository: image.image,
-          innerPort: image.inner_port,
-          outerPort: container.outer_port,
-          userId: appInstance.user_id,
-          noRebuild: args.noRebuild,
-        });
-        // await dockerContainer.start();
-  
-        // await AppInstanceModel.updateContainerDockerRuntimeId(containerId, dockerContainer.id);
+        await new Container(args.id).update(args.noRebuild);
         EventsObserver.listener({ type: 'updateContainer', data: args });
         return true;
       }),
@@ -320,18 +231,7 @@ const appModule = createModule({
         value: string,
       }[] }, boolean>(async (parent, args, context, info) => {
         console.log(args);
-        await AppInstanceModel.removeContainerEnvOptions(args.id);
-        for (let i in args.envs) {
-          const env = args.envs[i];
-          const envId = uuidv4();
-          console.log(env);
-          await AppInstanceModel.addContainerEnvOption({
-            id: envId,
-            container_id: args.id,
-            container_env_name: env.key,
-            container_env_value: env.value,
-          });
-        }
+        await new Container(args.id).changeEnvs(args.envs);
         EventsObserver.listener({ type: 'changeContainerEnvs', data: args });
         return true;
       }),

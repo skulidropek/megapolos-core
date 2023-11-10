@@ -1,7 +1,6 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import pubsub from '../../pubsub';
 import { resolver } from '../../types';
 import EventsObserver from '../events/eventsObserver';
 import { JSONResolver } from 'graphql-scalars';
@@ -54,7 +53,7 @@ const eventModule = createModule({
     Subscription: {
       event: {
         subscribe() {
-          return pubsub.asyncIterator(['EVENT']);
+          return EventsObserver.getIterator();
         },
       },
     },
