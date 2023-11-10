@@ -2,6 +2,7 @@
 
 import { PubSub } from 'graphql-subscriptions';
 import { AppInstanceTable, ContainerTable, ContainerVolumeTable, DeviceTable, UserTable } from './modules/models/tables';
+import EventsObserver from './modules/events/eventsObserver';
 
 export interface AppInput {
   name: string,

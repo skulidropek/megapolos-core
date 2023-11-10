@@ -93,7 +93,7 @@ class MegapolosNode {
   async dockerEvents() {
     docker.getEvents({}, function (err, data) {
       if (err) {
-        console.error(err.message);
+        console.error('Docker error', err.message);
       } else {
         data.on('data', function (chunk) {
           EventsObserver.listener<DockerEvent>({

@@ -15,6 +15,7 @@ import deviceModule from './modules/resolvers/device.resolver';
 import eventModule from './modules/resolvers/event.resolver';
 import volumeModule from './modules/resolvers/volume.resolver';
 import User from './classes/User';
+import EventsObserver from './modules/events/eventsObserver';
 
 const graphqlServer = async () => {
   try {
@@ -80,6 +81,7 @@ const graphqlServer = async () => {
 
   } catch (e) {
     console.error(e);
+    EventsObserver.listener({ type: 'error', data: e });
     throw e;
   }
 };

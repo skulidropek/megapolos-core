@@ -94,6 +94,7 @@ class Volume {
         await exec(`umount ${volumePath}`);
       } catch (e) {
         console.error(e);
+        EventsObserver.listener({ type: 'volumeError', data: { containerId: this.id, error: e } });
       }
       await fs.rmdir(volumePath);
     }

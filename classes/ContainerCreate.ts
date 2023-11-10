@@ -210,12 +210,12 @@ class ContainerCreate {
       HostIp: '127.0.0.1',
       HostPort: containerData.outer_port.toString(),
     }];
-    if (!isWsl) {
-      portBindings.push({
-        HostIp: '172.17.0.1',
-        HostPort: containerData.outer_port.toString(),
-      });
-    }
+    // if (!isWsl) {
+    portBindings.push({
+      HostIp: '172.17.0.1',
+      HostPort: containerData.outer_port.toString(),
+    });
+    // }
 
     EventsObserver.listener({ 'type': 'createContainerAfterBuild', id: this.container.id });
     const dockerContainer = await (docker.createContainer({

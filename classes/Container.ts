@@ -47,6 +47,7 @@ class Container {
       await (await this.getDockerContainer()).start();
     } catch (e) {
       console.error(e);
+      EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
     }
         
     await this.updateLifeStatus('running');
@@ -57,6 +58,7 @@ class Container {
       await (await this.getDockerContainer()).stop();
     } catch (e) {
       console.error(e);
+      EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
     }
       
     await this.updateLifeStatus('stopped');
@@ -74,6 +76,7 @@ class Container {
         await (await this.getDockerContainer()).remove();
       } catch (e) {
         console.error(e);
+        EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
       }
     }
     const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
@@ -102,6 +105,7 @@ class Container {
           await this.start();
         } catch (e) {
           console.error(e);
+          EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
         }
       }
       if (container.life_status === 'stopped' && containerInfo.State.Running) {
@@ -109,10 +113,12 @@ class Container {
           await this.stop();
         } catch (e) {
           console.error(e);
+          EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
         }
       }
     } catch (e) {
       console.error(e);
+      EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
     }
   }
 
@@ -213,6 +219,12 @@ class Container {
     }));
   }
 
+  async getDockerLog(): Promise<string> {
+    const container = await this.getDockerContainer();
+    const log = await container.logs({ stdout: true, stderr: true });
+    return log.toString();
+  }
+
   async update(noRebuild: boolean):Promise<void> {
     const data = await this.getData();
     if (data.docker_runtime_id) {
@@ -220,11 +232,13 @@ class Container {
         await this.stop();
       } catch (e) {
         console.error(e);
+        EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
       }
       try {
         await (await this.getDockerContainer()).remove();
       } catch (e) {
         console.error(e);
+        EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
       }
     }
     const containerCreate = new ContainerCreate();

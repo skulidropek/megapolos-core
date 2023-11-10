@@ -7,6 +7,7 @@ import { promisify } from 'util';
 const exec =   promisify(require('child_process').exec);
 
 import config from '../config/config.json';
+import EventsObserver from '../modules/events/eventsObserver';
 
 class User {
   id: string;
@@ -74,6 +75,7 @@ class User {
         await exec(`userdel -r ${this.id.replace(/-/g, '')}`);
       } catch (e) {
         console.error(e);
+        EventsObserver.listener({ type: 'error', data: e });
       }
     }
   }

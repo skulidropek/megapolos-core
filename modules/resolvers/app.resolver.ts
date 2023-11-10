@@ -145,6 +145,7 @@ const appModule = createModule({
         getAppInstances: [AppInstance]
         getAppInstance(id: String): AppInstance
         getContainerDevices(id: String): [Device]
+        getContainerLog(id: String): String
       }
 
       type Mutation {
@@ -184,6 +185,9 @@ const appModule = createModule({
       }),
       getContainerDevices: resolver<{ id: string }, DeviceTable[]>(async (parent, args, context, info) => {
         return Promise.all((await new Container(args.id).getDevices()).map((device) => device.getData()));
+      }),
+      getContainerLog: resolver<{ id: string }, string>(async (parent, args, context, info) => {
+        return new Container(args.id).getDockerLog();
       }),
     },
     Mutation: {
