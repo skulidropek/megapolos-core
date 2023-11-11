@@ -59,7 +59,7 @@ class App {
   }
 
   async getInstances(): Promise<Instance[]> {
-    return (await AppInstanceModel.getAppInstances()).map((instance) => new Instance(instance.id));
+    return (await AppInstanceModel.getInstancesOfApp(this.id)).map((instance) => new Instance(instance.id));
   }
 
   async getImages(): Promise<Image[]> {

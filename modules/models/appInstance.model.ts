@@ -12,6 +12,10 @@ class AppInstanceModel {
     return knex<AppInstanceTable>('app_instance').select('app_instance.*').where('app_instance.id', appInstanceId).first();
   }
 
+  static async getInstancesOfApp(appId: string):Promise<AppInstanceTable[]> {
+    return knex<AppInstanceTable>('app_instance').select('app_instance.*').where('app_instance.app_id', appId);
+  }
+  
   static async getFirstAppInstanceOfApp(appId: string):Promise<AppInstanceTable> {
     return knex<AppInstanceTable>('app_instance').select('app_instance.*').where('app_instance.app_id', appId).first();
   }
