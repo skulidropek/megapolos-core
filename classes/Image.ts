@@ -27,6 +27,10 @@ class Image {
     return AppModel.getImage(this.id);
   }
 
+  async edit(name: string, image: string, inner_port: number): Promise<void> {
+    await AppModel.editImage(this.id, { name, image, inner_port });
+  }
+
   remove() {
     return AppModel.removeImage(this.id);
   }    

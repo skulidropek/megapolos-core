@@ -63,33 +63,7 @@ class Instance {
 
   async getDataWithContainers(): Promise<AppInstanceResult> {
     const appInstance:AppInstanceResult = await AppInstanceModel.getAppInstance(this.id);
-    appInstance.containers = await AppInstanceModel.getAppInstanceContainers(this.id);
-    const containers = appInstance.containers;
-    for (let j in containers) {
-      const devices = await DeviceModel.getDevicesOfContainer(containers[j].id);
-      containers[j].devices = [];
-      for (let k in devices) {
-        const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, containers[j].id);
-        const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, containers[j].id);
-        containers[j].devices.push({
-          device: devices[k],
-          parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
-          env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
-        });
-      }
-      const volumes = await VolumeModel.getVolumesOfContainer(containers[j].id);
-      containers[j].volumes = volumes;
-      const envs = await AppInstanceModel.getContainerEnvOptions(containers[j].id);
-      containers[j].envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
-      if (containers[j].docker_runtime_id) {
-        try {
-          const dockerStatus = (await docker.getContainer(containers[j].docker_runtime_id).inspect()).State.Status;
-          containers[j].docker_status = dockerStatus;
-        } catch (e) {
-          containers[j].docker_status = 'not exist';
-        }
-      }
-    }
+    appInstance.containers = await Promise.all((await this.getContainers()).map((container) => container.getDataWithDetails()));
     return appInstance;
   }
 
@@ -115,6 +89,12 @@ class Instance {
     await AppInstanceModel.updateAppInstanceLifeStatus(this.id, 'stopped');
 
     EventsObserver.listener({ 'type': 'stopAppInstance', data:{ id: this.id } });
+  }
+
+  async edit(name: string) {
+    await AppInstanceModel.editInstance(this.id, { name });
+
+    EventsObserver.listener({ 'type': 'editAppInstance', data:{ id: this.id } });
   }
 
   async remove() {

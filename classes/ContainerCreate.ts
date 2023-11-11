@@ -75,7 +75,7 @@ class ContainerCreate {
     let outerPort = await MegapolosNode.currentNode.getPort();
     if (this.input) {
       if (this.input.fixed_outer_port) {
-        MegapolosNode.currentNode.checkPort(this.input.fixed_outer_port);
+        await MegapolosNode.currentNode.checkPort(this.input.fixed_outer_port);
         outerPort = this.input.fixed_outer_port;
       }
     }

@@ -41,6 +41,14 @@ class AppModel {
     await knex.table<ImageTable>('image').delete().where('id', imageId);
   }
 
+  static async editApp(appId: string, input: { name: string }) {
+    await knex.table<AppTable>('app').update(input).where('id', appId);
+  }
+
+  static async editImage(imageId: string, input: { name: string, image: string, inner_port: number }) {
+    await knex.table<ImageTable>('image').update(input).where('id', imageId);
+  }
+
 }
 
 export default AppModel;

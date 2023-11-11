@@ -75,6 +75,10 @@ class App {
     return Image.createImage(this.id, image);
   }
 
+  async edit( name: string): Promise<void> {
+    await AppModel.editApp(this.id, { name });
+  }
+
   async uninstall() {
     await this.removeInstances();
     const images = await this.getImages();

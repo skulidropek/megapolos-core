@@ -85,21 +85,6 @@ class Volume {
     return VolumeModel.getVolumeOfContainer(container.id, this.id);
   }
 
-  async removeFromContainer(container: Container): Promise<void> {
-    const volumeContainer = await VolumeModel.getVolumeOfContainer(container.id, this.id);
-    if (volumeContainer.is_dynamic) {
-      const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id + '/' + volumeContainer.id;
-      MegapolosNode.currentNode.validatePath(volumePath);
-      try {
-        await exec(`umount ${volumePath}`);
-      } catch (e) {
-        console.error(e);
-        EventsObserver.listener({ type: 'volumeError', data: { containerId: this.id, error: e } });
-      }
-      await fs.rmdir(volumePath);
-    }
-    await VolumeModel.removeVolumeFromContainer(container.id, this.id);
-  }
 }
 
 export default Volume;

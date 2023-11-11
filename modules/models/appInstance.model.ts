@@ -78,6 +78,14 @@ class AppInstanceModel {
     await knex<AppInstanceTable>('app_instance').delete().where('id', appInstanceId);
   }
 
+  static async editInstance(instanceId: string, input: { name: string }) {
+    await knex.table<AppInstanceTable>('app_instance').update(input).where('id', instanceId);
+  }
+
+  static async editContainer(containerId: string, input: { name: string, outer_port: number }) {
+    await knex.table<ContainerTable>('container').update(input).where('id', containerId);
+  }
+
 }
 
 export default AppInstanceModel;

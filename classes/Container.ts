@@ -11,10 +11,13 @@ import DeviceModel from '../modules/models/device.model';
 import Image from './Image';
 import Instance from './Instance';
 import ContainerCreate from './ContainerCreate';
-import { ContainerInput } from '../types';
+import { ContainerInput, ContainerResult } from '../types';
 import Volume from './Volume';
 import VolumeModel from '../modules/models/volume.model';
 import BaseDeviceWithType from '../modules/devices/BaseDeviceWithType';
+import { promisify } from 'util';
+
+const exec = promisify(require('child_process').exec);
 
 export enum ContainerLifeStatus {
   Stopped = 'stopped',
@@ -64,6 +67,18 @@ class Container {
     await this.updateLifeStatus('stopped');
   }
 
+  async edit(name: string, outer_port: number): Promise<void> {
+    const data = await this.getData();
+    if (outer_port) {
+      if (data.outer_port !== outer_port) {
+        await MegapolosNode.currentNode.checkPort(outer_port);
+      }
+    } else {
+      outer_port = await MegapolosNode.currentNode.getPort();
+    }
+    await AppInstanceModel.editContainer(this.id, { name, outer_port });
+  }
+
   async remove():Promise<void> {
     const data = await this.getData();
     if (data.docker_runtime_id) {
@@ -83,6 +98,12 @@ class Container {
     if (fsSync.existsSync(megapolosVolume)) {
       MegapolosNode.currentNode.validatePath(megapolosVolume);
       await fs.rmdir(megapolosVolume, { recursive: true });
+    }
+    
+    const volumes = await VolumeModel.getVolumesOfContainer(this.id);
+    for (let i in volumes) {
+      const volume = volumes[i];
+      await this.removeVolume(volume.id);
     }
   
     const devices = await this.getDevices();
@@ -124,6 +145,55 @@ class Container {
 
   getData(): Promise<ContainerTable> {
     return AppInstanceModel.getContainer(this.id);
+  }
+
+  async removeVolume(containerVolumeId: String): Promise<void> {
+    const volumes = await VolumeModel.getVolumesOfContainer(this.id);
+    const volumeContainer = volumes.find((_volume) => _volume.id === containerVolumeId);
+    if (!volumeContainer) {
+      throw new Error('Volume not found');
+    }
+    if (volumeContainer.is_dynamic) {
+      const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id + '/' + volumeContainer.id;
+      MegapolosNode.currentNode.validatePath(volumePath);
+      try {
+        await exec(`umount ${volumePath}`);
+      } catch (e) {
+        console.error(e);
+        EventsObserver.listener({ type: 'volumeError', data: { containerId: this.id, error: e } });
+      }
+      await fs.rmdir(volumePath);
+    }
+    await VolumeModel.removeVolumeFromContainer(containerVolumeId);
+  }
+
+  async getDataWithDetails(): Promise<ContainerResult> {
+    const container: ContainerResult = await this.getData();
+    const devices = await DeviceModel.getDevicesOfContainer(container.id);
+    container.devices = [];
+    for (let k in devices) {
+      const auxOptions = await DeviceModel.getDeviceAuxOptionsOfContainer(devices[k].id, container.id);
+      const envs = await DeviceModel.getDeviceEnvsOfContainer(devices[k].id, container.id);
+      container.devices.push({
+        device: devices[k],
+        parameters: auxOptions.map((option) => ({ key: option.device_option_name, value: option.container_option_value })),
+        env_parameters: envs.map((env) => ({ key: env.device_option_name, value: env.container_env_name })),
+      });
+    }
+    const volumes = await VolumeModel.getVolumesOfContainer(container.id);
+    container.volumes = volumes;
+    const envs = await AppInstanceModel.getContainerEnvOptions(container.id);
+    container.envs = envs.map((env) => ({ key: env.container_env_name, value: env.container_env_value }));
+    if (container.docker_runtime_id) {
+      try {
+        const dockerStatus = (await docker.getContainer(container.docker_runtime_id).inspect()).State.Status;
+        container.docker_status = dockerStatus;
+      } catch (e) {
+        container.docker_status = 'not exist';
+      }
+    }
+
+    return container;
   }
 
   async getDevices():Promise<BaseDevice[]> {
@@ -211,7 +281,7 @@ class Container {
     return data ? new BaseDevice(data.id) : undefined;
   }
 
-  async getVolumes(): Promise<{containerVolume: ContainerVolumeTable, volume: Volume}[]> {
+  async getVolumes(): Promise<{ containerVolume: ContainerVolumeTable, volume: Volume }[]> {
     const containerVolumes = await VolumeModel.getVolumesOfContainer(this.id);
     return containerVolumes.map((containerVolume) => ({
       containerVolume,

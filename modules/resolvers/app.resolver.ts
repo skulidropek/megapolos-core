@@ -1,12 +1,13 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { AppInput, AppInstanceInput, AppInstanceResult, resolver } from '../../types';
+import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
 import { AppTable, DeviceTable, ImageTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
 import Instance from '../../classes/Instance';
 import Container from '../../classes/Container';
+import Image from '../../classes/Image';
 
 const appModule = createModule({
   id: 'app-module',
@@ -144,6 +145,7 @@ const appModule = createModule({
         getApp(id: String): App
         getAppInstances: [AppInstance]
         getAppInstance(id: String): AppInstance
+        getContainer(id: String): Container
         getContainerDevices(id: String): [Device]
         getContainerLog(id: String): String
       }
@@ -154,9 +156,14 @@ const appModule = createModule({
         createAppInstance(input: AppInstanceInput!): Boolean
         startAppInstance(id: String!): Boolean
         stopAppInstance(id: String!): Boolean
+        restartAppInstance(id: String!): Boolean
         removeAppInstance(id: String!): Boolean
         updateContainer(id: String! noRebuild: Boolean): Boolean
         changeContainerEnvs(id: String!, envs: [ContainerParameterInput]): Boolean
+        editApp(id: String! name: String!): Boolean
+        editImage(id: String! name: String! image: String! inner_port: Int!): Boolean
+        editAppInstance(id: String! name: String!): Boolean
+        editContainer(id: String! name: String! outer_port: Int): Boolean
       }
     `,
   ],
@@ -182,6 +189,9 @@ const appModule = createModule({
       }),
       getAppInstance: resolver<{ id: string }, AppInstanceResult>(async (parent, args, context, info) => {
         return new Instance(args.id).getDataWithContainers();
+      }),
+      getContainer: resolver<{ id: string }, ContainerResult>(async (parent, args, context, info) => {
+        return new Container(args.id).getDataWithDetails();
       }),
       getContainerDevices: resolver<{ id: string }, DeviceTable[]>(async (parent, args, context, info) => {
         return Promise.all((await new Container(args.id).getDevices()).map((device) => device.getData()));
@@ -216,6 +226,12 @@ const appModule = createModule({
         EventsObserver.listener({ type: 'stopAppInstance', data: args });
         return true;
       }),
+      restartAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        await new Instance(args.id).stop();
+        await new Instance(args.id).start();
+        EventsObserver.listener({ type: 'startAppInstance', data: args });
+        return true;
+      }),
       removeAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         await new Instance(args.id).remove();
         EventsObserver.listener({ type: 'removeAppInstance', data: args });
@@ -233,6 +249,26 @@ const appModule = createModule({
         console.log(args);
         await new Container(args.id).changeEnvs(args.envs);
         EventsObserver.listener({ type: 'changeContainerEnvs', data: args });
+        return true;
+      }),
+      editApp: resolver<{ id: string, name: string }, boolean>(async (parent, args, context, info) => {
+        await new App(args.id).edit(args.name);
+        EventsObserver.listener({ type: 'editApp', data: args });
+        return true;
+      }),
+      editImage: resolver<{ id: string, name: string, image: string, inner_port: number }, boolean>(async (parent, args, context, info) => {
+        await new Image(args.id).edit(args.name, args.image, args.inner_port);
+        EventsObserver.listener({ type: 'editImage', data: args });
+        return true;
+      }),
+      editAppInstance: resolver<{ id: string, name: string }, boolean>(async (parent, args, context, info) => {
+        await new Instance(args.id).edit(args.name);
+        EventsObserver.listener({ type: 'editAppInstance', data: args });
+        return true;
+      }),
+      editContainer: resolver<{ id: string, name: string, outer_port: number }, boolean>(async (parent, args, context, info) => {
+        await new Container(args.id).edit(args.name, args.outer_port);
+        EventsObserver.listener({ type: 'editContainer', data: args });
         return true;
       }),
     },

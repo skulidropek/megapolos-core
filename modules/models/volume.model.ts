@@ -39,10 +39,9 @@ class VolumeModel {
     return true;
   }
 
-  static async removeVolumeFromContainer(containerId: string, volumeId: string): Promise<boolean> {
+  static async removeVolumeFromContainer(containerVolumeId): Promise<boolean> {
     await knex<ContainerVolumeTable>('container_volume').delete().where({
-      container_id: containerId,
-      volume_id: volumeId,
+      id: containerVolumeId,
     });
     return true;
   }

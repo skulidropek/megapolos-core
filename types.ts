@@ -85,18 +85,20 @@ export interface EnvironmentVariable {
   value: string;
 }
 
+export type ContainerResult = (ContainerTable & {
+  volumes?: ContainerVolumeTable[]
+  envs?: { key: string, value: string }[]
+  devices?: {
+    device: DeviceTable
+    parameters: { key: string, value: string }[]
+    env_parameters: { key: string, value: string }[]
+  }[]
+  docker_status?: string
+});
+
 export type AppInstanceResult = (AppInstanceTable & 
 {
-  containers?: (ContainerTable & {
-    volumes?: ContainerVolumeTable[]
-    envs?: { key: string, value: string }[]
-    devices?: {
-      device: DeviceTable
-      parameters: { key: string, value: string }[]
-      env_parameters: { key: string, value: string }[]
-    }[]
-    docker_status?: string
-  })[]
+  containers?: ContainerResult[]
 }
 );
 

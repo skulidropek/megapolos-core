@@ -56,7 +56,7 @@ const volumeModule = createModule({
         addVolume(input: VolumeInput): Boolean
         deleteVolume(id: String): Boolean
         addVolumeToContainer(container_id: String, input: ContainerVolumeInput): ContainerVolume
-        removeVolumeFromContainer(container_id: String, volume_id: String): Boolean
+        removeVolumeFromContainer(id: String container_id: String): Boolean
         uploadFileToVolume(volume_id: String, file: Upload!): Boolean
         setDeviceBackupVolume(device_id: String, volume_id: String): Boolean
         removeDeviceBackupVolume(device_id: String): Boolean
@@ -97,8 +97,8 @@ const volumeModule = createModule({
         EventsObserver.listener({ type: 'addVolumeToContainer', data: args });
         return containerVolume;
       }),
-      removeVolumeFromContainer: resolver<{ container_id: string, volume_id: string }, boolean>(async (parent, args, context, info) => {
-        await new Volume(args.volume_id).removeFromContainer(new Container(args.container_id));
+      removeVolumeFromContainer: resolver<{ id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
+        await new Container(args.container_id).removeVolume(args.id);
         EventsObserver.listener({ type: 'removeVolumeFromContainer', data: args });
         return true;
       }),
