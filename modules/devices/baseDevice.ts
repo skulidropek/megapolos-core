@@ -266,7 +266,7 @@ class BaseDevice {
       }
     `, { containerId })).getContainerOptionsEnv;
     } catch (e) {
-      console.error(e);
+      console.trace(e);
       EventsObserver.listener({ type: 'error', data: e });
       return [];
     }

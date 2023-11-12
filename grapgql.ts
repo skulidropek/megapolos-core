@@ -80,7 +80,7 @@ const graphqlServer = async () => {
     });
 
   } catch (e) {
-    console.error(e);
+    console.trace(e);
     EventsObserver.listener({ type: 'error', data: e });
     throw e;
   }

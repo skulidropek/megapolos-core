@@ -36,6 +36,6 @@ import rqlite from '../coreRqlite';
         await sleep(4000);
         await rqlite.execute(db);
     } catch (e) {
-        console.error(e);
+        console.trace(e);
     }
 })();

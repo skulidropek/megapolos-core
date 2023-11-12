@@ -274,7 +274,7 @@ class AppInstanceAction {
       try {
         await certificateDevice.add(containerId);
       } catch (e) {
-        console.error(e);
+        console.trace(e);
       }
     }
 
@@ -325,7 +325,7 @@ class AppInstanceAction {
       try {
         await certificateDevice.remove(containerId);
       } catch (e) {
-        console.error(e);
+        console.trace(e);
       }
     }
     if (device.device_type_id === 'domain') {
@@ -460,7 +460,7 @@ class AppInstanceAction {
       try {
         await exec(`umount ${volumePath}`);
       } catch (e) {
-        console.error(e);
+        console.trace(e);
       }
       await fs.rmdir(volumePath);
     }
@@ -475,7 +475,7 @@ class AppInstanceAction {
       try {
         await docker.getContainer(container.docker_runtime_id).start();
       } catch (e) {
-        console.error(e);
+        console.trace(e);
       }
         
       await AppInstanceModel.updateContainerLifeStatus(container.id, 'running');
@@ -493,7 +493,7 @@ class AppInstanceAction {
       try {
         await docker.getContainer(container.docker_runtime_id).stop();
       } catch (e) {
-        console.error(e);
+        console.trace(e);
       }
         
       await AppInstanceModel.updateContainerLifeStatus(container.id, 'stopped');
@@ -512,12 +512,12 @@ class AppInstanceAction {
         try {
           await docker.getContainer(container.docker_runtime_id).stop();
         } catch (e) {
-          console.error(e);
+          console.trace(e);
         }
         try {
           await docker.getContainer(container.docker_runtime_id).remove();
         } catch (e) {
-          console.error(e);
+          console.trace(e);
         }
       }
       const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id;
@@ -539,7 +539,7 @@ class AppInstanceAction {
       try {
         await exec(`userdel -r ${instance.user_id.replace(/-/g, '')}`);
       } catch (e) {
-        console.error(e);
+        console.trace(e);
       }
     }
 

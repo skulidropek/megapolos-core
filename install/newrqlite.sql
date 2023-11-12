@@ -196,6 +196,15 @@ container_device (
 );
 
 CREATE TABLE IF NOT EXISTS
+image_device (
+    id text not null primary key,
+    image_id text not null,     
+    device_id text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (image_id) REFERENCES image(id)
+);
+
+CREATE TABLE IF NOT EXISTS
 container_device_domain (
     id text not null primary key,
     container_id text not null,
@@ -253,6 +262,17 @@ container_device_env_option (
 );
 
 CREATE TABLE IF NOT EXISTS
+image_device_env_option (
+    id text not null primary key,
+    image_id text not null,
+    device_id text not null,
+    image_env_name text not null,
+    device_option_name text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (image_id) REFERENCES image(id)
+);
+
+CREATE TABLE IF NOT EXISTS
 container_device_aux_option (
     id text not null primary key,
     container_id text not null,
@@ -261,6 +281,17 @@ container_device_aux_option (
     container_option_value text not null,
     FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+image_device_aux_option (
+    id text not null primary key,
+    image_id text not null,
+    device_id text not null,
+    device_option_name text not null,
+    image_option_value text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (image_id) REFERENCES image(id)
 );
 
 CREATE TABLE IF NOT EXISTS

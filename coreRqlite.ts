@@ -41,7 +41,7 @@ void (async () => {
   try {
     const dataResults = await api.query([['SELECT * FROM user']]);
   } catch (e) {
-    console.error(e);
+    console.trace(e);
   }
 })();
 

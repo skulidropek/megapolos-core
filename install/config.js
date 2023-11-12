@@ -15,7 +15,7 @@ try {
 
   if (dataResults.hasError()) {
     const error = dataResults.getFirstError()
-    console.error(error, 'rqlite create tables results contained an error.')
+    console.trace(error, 'rqlite create tables results contained an error.')
     return
   }
 
@@ -23,7 +23,7 @@ try {
   console.log(body, 'HTTP reponse body.')
   console.log(statusCode, 'HTTP response code.')
 } catch (e) {
-  console.error(e, 'The HTTP client got an HTTP error, there must be something else going on.')
+  console.trace(e, 'The HTTP client got an HTTP error, there must be something else going on.')
 }
 
 // старт сервера

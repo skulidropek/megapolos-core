@@ -74,7 +74,7 @@ class User {
       try {
         await exec(`userdel -r ${this.id.replace(/-/g, '')}`);
       } catch (e) {
-        console.error(e);
+        console.trace(e);
         EventsObserver.listener({ type: 'error', data: e });
       }
     }

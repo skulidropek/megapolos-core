@@ -7,7 +7,7 @@ import MegapolosNode from './classes/Node';
 import User from './classes/User';
 
 if (process.getuid() != 0) {
-  console.error('You must run this app as root');
+  console.trace('You must run this app as root');
   // process.exit(1);
 }
 

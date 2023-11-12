@@ -49,7 +49,7 @@ class Container {
     try {
       await (await this.getDockerContainer()).start();
     } catch (e) {
-      console.error(e);
+      console.trace(e);
       EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
     }
         
@@ -60,7 +60,7 @@ class Container {
     try {
       await (await this.getDockerContainer()).stop();
     } catch (e) {
-      console.error(e);
+      console.trace(e);
       EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
     }
       
@@ -85,12 +85,12 @@ class Container {
       try {
         await this.stop();
       } catch (e) {
-        console.error(e);
+        console.trace(e);
       }
       try {
         await (await this.getDockerContainer()).remove();
       } catch (e) {
-        console.error(e);
+        console.trace(e);
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
       }
     }
@@ -99,7 +99,7 @@ class Container {
       MegapolosNode.currentNode.validatePath(megapolosVolume);
       await fs.rmdir(megapolosVolume, { recursive: true });
     }
-    
+
     const volumes = await VolumeModel.getVolumesOfContainer(this.id);
     for (let i in volumes) {
       const volume = volumes[i];
@@ -125,7 +125,7 @@ class Container {
         try {
           await this.start();
         } catch (e) {
-          console.error(e);
+          console.trace(e);
           EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
         }
       }
@@ -133,12 +133,12 @@ class Container {
         try {
           await this.stop();
         } catch (e) {
-          console.error(e);
+          console.trace(e);
           EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
         }
       }
     } catch (e) {
-      console.error(e);
+      console.trace(e);
       EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
     }
   }
@@ -159,7 +159,7 @@ class Container {
       try {
         await exec(`umount ${volumePath}`);
       } catch (e) {
-        console.error(e);
+        console.trace(e);
         EventsObserver.listener({ type: 'volumeError', data: { containerId: this.id, error: e } });
       }
       await fs.rmdir(volumePath);
@@ -301,13 +301,13 @@ class Container {
       try {
         await this.stop();
       } catch (e) {
-        console.error(e);
+        console.trace(e);
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
       }
       try {
         await (await this.getDockerContainer()).remove();
       } catch (e) {
-        console.error(e);
+        console.trace(e);
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
       }
     }
