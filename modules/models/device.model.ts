@@ -110,6 +110,7 @@ class DeviceModel {
   static async getDeviceDomainOptionsOfContainer(deviceId: string, containerId: string):Promise<ContainerDeviceDomainTable> {
     const result = await knex
       .select<ContainerDeviceDomainTable>('container_device_domain.*')
+      .from('container_device_domain')
       .where({
         container_id: containerId,
         device_id: deviceId,
@@ -333,6 +334,12 @@ class DeviceModel {
 
   static async updateDeviceType(deviceId: string, deviceTypeId: string) {
     await knex<DeviceTable>('device').update({ device_type_id: deviceTypeId }).where('id', deviceId);
+  }
+
+  static async getContainersOfDevice(deviceId: string):Promise<(ContainerTable)[]> {
+    return knex<ContainerTable>('container').select('container.*')
+      .leftJoin('container_device', 'container.id', 'container_device.container_id')
+      .where('container_device.device_id', deviceId);
   }
 }
 

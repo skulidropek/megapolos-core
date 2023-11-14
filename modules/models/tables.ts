@@ -226,3 +226,40 @@ export interface DeviceBackupTable {
   update_date: string,
   remove_date: string,
 }
+
+export interface ImageDeviceTable {
+  id: string,
+  image_id: string,
+  device_id: string,
+}
+
+export interface ImageDeviceEnvOptionTable {
+  id: string,
+  image_id: string,
+  device_id: string,
+  image_env_name: string,
+  device_option_name: string,
+}
+
+export interface ImageDeviceAuxOptionTable {
+  id: string,
+  image_id: string,
+  device_id: string,
+  device_option_name: string,
+  image_option_value: string,
+}
+
+export interface ImageVolumeTable {
+  id: string,
+  name: string,
+  image_id: string,
+  inner_path: string,
+  is_dynamic: number,
+}
+
+export interface ImageEnvOptionTable {
+  id: string,
+  image_id: string,
+  image_env_name: string,
+  image_env_value: string,
+}

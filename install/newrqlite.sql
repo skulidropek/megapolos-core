@@ -216,6 +216,14 @@ container_device_domain (
 );
 
 CREATE TABLE IF NOT EXISTS
+domain (
+    id text not null primary key,
+    device_id text not null,
+    domain text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+);
+
+CREATE TABLE IF NOT EXISTS
 container_device_certificate (
     id text not null primary key,
     container_id text not null,
@@ -224,6 +232,15 @@ container_device_certificate (
     public_key_path text not null,
     FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+certificate (
+    id text not null primary key,
+    device_id text not null,
+    private_key_path text not null,
+    public_key_path text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
 );
 
 CREATE TABLE IF NOT EXISTS
@@ -241,6 +258,18 @@ container_device_db (
 );
 
 CREATE TABLE IF NOT EXISTS
+db (
+    id text not null primary key,
+    device_id text not null,
+    db_host text not null,
+    db_name text not null,
+    db_user text not null,
+    db_password text not null,
+    db_protocol text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+);
+
+CREATE TABLE IF NOT EXISTS
 container_device_repository (
     id text not null primary key,
     container_id text not null,
@@ -248,6 +277,24 @@ container_device_repository (
     repository text not null,
     FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+repository (
+    id text not null primary key,
+    device_id text not null,
+    repository text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+);
+
+CREATE TABLE IF NOT EXISTS
+docker_image (
+    id text not null primary key,
+    device_id text not null,
+    image text not null,
+    tag text not null,
+    docker_id text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
 );
 
 CREATE TABLE IF NOT EXISTS
@@ -319,12 +366,31 @@ container_volume (
 );
 
 CREATE TABLE IF NOT EXISTS
+image_volume (
+    id text not null primary key,
+    name text not null,
+    image_id text not null,
+    inner_path text not null,
+    is_dynamic int null,
+    FOREIGN KEY (image_id) REFERENCES image(id)
+);
+
+CREATE TABLE IF NOT EXISTS
 container_env_option (
     id text not null primary key,
     container_id text not null,
     container_env_name text not null,
     container_env_value text not null,
     FOREIGN KEY (container_id) REFERENCES container(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+image_env_option (
+    id text not null primary key,
+    image_id text not null,
+    image_env_name text not null,
+    image_env_value text not null,
+    FOREIGN KEY (image_id) REFERENCES image(id)
 );
 
 CREATE TABLE IF NOT EXISTS

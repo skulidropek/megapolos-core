@@ -169,6 +169,7 @@ const deviceModule = createModule({
         getContainerDeviceCertificate(container_id: String, device_id: String): ContainerDeviceCertificate
         getContainerDeviceDb(container_id: String, device_id: String): ContainerDeviceDb
         getContainerDeviceRepository(container_id: String, device_id: String): ContainerDeviceRepository
+        getContainersOfDevice(device_id: String): [Container]
       }
 
       type Mutation {
@@ -243,6 +244,10 @@ const deviceModule = createModule({
       getContainerDeviceEnvOptions: resolver<{ container_id: string, device_id: string }, ContainerDeviceEnvOptionTable[]>(async (parent, args, context, info) => {
         const options = new BaseDevice(args.device_id).getContainerEnvOptions(args.container_id);
         return options;
+      }),
+      getContainersOfDevice: resolver<{ device_id: string }, ContainerTable[]>(async (parent, args, context, info) => {
+        const containers = await Promise.all((await new BaseDevice(args.device_id).getContainers()).map((container) => container.getData()));
+        return containers;
       }),
     },
     Mutation: {

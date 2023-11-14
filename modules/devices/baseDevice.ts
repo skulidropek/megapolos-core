@@ -141,7 +141,7 @@ class BaseDevice {
   }
 
   setContainerEnvOptions(containerId:string, options:{ key: string, value:string }[]):Promise<void> {
-    return DeviceModel.setDeviceAuxOptionsOfContainer(this.id, containerId, options);
+    return DeviceModel.setDeviceEnvOptionsOfContainer(this.id, containerId, options);
   }
 
   async addToContainer(containerId: string, input: ContainerDeviceInput): Promise<void> {
@@ -270,6 +270,10 @@ class BaseDevice {
       EventsObserver.listener({ type: 'error', data: e });
       return [];
     }
+  }
+
+  getContainers():Promise<Container[]> {
+    return DeviceModel.getContainersOfDevice(this.id).then((containers) => containers.map((container) => new Container(container.id)));
   }
 
   async removeDevice():Promise<void> {
