@@ -196,11 +196,49 @@ container_device (
 );
 
 CREATE TABLE IF NOT EXISTS
+container_resource (
+    id text not null primary key,
+    container_id text not null,     
+    resource_id text not null,
+    FOREIGN KEY (resource_id) REFERENCES resource(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
+);
+
+CREATE TABLE IF NOT EXISTS
 image_device (
     id text not null primary key,
     image_id text not null,     
     device_id text not null,
     FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (image_id) REFERENCES image(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+image_resource_requirement (
+    id text not null primary key,
+    image_id text not null,
+    resource_type text not null,
+    resource_kind text not null,
+    FOREIGN KEY (image_id) REFERENCES image(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+image_volume_requirement (
+    id text not null primary key,
+    image_id text not null,
+    name text not null,
+    inner_path text not null,
+    FOREIGN KEY (image_id) REFERENCES image(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS
+image_env_requirement (
+    id text not null primary key,
+    image_id text not null,
+    name text not null,
+    env_name text not null,
+    env_default_value text not null,
     FOREIGN KEY (image_id) REFERENCES image(id)
 );
 
@@ -216,11 +254,20 @@ container_device_domain (
 );
 
 CREATE TABLE IF NOT EXISTS
-domain (
+resource (
     id text not null primary key,
     device_id text not null,
+    resource_type text not null,
+    resource_kind text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+resource_domain (
+    id text not null primary key,
     domain text not null,
-    FOREIGN KEY (device_id) REFERENCES device(id),
+    is_ssl int not null default 0,
+    FOREIGN KEY (id) REFERENCES resource(id)
 );
 
 CREATE TABLE IF NOT EXISTS
@@ -235,12 +282,11 @@ container_device_certificate (
 );
 
 CREATE TABLE IF NOT EXISTS
-certificate (
+resource_certificate (
     id text not null primary key,
-    device_id text not null,
     private_key_path text not null,
     public_key_path text not null,
-    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (id) REFERENCES resource(id)
 );
 
 CREATE TABLE IF NOT EXISTS
@@ -258,15 +304,14 @@ container_device_db (
 );
 
 CREATE TABLE IF NOT EXISTS
-db (
+resource_db (
     id text not null primary key,
-    device_id text not null,
     db_host text not null,
     db_name text not null,
     db_user text not null,
     db_password text not null,
     db_protocol text not null,
-    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (id) REFERENCES resource(id)
 );
 
 CREATE TABLE IF NOT EXISTS
@@ -280,21 +325,19 @@ container_device_repository (
 );
 
 CREATE TABLE IF NOT EXISTS
-repository (
+resource_repository (
     id text not null primary key,
-    device_id text not null,
     repository text not null,
-    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (id) REFERENCES resource(id)
 );
 
 CREATE TABLE IF NOT EXISTS
-docker_image (
+resource_docker_image (
     id text not null primary key,
-    device_id text not null,
     image text not null,
     tag text not null,
     docker_id text not null,
-    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (id) REFERENCES resource(id)
 );
 
 CREATE TABLE IF NOT EXISTS
@@ -305,6 +348,17 @@ container_device_env_option (
     container_env_name text not null,
     device_option_name text not null,
     FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (container_id) REFERENCES container(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+container_resource_env_option (
+    id text not null primary key,
+    container_id text not null,
+    resource_id text not null,
+    container_env_name text not null,
+    resource_option_name text not null,
+    FOREIGN KEY (resource_id) REFERENCES resource(id),
     FOREIGN KEY (container_id) REFERENCES container(id)
 );
 
@@ -339,6 +393,17 @@ image_device_aux_option (
     image_option_value text not null,
     FOREIGN KEY (device_id) REFERENCES device(id),
     FOREIGN KEY (image_id) REFERENCES image(id)
+);
+
+CREATE TABLE IF NOT EXISTS
+resource_device_aux_option (
+    id text not null primary key,
+    resource_id text not null,
+    device_id text not null,
+    device_option_name text not null,
+    resource_option_value text not null,
+    FOREIGN KEY (device_id) REFERENCES device(id),
+    FOREIGN KEY (resource_id) REFERENCES resource(id)
 );
 
 CREATE TABLE IF NOT EXISTS

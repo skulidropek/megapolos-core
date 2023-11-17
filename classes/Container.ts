@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import fsSync from 'fs';import docker from '../coreDocker';
 import AppInstanceModel from '../modules/models/appInstance.model';
-import { ContainerDeviceEnvOptionTable, ContainerEnvOptionTable, ContainerTable, ContainerVolumeTable } from '../modules/models/tables';
+import { ContainerDeviceEnvOptionTable, ContainerEnvOptionTable, ContainerResourceEnvOptionTable, ContainerTable, ContainerVolumeTable } from '../modules/models/tables';
 import EventsObserver from '../modules/events/eventsObserver';
 import ContainerProcess from './ContainerProcess';
 import MegapolosNode from './Node';
@@ -16,6 +16,9 @@ import Volume from './Volume';
 import VolumeModel from '../modules/models/volume.model';
 import BaseDeviceWithType from '../modules/devices/BaseDeviceWithType';
 import { promisify } from 'util';
+import ResourceModel from '../modules/models/resource.model';
+import BaseResource from '../modules/resources/BaseResource';
+import BaseResourceWithType from '../modules/devices/ResourceDeviceWithType';
 
 const exec = promisify(require('child_process').exec);
 
@@ -207,8 +210,20 @@ class Container {
       return BaseDeviceWithType.getDeviceWithType(device.id);
     }
     return undefined;
+  } 
+  
+  async getResources():Promise<BaseResource[]> {
+    return (await ResourceModel.getResourcesOfContainer(this.id)).map((resource) => new BaseResource(resource.id));
   }
-      
+
+  async getResourceOfType(type: string): Promise<BaseResource> {
+    const containerResources = await ResourceModel.getResourcesOfContainer(this.id);
+    const resource = containerResources.find((_resource) => _resource.resource_type === type);
+    if (resource) {
+      return BaseResourceWithType.getResourceWithType(resource.id);
+    }
+    return undefined;
+  } 
 
   async changeEnvs(input: {
     key: string,
@@ -274,6 +289,10 @@ class Container {
 
   async getDevicesEnvs():Promise<ContainerDeviceEnvOptionTable[]> {
     return DeviceModel.getEnvOfContainer(this.id);
+  }
+
+  async getResourcesEnvs():Promise<ContainerResourceEnvOptionTable[]> {
+    return ResourceModel.getEnvOfContainer(this.id);
   }
 
   async getDeviceOfDriver(): Promise<BaseDevice> {

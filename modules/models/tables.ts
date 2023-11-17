@@ -263,3 +263,87 @@ export interface ImageEnvOptionTable {
   image_env_name: string,
   image_env_value: string,
 }
+
+export interface ContainerResourceTable {
+  id: string,
+  container_id: string,
+  resource_id: string,
+}
+
+export interface ImageResourceRequirementTable {
+  id: string,
+  image_id: string,
+  resource_type: string,
+  resource_kind: string,
+}
+
+export interface ImageVolumeRequirementTable {
+  id: string,
+  image_id: string,
+  name: string,
+  inner_path: string,
+}
+
+export interface ImageEnvRequirementTable {
+  id: string,
+  image_id: string,
+  name: string,
+  env_name: string,
+  env_default_value: string,
+}
+
+export interface ResourceTable {
+  id: string,
+  device_id: string,
+  resource_type: string,
+  resource_kind: string,
+}
+
+export interface ResourceDomainTable {
+  id: string,
+  domain: string,
+  is_ssl: number,
+}
+
+export interface ResourceCertificateTable {
+  id: string,
+  private_key_path: string,
+  public_key_path: string,
+}
+
+export interface ResourceDbTable {
+  id: string,
+  db_host: string,
+  db_name: string,
+  db_user: string,
+  db_password: string,
+  db_protocol: string,
+}
+
+export interface ResourceRepositoryTable {
+  id: string,
+  repository: string,
+}
+
+export interface ResourceDockerImageTable {
+  id: string,
+  image: string,
+  tag: string,
+  docker_id: string,
+}
+
+export interface ContainerResourceEnvOptionTable {
+  id: string,
+  container_id: string,
+  resource_id: string,
+  container_env_name: string,
+  resource_option_name: string,
+}
+
+export interface ResourceDeviceAuxOptionTable {
+  id: string,
+  resource_id: string,
+  device_id: string,
+  device_option_name: string,
+  resource_option_value: string,
+}
