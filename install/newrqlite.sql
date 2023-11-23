@@ -257,6 +257,7 @@ CREATE TABLE IF NOT EXISTS
 resource (
     id text not null primary key,
     device_id text not null,
+    name text not null,
     resource_type text not null,
     resource_kind text not null,
     FOREIGN KEY (device_id) REFERENCES device(id)
@@ -284,6 +285,7 @@ container_device_certificate (
 CREATE TABLE IF NOT EXISTS
 resource_certificate (
     id text not null primary key,
+    domain text not null,
     private_key_path text not null,
     public_key_path text not null,
     FOREIGN KEY (id) REFERENCES resource(id)

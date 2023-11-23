@@ -4,6 +4,11 @@ import { ResourceDbTable } from '../models/tables';
 import BaseResource from './BaseResource';
 
 class DbResource extends BaseResource {
+  static async getDatabases():Promise<DbResource[]> {
+    const data = await ResourceModel.getDbs();
+    return data.map((item) => new DbResource(item.id));
+  }
+
   async getDbData():Promise<ResourceDbTable> {
     return ResourceModel.getDbResource(this.id);
   }

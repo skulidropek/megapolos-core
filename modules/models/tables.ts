@@ -295,6 +295,7 @@ export interface ImageEnvRequirementTable {
 export interface ResourceTable {
   id: string,
   device_id: string,
+  name: string,
   resource_type: string,
   resource_kind: string,
 }
@@ -307,6 +308,7 @@ export interface ResourceDomainTable {
 
 export interface ResourceCertificateTable {
   id: string,
+  domain: string,
   private_key_path: string,
   public_key_path: string,
 }

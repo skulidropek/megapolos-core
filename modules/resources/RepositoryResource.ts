@@ -6,6 +6,9 @@ class RepositoryResource extends BaseResource {
     const data = await this.getData();
     return new RepositoryDevice(data.device_id);
   }
+
+  async remove():Promise<void> {
+  }
 }
 
 export default RepositoryResource;

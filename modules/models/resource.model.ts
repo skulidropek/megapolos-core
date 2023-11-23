@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { knex } from '../../coreRqlite';
 import { ContainerResourceEnvOptionTable, ContainerResourceTable, ContainerTable, ResourceCertificateTable, ResourceDbTable, ResourceDockerImageTable, ResourceDomainTable, ResourceRepositoryTable, ResourceTable } from './tables';
+import Entity from './Entity';
 
 class ResourceModel {
   static async getResource(id:string):Promise<ResourceTable> {
@@ -90,6 +91,26 @@ class ResourceModel {
       .leftJoin('container_resource', 'resource.id', 'container_resource.resource_id')
       .leftJoin('container', 'container.id', 'container_resource.container_id')
       .where('container_resource.container_id', containerId);
+  }
+
+  static async getCertificates():Promise<ResourceCertificateTable[]> {
+    return new Entity<ResourceCertificateTable>('resource_certificate').findAll();
+  }
+
+  static async getDbs():Promise<ResourceDbTable[]> {
+    return new Entity<ResourceDbTable>('resource_db').findAll();
+  }
+
+  static async getDomains():Promise<ResourceDomainTable[]> {
+    return new Entity<ResourceDomainTable>('resource_domain').findAll();
+  }
+
+  static async getRepositories():Promise<ResourceRepositoryTable[]> {
+    return new Entity<ResourceRepositoryTable>('resource_repository').findAll();
+  }
+
+  static async getDockerImages():Promise<ResourceDockerImageTable[]> {
+    return new Entity<ResourceDockerImageTable>('resource_docker_image').findAll();
   }
           
 }
