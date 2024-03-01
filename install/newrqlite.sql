@@ -343,6 +343,14 @@ resource_docker_image (
 );
 
 CREATE TABLE IF NOT EXISTS
+resource_docker_image_env_option (
+    resource_docker_image_id text not null primary key,
+    option_name text not null,
+    option_value text not null,
+    FOREIGN KEY (resource_docker_image_id) REFERENCES resource_docker_image(id)
+);
+
+CREATE TABLE IF NOT EXISTS
 container_device_env_option (
     id text not null primary key,
     container_id text not null,

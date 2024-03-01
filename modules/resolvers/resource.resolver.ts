@@ -2,11 +2,13 @@
 
 import { resolver } from '../../types';
 import { createModule, gql } from 'graphql-modules';
-import { ResourceCertificateTable, ResourceDbTable, ResourceDomainTable, ResourceTable } from '../models/tables';
+import { ResourceCertificateTable, ResourceDbTable, ResourceDockerImageTable, ResourceDomainTable, ResourceRepositoryTable, ResourceTable } from '../models/tables';
 import Container from '../../classes/Container';
 import CertificateResource from '../resources/CertificateResource';
 import DbResource from '../resources/DbResource';
 import DomainResource from '../resources/DomainResource';
+import RepositoryResource from '../resources/RepositoryResource';
+import DockerImageResource from '../resources/DockerImageResource';
 
 const resourceModule = createModule({
   id: 'resource-module',
@@ -88,7 +90,7 @@ const resourceModule = createModule({
           };
         }));
       }),
-      getDatabases: resolver<{ id: string }, (ResourceDbTable & { resource: ResourceTable })[]>(async (parent, args, context, info) => {
+      getDatabases: resolver<void, (ResourceDbTable & { resource: ResourceTable })[]>(async (parent, args, context, info) => {
         return Promise.all((await DbResource.getDatabases()).map(async resource => {
           const dbData = await resource.getDbData();
           dbData.db_password = '';
@@ -98,10 +100,26 @@ const resourceModule = createModule({
           };
         }));
       }),
-      getDomains: resolver<{ id: string }, (ResourceDomainTable & { resource: ResourceTable })[]>(async (parent, args, context, info) => {
+      getDomains: resolver<void, (ResourceDomainTable & { resource: ResourceTable })[]>(async (parent, args, context, info) => {
         return Promise.all((await DomainResource.getDomains()).map(async resource => {
           return {
             ...await resource.getDomainData(),
+            resource: await resource.getData(),
+          };
+        }));
+      }),
+      getRepositories: resolver<void, (ResourceRepositoryTable & { resource: ResourceTable })[]>(async (parent, args, context, info) => {
+        return Promise.all((await RepositoryResource.getRepositories()).map(async resource => {
+          return {
+            ...await resource.getRepositoryData(),
+            resource: await resource.getData(),
+          };
+        }));
+      }),
+      getDockerImages: resolver<void, (ResourceDockerImageTable & { resource: ResourceTable })[]>(async (parent, args, context, info) => {
+        return Promise.all((await DockerImageResource.getDockerImages()).map(async resource => {
+          return {
+            ...await resource.getDockerImageData(),
             resource: await resource.getData(),
           };
         }));
