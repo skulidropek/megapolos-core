@@ -53,12 +53,12 @@ class ContainerCreate {
     this.user = await this.instance.getUser();
     this.userData = await this.user.getData();
 
-    await this.pullImage();
+    // await this.pullImage();
     await this.createContainer();
-    await this.addDevices();
+    // await this.addDevices();
     await this.addVolumes();
     await this.addEnvs();
-    await this.build(this.container, false);
+    // await this.build(this.container, false);
     return this.container;
   }
   
@@ -151,7 +151,7 @@ class ContainerCreate {
         MegapolosNode.currentNode.validatePath(repository.path);
         if (fsSync.existsSync(repository.path)
         ) {
-          fs.rmdir(repository.path, { recursive: true });
+          // fs.rmdir(repository.path, { recursive: true });
         }
       } else {
         await builderDevice.buildContainer(this.container.id, this.imageData.image, allEnvs);
@@ -195,7 +195,7 @@ class ContainerCreate {
     MegapolosNode.currentNode.validatePath(megapolosVolume);
 
     if (!fsSync.existsSync(megapolosVolume)) {
-      await fs.mkdir(megapolosVolume);
+      // await fs.mkdir(megapolosVolume);
     }
 
     const containerVolumes = await Promise.all((await this.container.getVolumes()).map(async (_containerVolume) => ({

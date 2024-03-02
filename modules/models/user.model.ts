@@ -1,7 +1,8 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { knex } from '../../coreRqlite';
-import { UserTable } from './tables';
+import Entity from './Entity';
+import { GroupUserTable, UserTable } from './tables';
 
 class UserModel {
   static async getUsers():Promise<(UserTable & { user: string })[]> {
@@ -17,6 +18,18 @@ class UserModel {
 
   static async getUserById(userId: string):Promise<UserTable> {
     return knex<UserTable>('user').select('user.*').where('user.id', userId).first();
+  }
+
+  static async createUserGroup(input: Partial<GroupUserTable>):Promise<GroupUserTable> {
+    return new Entity<GroupUserTable>('group_user').create(input);
+  }
+
+  static async getUserGroupById(groupId: string):Promise<GroupUserTable> {
+    return new Entity<GroupUserTable>('group_user').findOne({ id: groupId });
+  }
+
+  static async getUserGroupByName(name: string):Promise<GroupUserTable> {
+    return new Entity<GroupUserTable>('group_user').findOne({ name });
   }
 
   static async createUser(input: { id: string, name: string, groupUserId: string, osUserId?: string }) {

@@ -39,7 +39,9 @@
     "knex": "^3.0.1",
     "knex-rqlite": "^2.0.3",
     "node-fetch": "^3.3.0",
+    "pg": "^8.11.3",
     "rqlite-js": "2.5.5",
+    "simple-git": "^3.22.0",
     "subscriptions-transport-ws": "^0.11.0",
     "uuid": "^9.0.0",
     "ws": "^8.11.0"

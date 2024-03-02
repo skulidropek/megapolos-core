@@ -18,8 +18,8 @@ exec('mount --make-shared /');
 (async () => {
   MegapolosNode.createCurrentNode();
 
-  await MegapolosNode.currentNode.dockerEvents();
-  await MegapolosNode.currentNode.restoreContainers();
+  // await MegapolosNode.currentNode.dockerEvents();
+  // await MegapolosNode.currentNode.restoreContainers();
 
   await User.createRootUser();
 

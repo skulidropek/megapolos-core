@@ -85,6 +85,14 @@ export interface UserTable {
   disable_date: string;
   os_user_id: string;
 }
+export interface GroupUserTable {
+  id: string;
+  name: string;
+  rest_api: string;
+  create_date: string;
+  update_date: string;
+  disable_date: string;
+}
 export interface AppTable {
   id: string;
   name: string;
@@ -348,4 +356,14 @@ export interface ResourceDeviceAuxOptionTable {
   device_id: string,
   device_option_name: string,
   resource_option_value: string,
+}
+
+export interface RepositoryTable {
+  id: string,
+  url: string,
+  user: string,
+  password: string,
+  create_date: string,
+  update_date: string,
+  remove_date: string,
 }

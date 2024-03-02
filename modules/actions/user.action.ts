@@ -15,8 +15,9 @@ class UserAction {
   static async createRoot() {
     let admins = await UserModel.getUsersByRole('root');
     if (!admins.length) {
+      const rootGroup = await UserModel.createUserGroup({ name: 'root' });
       await UserModel.createUser({
-        groupUserId: 'root',
+        groupUserId: rootGroup.id,
         name: 'root',
         id: uuidv4(),
       });

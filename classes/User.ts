@@ -20,18 +20,18 @@ class User {
     const id = uuidv4();
     let linuxUserId = '';
     if (isDevice) {
-      await exec(`useradd -m -s /bin/bash ${id.replace(/-/g, '')}`);
-      linuxUserId = (await exec('cat /etc/passwd')).stdout.
-        split('\n').
-        filter((user) => user.startsWith(id.replace(/-/g, ''))).
-        join('\n').
-        split(':')[2];
+      // await exec(`useradd -m -s /bin/bash ${id.replace(/-/g, '')}`);
+      // linuxUserId = (await exec('cat /etc/passwd')).stdout.
+      //   split('\n').
+      //   filter((user) => user.startsWith(id.replace(/-/g, ''))).
+      //   join('\n').
+      //   split(':')[2];
     }
   
     await UserModel.createUser({
       id,
       name: input.name,
-      groupUserId: isDevice ? 'device' : 'app',
+      groupUserId: input.groupUserId,
       osUserId: linuxUserId,
     });
     return new User(id);
@@ -40,10 +40,15 @@ class User {
   static async createRootUser():Promise<User> {
     let admins = await UserModel.getUsersByRole('root');
     if (!admins.length) {
-      await User.createUser({ name: 'root', groupUserId: 'root' });
+      let rootGroup = await UserModel.getUserGroupByName('root');
+      if (!rootGroup) {
+        await UserModel.createUserGroup({ name: 'root' });
+      }
+      rootGroup = await UserModel.getUserGroupByName('root');
+      console.log(rootGroup);
+      await User.createUser({ name: 'root', groupUserId: rootGroup.id });
       admins = await UserModel.getUsersByRole('root');
     }
-    console.log(new User(admins[0].id).createToken());
     return new User(admins[0].id);
   }
 
@@ -72,7 +77,7 @@ class User {
   
     if (data.os_user_id) {
       try {
-        await exec(`userdel -r ${this.id.replace(/-/g, '')}`);
+        // await exec(`userdel -r ${this.id.replace(/-/g, '')}`);
       } catch (e) {
         console.trace(e);
         EventsObserver.listener({ type: 'error', data: e });

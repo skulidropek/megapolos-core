@@ -50,7 +50,7 @@ class Container {
 
   async start() {
     try {
-      await (await this.getDockerContainer()).start();
+      // await (await this.getDockerContainer()).start();
     } catch (e) {
       console.trace(e);
       EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
@@ -61,7 +61,7 @@ class Container {
 
   async stop() {
     try {
-      await (await this.getDockerContainer()).stop();
+      // await (await this.getDockerContainer()).stop();
     } catch (e) {
       console.trace(e);
       EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
@@ -91,7 +91,7 @@ class Container {
         console.trace(e);
       }
       try {
-        await (await this.getDockerContainer()).remove();
+        // await (await this.getDockerContainer()).remove();
       } catch (e) {
         console.trace(e);
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
@@ -100,7 +100,7 @@ class Container {
     const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
     if (fsSync.existsSync(megapolosVolume)) {
       MegapolosNode.currentNode.validatePath(megapolosVolume);
-      await fs.rmdir(megapolosVolume, { recursive: true });
+      // await fs.rmdir(megapolosVolume, { recursive: true });
     }
 
     const volumes = await VolumeModel.getVolumesOfContainer(this.id);
@@ -165,7 +165,7 @@ class Container {
         console.trace(e);
         EventsObserver.listener({ type: 'volumeError', data: { containerId: this.id, error: e } });
       }
-      await fs.rmdir(volumePath);
+      // await fs.rmdir(volumePath);
     }
     await VolumeModel.removeVolumeFromContainer(containerVolumeId);
   }
@@ -324,7 +324,7 @@ class Container {
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
       }
       try {
-        await (await this.getDockerContainer()).remove();
+        // await (await this.getDockerContainer()).remove();
       } catch (e) {
         console.trace(e);
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });

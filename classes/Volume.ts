@@ -28,7 +28,7 @@ class Volume {
     if (input.type === 'auto' || input.type === 'dynamic_auto') {
       const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + id;
       if (!fsSync.existsSync(megapolosVolume)) {
-        await fs.mkdir(megapolosVolume);
+        // await fs.mkdir(megapolosVolume);
       }
       input.outer_path = megapolosVolume;
     }
@@ -48,7 +48,7 @@ class Volume {
     if (volume.type === 'auto' || volume.type === 'dynamic_auto') {
       const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
       if (fsSync.existsSync(megapolosVolume)) {
-        await fs.rmdir(megapolosVolume, { recursive: true });
+        // await fs.rmdir(megapolosVolume, { recursive: true });
       }
     }
     await VolumeModel.deleteVolume(this.id);
@@ -62,17 +62,17 @@ class Volume {
     if (!volume) {
       throw new Error('Volume not found');
     }
-    await fs.writeFile(volume.outer_path + '/' + filename, data, 'base64');
+    // await fs.writeFile(volume.outer_path + '/' + filename, data, 'base64');
   }
 
   async addToContainer(container: Container, input: ContainerVolumeInput): Promise<ContainerVolumeTable> {
     const volume = await this.getData();
     const volumeContainerId = uuidv4();
     if (input.is_dynamic) {
-      const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id + '/' + volumeContainerId;
-      MegapolosNode.currentNode.validatePath(volumePath);
-      await fs.mkdir(volumePath);
-      await exec(`mount --bind ${volume.outer_path} ${volumePath}`);
+      // const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id + '/' + volumeContainerId;
+      // MegapolosNode.currentNode.validatePath(volumePath);
+      // // await fs.mkdir(volumePath);
+      // await exec(`mount --bind ${volume.outer_path} ${volumePath}`);
     }
     await VolumeModel.addVolumeToContainer({
       id: volumeContainerId,
