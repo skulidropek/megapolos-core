@@ -1,0 +1,66 @@
+/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+
+import { createModule, gql } from 'graphql-modules';
+import EventsObserver from '../events/eventsObserver';
+import { resolver } from '../../types';
+import { RepositoryTable } from '../models/tables';
+import Repository from '../../classes/Repository';
+
+const repositoryModule = createModule({
+  id: 'repository-module',
+  dirname: __dirname,
+  typeDefs: [
+    gql`
+      type Query {
+        getRepositories: [Repository]
+        getRepository(id: String!): Repository
+        getBranches(id: String!): [String]
+      }
+      type Mutation {
+        createRepository(repository: RepositoryInput): Repository
+        removeRepository(id: String!): Repository
+        editRepository(id: String! repository: RepositoryInput): Repository
+      }
+        type Repository {
+            id: String
+            name: String
+            url: String
+            user: String
+            password: String
+            create_date: String
+            update_date: String
+            remove_date: String
+        }
+        input RepositoryInput {
+            name: String
+            url: String
+            user: String
+            password: String
+        }
+    `,
+  ],
+  resolvers: {
+    Query: {
+      getRepositories: resolver<{}, RepositoryTable[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getRepositories', data: args });
+        return Repository.getAllData();
+      }),
+      getRepository: resolver<{ id: string }, RepositoryTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getRepository', data: args });
+        return new Repository(args.id).getData();
+      }),
+      getBranches: resolver<{ id: string }, string[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getBranches', data: args });
+        return new Repository(args.id).getBranches();
+      }),
+    },
+    Mutation: {
+      createRepository: resolver<{ repository: Partial<RepositoryTable> }, RepositoryTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'createRepository', data: args });
+        return (await Repository.create(args.repository)).getData();
+      }),
+    },
+  },
+});
+
+export default repositoryModule;

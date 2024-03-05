@@ -112,11 +112,11 @@ class MegapolosNode {
     return { id: commandId, output: (async () => {
       const process = new Process(command, user);
       this.commands[commandId] = process;
-      const osUserId = (await (user.getData())).os_user_id;
-      if (!osUserId) {
-        console.log(await (user.getData()));
-        throw new Error('No os user id');
-      }
+      // const osUserId = (await (user.getData())).os_user_id;
+      // if (!osUserId) {
+      //   console.log(await (user.getData()));
+      //   throw new Error('No os user id');
+      // }
       process.onoutput = (data) => {
         EventsObserver.listener({ type: 'shellCommandOutput', data: data });
       };

@@ -36,9 +36,11 @@ export interface RemoveStrategyTable {
 export interface NodeTable {
   id: string;
   name: string;
-  url: string;
+  host: string;
   cpu: string;
   memory: string;
+  user: string;
+  password: string;
   life_status: string;
   create_date: string;
   update_date: string;
@@ -120,6 +122,8 @@ export interface ImageTable {
   create_date: string;
   update_date: string;
   commit_id: string;
+  repository_id: string;
+  branch: string;
 }
 export interface ContainerDeviceEnvOptionTable {
   id: string;

@@ -14,6 +14,8 @@ const nodeModule = createModule({
   dirname: __dirname,
   typeDefs: [
     gql`
+      scalar Date
+
       type ShellCommandResult {
         stdout: String
         stderr: String
@@ -22,10 +24,35 @@ const nodeModule = createModule({
       type Query {
         version: String
         getShellCommandStatus(id: String!): String
+        getNodes: [Node]
+        getNode(id: String!): Node
       }
       type Mutation {
+        createNode(node: NodeInput): Node
+        removeNode(id: String!): Node
+        editNode(id: String! node: NodeInput): Node
         shellCommand(command: String! containerId: String): ShellCommandResult
         shellCommandStart(command: String! containerId: String): String
+      }
+
+      type Node {
+        id: String
+        name: String
+        host: String
+        cpu: String
+        memory: String
+        user: String
+        password: String
+        lifeStatus: String
+        createDate: Date
+        updateDate: Date
+        removeDate: Date
+      }
+
+      input NodeInput {
+        name: String
+        host: String
+        password: String
       }
     `,
   ],

@@ -77,6 +77,8 @@ const appModule = createModule({
         name: String
         image: String
         inner_port: Int
+        repository_id: String
+        branch: String
       }
 
       input ContainerDeviceParameterInput {
@@ -152,6 +154,8 @@ const appModule = createModule({
 
       type Mutation {
         installApp(input: AppInput!): Boolean
+        addImage(appId: String! image: ImageInput!): Boolean
+        buildImage(imageId: String!): Boolean
         uninstallApp(id: String!): Boolean
         createAppInstance(input: AppInstanceInput!): Boolean
         startAppInstance(id: String!): Boolean
@@ -257,7 +261,7 @@ const appModule = createModule({
         return true;
       }),
       editImage: resolver<{ id: string, name: string, image: string, inner_port: number }, boolean>(async (parent, args, context, info) => {
-        await new Image(args.id).edit(args.name, args.image, args.inner_port);
+        await new Image(args.id).edit(args);
         EventsObserver.listener({ type: 'editImage', data: args });
         return true;
       }),
@@ -269,6 +273,16 @@ const appModule = createModule({
       editContainer: resolver<{ id: string, name: string, outer_port: number }, boolean>(async (parent, args, context, info) => {
         await new Container(args.id).edit(args.name, args.outer_port);
         EventsObserver.listener({ type: 'editContainer', data: args });
+        return true;
+      }),
+      addImage: resolver<{ appId: string, image: ImageTable }, boolean>(async (parent, args, context, info) => {
+        await new App(args.appId).addImage(args.image);
+        EventsObserver.listener({ type: 'addImage', data: args });
+        return true;
+      }),
+      buildImage: resolver<{ imageId: string }, boolean>(async (parent, args, context, info) => {
+        await new Image(args.imageId).build(context.user.id);
+        EventsObserver.listener({ type: 'buildImage', data: args });
         return true;
       }),
     },

@@ -71,8 +71,11 @@ class App {
     return new User(data.owner_user_id);
   }
 
-  addImage(image: { name: string, image: string, inner_port: number }): Promise<Image> {
-    return Image.createImage(this.id, image);
+  addImage(image: Partial<ImageTable>): Promise<Image> {
+    return Image.createImage({
+      ...image,
+      app_id: this.id,
+    });
   }
 
   async edit( name: string): Promise<void> {

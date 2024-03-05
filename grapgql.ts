@@ -16,12 +16,15 @@ import eventModule from './modules/resolvers/event.resolver';
 import volumeModule from './modules/resolvers/volume.resolver';
 import User from './classes/User';
 import EventsObserver from './modules/events/eventsObserver';
-import resourceModule from './modules/resolvers/resource.resolver';
+// import resourceModule from './modules/resolvers/resource.resolver';
+import repositoryModule from './modules/resolvers/repository.resolver';
 
 const graphqlServer = async () => {
   try {
     const application = createApplication({
-      modules: [userModule, nodeModule, appModule, deviceModule, eventModule, volumeModule, resourceModule],
+      modules: [userModule, nodeModule, appModule, deviceModule, eventModule, volumeModule, 
+        // resourceModule,
+        repositoryModule],
     });
    
     const { schema, createExecution, createSubscription, createApolloExecutor } = application;
