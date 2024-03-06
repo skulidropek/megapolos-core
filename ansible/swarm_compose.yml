@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+{% for item in data %}
+{% if item.disabled != True %}
+  {{ item.name }}:
+    image: "{{ item.image }}"
+{% if item.outer_port != None %}
+    ports: 
+      - {{ item.outer_port }}:{{ item.inner_port | default(80) }}
+{% endif %}
+    environment:
+{% if item.envs is defined %}
+{% for env in item.envs %}
+      - {{ env.name }}={{ env.value }}
+{% endfor %}      
+    volumes:
+{% if item.volumes is defined %}
+{% for volume in item.volumes %}
+      - {{ volume.source }}:{{ volume.destination }}
+{% endfor %}      
+{% endif %}
+    deploy:
+      mode: replicated
+      replicas: 1
+{% endif %}
+{% endfor %}

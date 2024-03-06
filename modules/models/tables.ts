@@ -111,6 +111,11 @@ export interface GroupUserTable {
   update_date: string;
   disable_date: string;
 }
+export enum ImageStatus {
+  NotExist = 'not_exist',
+  Building = 'building',
+  Built = 'built',
+}
 export interface ImageTable {
   id: string;
   name: string;
@@ -124,6 +129,7 @@ export interface ImageTable {
   commit_id: string;
   repository_id: string;
   branch: string;
+  status: ImageStatus;
 }
 export interface ContainerDeviceEnvOptionTable {
   id: string;

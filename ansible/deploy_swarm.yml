@@ -1,0 +1,68 @@
+- hosts: all
+  vars: 
+    name: "megapolos"
+    compose_file: /opt/megapolos_swarm_compose.yml
+    data: "{{ lookup('file','data.json') }}"
+  tasks:
+  - name: swarm directory
+    ansible.builtin.file:
+      path: /opt/megapolos_swarm_compose
+      state: directory
+  - name: nginx directory
+    ansible.builtin.file:
+      path: /data/nginx/conf
+      state: directory
+  - name: Install packages
+    ansible.builtin.pip:
+      name: jsondiff
+  - name: Log into private registry and force re-authorization
+    docker_login:
+        registry: "{{ lookup('ansible.builtin.env', 'CI_REGISTRY') }}"
+        username: "{{ lookup('ansible.builtin.env', 'CI_REGISTRY_USER') }}"
+        password: "{{ lookup('ansible.builtin.env', 'CI_REGISTRY_PASSWORD') }}"
+        reauthorize: yes
+  - name: Copy stack file
+    template:
+        src: swarm_compose.yml
+        dest: "{{ compose_file }}"
+        mode: 0444
+    register: stack_file
+    tags: stack
+  - name: Pull images
+    ansible.builtin.shell: docker-compose -f /opt/megapolos_swarm_compose.yml pull
+  - name: nginx
+    community.docker.docker_container:
+      name: nginx
+      image: nginx
+      volumes:
+        - /etc/letsencrypt:/etc/letsencrypt
+        - /data/nginx/conf:/etc/nginx/conf.d
+  - name: Deploy stack
+    docker_stack:
+        state: present
+        name: "{{ name }}"
+        prune: yes
+        with_registry_auth: yes
+        compose:
+        - "{{ compose_file }}"
+  - name: certificate
+    shell: |
+      certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ item.domain_name }} -d {{ item.domain_name }} --register-unsafely-without-email
+    args: 
+      creates: /etc/letsencrypt/live/{{ item.domain_name }}/fullchain.pem
+    with_items: "{{ data }}"
+    when: item.domain_name != None
+  - name: Copy config file
+    template:
+      src: nginx.vhost.template
+      dest: /data/nginx/conf/{{ item.domain_name }}.conf
+    with_items: "{{ data }}"
+    when: item.domain_name != None
+  - name: ensure a nginx is running
+    docker_container:
+      name: nginx
+      state: started
+  - name: reload nginx
+    community.docker.docker_container_exec:
+      container: nginx
+      command: nginx -s reload

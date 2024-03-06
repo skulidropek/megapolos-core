@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import fse from 'fs-extra';
 import AppModel from '../modules/models/app.model';
-import { ImageTable } from '../modules/models/tables';
+import { ImageStatus, ImageTable } from '../modules/models/tables';
 import App from './App';
 import Entity from '../modules/models/Entity';
 import docker from '../coreDocker';
@@ -36,18 +36,29 @@ class Image {
     await repository.copyBranchTo(path, data.branch);
     console.log(data);
     if (data.repository_id) {
-      const result = await MegapolosNode.currentNode.shellCommand('cd ' + path + ' && docker build -t ' + data.image + ' .', new User(userId)).output;
-      // const stream = await docker.buildImage({ 
-      //   context: path,
-      //   src: ['.'],
-      // }, { t: data.image });
-      // const result = await new Promise((resolve, reject) => {
-      //   docker.modem.followProgress(stream, (err, res) => err ? reject(err) : resolve(res));
-      // });
-      console.log(result);
-    }
-    if (await fse.exists(path)) {
-      await fse.remove(path);
+      const entity = new Entity<ImageTable>('image');
+      entity.update({ id: this.id }, { status: ImageStatus.Building });
+      MegapolosNode.currentNode.shellCommand('cd ' + path + ' && docker build -t ' + data.image + ' .', new User(userId)).output.
+        then(async result => {
+          // const stream = await docker.buildImage({ 
+          //   context: path,
+          //   src: ['.'],
+          // }, { t: data.image });
+          // const result = await new Promise((resolve, reject) => {
+          //   docker.modem.followProgress(stream, (err, res) => err ? reject(err) : resolve(res));
+          // });
+          entity.update({ id: this.id }, { status: ImageStatus.Built });
+          console.log(result);
+          if (await fse.exists(path)) {
+            await fse.remove(path);
+          }
+        }).catch(async (error) => {
+          entity.update({ id: this.id }, { status: ImageStatus.NotExist });
+          console.error(error);
+          if (await fse.exists(path)) {
+            await fse.remove(path);
+          }
+        });
     }
   }
 
