@@ -8,7 +8,7 @@
     "dev": "nodemon index.ts",
     "prod": "ts-node index.ts",
     "build": "tsc -p .",
-    "prestart": "copyfiles -u 3  src\\API\\schema\\*.graphql .\\dist\\API\\schema\\",
+    "prestart": "copyfiles -u 3  ansible\\*.* .\\dist\\ansible\\",
     "semantic-release": "semantic-release"
   },
   "repository": {

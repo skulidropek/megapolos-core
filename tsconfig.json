@@ -104,5 +104,8 @@
     "volumes",
     "data",
     "node_modules",
-    "dist"]
+    "repositories",
+    "dist",
+    "install"
+  ]
 }
