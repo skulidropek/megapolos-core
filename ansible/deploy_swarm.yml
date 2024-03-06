@@ -12,6 +12,12 @@
     ansible.builtin.file:
       path: /data/nginx/conf
       state: directory
+  - name: certbot cron
+    ansible.builtin.cron:
+      name: "certbot cron"
+      minute: "0"
+      hour: "3"
+      job: "certbot renew --quiet --pre-hook \"docker stop nginx\" --post-hook \"docker start nginx\""
   - name: volume directories
     ansible.builtin.file:
       path: "{{ item }}"

@@ -1,0 +1,34 @@
+stages:
+  - test
+  - release
+
+start:
+  stage: test
+  image: node:18
+  # except: 
+  #   - deploy
+  #   - test
+  #   - main
+  #   - 33-public-docker
+  script:
+   - npm install yarn
+   - yarn install
+   - cp config/config.sample.json config/config.json
+  #  - npx eslint .
+   - tsc .
+
+publish:
+  image: node:latest
+  stage: release
+  script:
+    - npm i
+    - |
+      {
+        echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/"
+        echo "${CI_API_V4_URL#https?}/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=\${CI_JOB_TOKEN}"
+      } | tee -a .npmrc
+    - npm run semantic-release
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH == "deploy" || $CI_COMMIT_BRANCH == "test"
+  #     when: never
+  #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
