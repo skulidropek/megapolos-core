@@ -19,6 +19,7 @@ import { promisify } from 'util';
 import ResourceModel from '../modules/models/resource.model';
 import BaseResource from '../modules/resources/BaseResource';
 import BaseResourceWithType from '../modules/devices/ResourceDeviceWithType';
+import Entity from '../modules/models/Entity';
 
 const exec = promisify(require('child_process').exec);
 
@@ -32,6 +33,18 @@ class Container {
 
   constructor(id: string) {
     this.id = id;
+  }
+
+  static async create(instanceId: string, data: Partial<ContainerTable>): Promise<Container> {
+    const entity = new Entity<ContainerTable>('container');
+    let outerPort = await MegapolosNode.currentNode.getPort();
+    if (data.outer_port) {
+      await MegapolosNode.currentNode.checkPort(data.outer_port);
+      outerPort = data.outer_port;
+    }
+    data.outer_port = outerPort;
+    const result = await entity.create({ app_instance_id: instanceId, ...data });
+    return new Container(result.id);
   }
 
   static createFromImage(instance: Instance, image: Image, input: ContainerInput): Promise<Container> {
@@ -70,16 +83,14 @@ class Container {
     await this.updateLifeStatus('stopped');
   }
 
-  async edit(name: string, outer_port: number): Promise<void> {
-    const data = await this.getData();
-    if (outer_port) {
-      if (data.outer_port !== outer_port) {
-        await MegapolosNode.currentNode.checkPort(outer_port);
+  async edit(data: Partial<ContainerTable>): Promise<void> {
+    const entity = await this.getData();
+    if (data.outer_port) {
+      if (data.outer_port !== entity.outer_port) {
+        await MegapolosNode.currentNode.checkPort(data.outer_port);
       }
-    } else {
-      outer_port = await MegapolosNode.currentNode.getPort();
     }
-    await AppInstanceModel.editContainer(this.id, { name, outer_port });
+    await new Entity<ContainerTable>('container').update({ id: this.id }, data);
   }
 
   async remove():Promise<void> {

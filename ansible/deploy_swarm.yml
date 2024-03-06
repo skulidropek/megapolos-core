@@ -1,8 +1,8 @@
-- hosts: all
+- hosts: "{{ hosts }}"
   vars: 
     name: "megapolos"
     compose_file: /opt/megapolos_swarm_compose.yml
-    data: "{{ lookup('file','data.json') }}"
+    data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
   tasks:
   - name: swarm directory
     ansible.builtin.file:
@@ -12,9 +12,20 @@
     ansible.builtin.file:
       path: /data/nginx/conf
       state: directory
+  - name: volume directories
+    ansible.builtin.file:
+      path: "{{ item }}"
+      state: directory
+    with_items: "{{ data.volumes }}"
+  - name: Install pip
+    ansible.builtin.apt:
+      name: pip
+      state: present
   - name: Install packages
     ansible.builtin.pip:
-      name: jsondiff
+      name: 
+        - jsondiff 
+        - docker
   - name: Log into private registry and force re-authorization
     docker_login:
         registry: "{{ lookup('ansible.builtin.env', 'CI_REGISTRY') }}"
@@ -34,6 +45,9 @@
     community.docker.docker_container:
       name: nginx
       image: nginx
+      ports:
+        - "80:80"
+        - "443:443"
       volumes:
         - /etc/letsencrypt:/etc/letsencrypt
         - /data/nginx/conf:/etc/nginx/conf.d
@@ -50,13 +64,13 @@
       certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ item.domain_name }} -d {{ item.domain_name }} --register-unsafely-without-email
     args: 
       creates: /etc/letsencrypt/live/{{ item.domain_name }}/fullchain.pem
-    with_items: "{{ data }}"
+    with_items: "{{ data.containers }}"
     when: item.domain_name != None
   - name: Copy config file
     template:
       src: nginx.vhost.template
       dest: /data/nginx/conf/{{ item.domain_name }}.conf
-    with_items: "{{ data }}"
+    with_items: "{{ data.containers }}"
     when: item.domain_name != None
   - name: ensure a nginx is running
     docker_container:

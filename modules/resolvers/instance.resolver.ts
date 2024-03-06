@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
+import { AppInstanceTable, AppTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -62,7 +62,7 @@ const instanceModule = createModule({
       }),
     },
     Mutation: {
-      createAppInstance: resolver<{ input: AppInstanceInput }, boolean>(async (parent, args, context, info) => {
+      createAppInstance: resolver<{ input: AppInstanceTable }, boolean>(async (parent, args, context, info) => {
         await Instance.createInstance(args.input);
         EventsObserver.listener({ type: 'createAppInstance', data: args });
         return true;

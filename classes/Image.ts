@@ -9,6 +9,7 @@ import { megapolosPath } from '..';
 import Repository from './Repository';
 import MegapolosNode from './Node';
 import User from './User';
+import config from '../config/config.json';
 
 class Image {
   id: string;
@@ -38,7 +39,8 @@ class Image {
     if (data.repository_id) {
       const entity = new Entity<ImageTable>('image');
       entity.update({ id: this.id }, { status: ImageStatus.Building });
-      MegapolosNode.currentNode.shellCommand('cd ' + path + ' && docker build -t ' + data.image + ' .', new User(userId)).output.
+      MegapolosNode.currentNode.shellCommand(
+        `cd ${path} && docker build -t ${data.image} -t ${config.registryHost}/${data.image} .`, new User(userId)).output.
         then(async result => {
           // const stream = await docker.buildImage({ 
           //   context: path,
@@ -47,6 +49,8 @@ class Image {
           // const result = await new Promise((resolve, reject) => {
           //   docker.modem.followProgress(stream, (err, res) => err ? reject(err) : resolve(res));
           // });
+          await MegapolosNode.currentNode.shellCommand(`docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}`, new User(userId)).output;
+          await MegapolosNode.currentNode.shellCommand(`docker push ${config.registryHost}/${data.image}`, new User(userId)).output;
           entity.update({ id: this.id }, { status: ImageStatus.Built });
           console.log(result);
           if (await fse.exists(path)) {

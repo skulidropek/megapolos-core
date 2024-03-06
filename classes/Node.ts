@@ -9,6 +9,11 @@ import Container from './Container';
 import docker from '../coreDocker';
 import DockerEvent from '../modules/events/docker.event';
 import { megapolosPath } from '..';
+import { ContainerTable, DomainTable, ImageTable, NodeTable } from '../modules/models/tables';
+import Entity from '../modules/models/Entity';
+import { knex } from '../coreRqlite';
+import config from '../config/config.json';
+import fse from 'fs-extra';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -48,8 +53,95 @@ class MegapolosNode {
 
   static currentNode: MegapolosNode;
 
+  id: string;
+
   static createCurrentNode() {
     MegapolosNode.currentNode = new MegapolosNode();
+  }
+
+  static async createNode(data: Partial<NodeTable>): Promise<MegapolosNode> {
+    const entity = new Entity<NodeTable>('node');
+    const result = await entity.create(data);
+    return new MegapolosNode(result.id);
+  }
+
+  static async getNodesData(): Promise<NodeTable[]> {
+    const entity = new Entity<NodeTable>('node');
+    return entity.findAll();
+  }
+
+  static async getNodes(): Promise<MegapolosNode[]> {
+    const nodes = await MegapolosNode.getNodesData();
+    return nodes.map((node) => new MegapolosNode(node.id));
+  }
+
+  constructor(id?: string) {
+    if (id) {
+      this.id = id;
+    }
+  }
+
+  edit(data: Partial<NodeTable>) {
+    const entity = new Entity<NodeTable>('node');
+    return entity.update({ id: this.id }, data);
+  }
+
+  delete() {
+    const entity = new Entity<NodeTable>('node');
+    return entity.delete({ id: this.id });
+  }
+
+  getData() {
+    const entity = new Entity<NodeTable>('node');
+    return entity.findOne({ id: this.id });
+  }
+
+  async update() {
+    const data = await this.getData();
+    const result: any = {
+      containers: [],
+      volumes: [],
+      host: data.host,
+    };
+    const containers:ContainerTable[] = await knex('container').where({ node_id: this.id });
+    for (let i in containers) {
+      const containerResult: any = {};
+      const container = containers[i];
+      const containerObject = new Container(container.id);
+      const image:ImageTable = await knex('image').where({ id: container.image_id }).first();
+      let domain:DomainTable;
+      if (container.domain_id) {
+        domain = await knex('domain').where({ id: container.domain_id }).first();
+      }
+      const envs = await containerObject.getEnvs();
+      const volumes = await containerObject.getVolumes();
+      containerResult.auth = '';
+      containerResult.name = data.name;
+      containerResult.image = `${config.registryHost}/${image.image}`;
+      containerResult.inner_port = image.inner_port;
+      containerResult.outer_port = container.outer_port;
+      containerResult.envs = [];
+      containerResult.domain_name = domain ? domain.name : null;
+      containerResult.auth = domain ? domain.auth : '';
+      
+      for (let i in envs) {
+        let env = envs[i];
+        containerResult.envs.push({ name: env.container_env_name, value: env.container_env_value });
+      }
+      containerResult.volumes = [];
+      for (let i in volumes) {
+        let volume = volumes[i];
+        containerResult.volumes.push({ source: (await volume.volume.getData()).outer_path, target: volume.containerVolume.inner_path });
+        result.volumes.push((await volume.volume.getData()).outer_path);
+      }
+      result.containers.push(containerResult);
+    }
+    console.log(JSON.stringify(result, null, 2));
+    const jsonPath = megapolosPath + `/ansible/${data.name}.json`;
+    await fse.writeFile(jsonPath, JSON.stringify(result, null, 2));
+    const command = `ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${config.registryHost} CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${config.registryPassword}' ANSIBLE_PASSWORD='${data.password}' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${data.user} -e ansible_ssh_password='{{ lookup("env", "ANSIBLE_PASSWORD") }}' --extra-vars "hosts=${data.host}" ${megapolosPath}/ansible/deploy_swarm.yml`;
+    console.log(command);
+    await MegapolosNode.currentNode.shellCommand(command, new User(data.user)).output;
   }
 
   async getPort() {

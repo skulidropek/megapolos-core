@@ -155,6 +155,7 @@ export interface ContainerTable {
   create_date: string;
   update_date: string;
   remove_date: string;
+  domain_id: string;
 }
 
 export interface ContainerDeviceAuxOptionTable {
@@ -373,6 +374,15 @@ export interface RepositoryTable {
   url: string,
   user: string,
   password: string,
+  create_date: string,
+  update_date: string,
+  remove_date: string,
+}
+
+export interface DomainTable {
+  id: string,
+  name: string,
+  auth: string,
   create_date: string,
   update_date: string,
   remove_date: string,

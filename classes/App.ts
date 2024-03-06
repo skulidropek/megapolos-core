@@ -48,7 +48,7 @@ class App {
   }
   
   createInstance(name: string, containers: ContainerInput[], isDevice = false): Promise<Instance> {
-    return Instance.createInstance({ app_id: this.id, name, containers }, isDevice);
+    return Instance.createInstance({ app_id: this.id, name }, isDevice);
   }
 
   async removeInstances(): Promise<void> {

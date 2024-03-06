@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
+import { AppTable, ContainerTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -31,6 +31,7 @@ const containerModule = createModule({
         volumes: [ContainerVolume]
         envs: [ContainerParameter]
         docker_status: String
+        domain_id: String
       }
 
       input ContainerDeviceParameterInput {
@@ -86,6 +87,7 @@ const containerModule = createModule({
         image_id: String
         outer_port: Int
         node_id: String
+        domain_id: String
       }
       
       type Query {
@@ -95,6 +97,7 @@ const containerModule = createModule({
       }
 
       type Mutation {
+        addContainer(appInstanceId: String! data: ContainerInput!): Boolean
         updateContainer(id: String! noRebuild: Boolean): Boolean
         changeContainerEnvs(id: String!, envs: [ContainerParameterInput]): Boolean
         editContainer(id: String! data: ContainerInput!): Boolean
@@ -128,8 +131,13 @@ const containerModule = createModule({
         EventsObserver.listener({ type: 'changeContainerEnvs', data: args });
         return true;
       }),
-      editContainer: resolver<{ id: string, name: string, outer_port: number }, boolean>(async (parent, args, context, info) => {
-        await new Container(args.id).edit(args.name, args.outer_port);
+      addContainer: resolver<{ appInstanceId: string, data: ContainerTable }, boolean>(async (parent, args, context, info) => {
+        await Container.create(args.appInstanceId, args.data);
+        EventsObserver.listener({ type: 'addContainer', data: args });
+        return true;
+      }),
+      editContainer: resolver<{ id: string, data: ContainerTable }, boolean>(async (parent, args, context, info) => {
+        await new Container(args.id).edit(args.data);
         EventsObserver.listener({ type: 'editContainer', data: args });
         return true;
       }),

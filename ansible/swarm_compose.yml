@@ -1,7 +1,7 @@
 version: "3.7"
 services:
-{% for item in data %}
-{% if item.disabled != True %}
+{% for item in data.containers %}
+{% if True or item.disabled is not defined and item.disabled != True %}
   {{ item.name }}:
     image: "{{ item.image }}"
 {% if item.outer_port != None %}
@@ -12,11 +12,12 @@ services:
 {% if item.envs is defined %}
 {% for env in item.envs %}
       - {{ env.name }}={{ env.value }}
-{% endfor %}      
+{% endfor %}     
+{% endif %} 
     volumes:
 {% if item.volumes is defined %}
 {% for volume in item.volumes %}
-      - {{ volume.source }}:{{ volume.destination }}
+      - {{ volume.source }}:{{ volume.target }}
 {% endfor %}      
 {% endif %}
     deploy:

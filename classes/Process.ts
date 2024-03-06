@@ -21,6 +21,7 @@ class Process extends BaseProcess {
     return new Promise((resolve, reject) => {
       const child = spawn(this.command, {
         shell: 'bash',
+        uid: 0,
       });
       child.stdout.on('data', (data) => {
         this.stdout += data.toString();

@@ -8,6 +8,7 @@ import packageFile from '../../package.json';
 import MegapolosNode from '../../classes/Node';
 import User from '../../classes/User';
 import Container from '../../classes/Container';
+import { NodeTable } from '../models/tables';
 
 const nodeModule = createModule({
   id: 'node-module',
@@ -29,10 +30,11 @@ const nodeModule = createModule({
       }
       type Mutation {
         createNode(node: NodeInput): Node
-        removeNode(id: String!): Node
+        removeNode(id: String!): Boolean
         editNode(id: String! node: NodeInput): Node
         shellCommand(command: String! containerId: String): ShellCommandResult
         shellCommandStart(command: String! containerId: String): String
+        updateNode(id: String!): Boolean
       }
 
       type Node {
@@ -50,6 +52,7 @@ const nodeModule = createModule({
       }
 
       input NodeInput {
+        user: String
         name: String
         host: String
         password: String
@@ -65,8 +68,26 @@ const nodeModule = createModule({
         // return commands[args.id] ? 'running' : '';
         return MegapolosNode.currentNode.commands[args.id].status;
       }),
+      getNodes: resolver<void, NodeTable[]>(async (parent, args, context, info) => {
+        return MegapolosNode.getNodesData();
+      }),
+      getNode: resolver<{ id: string }, NodeTable>(async (parent, args, context, info) => {
+        return new MegapolosNode(args.id).getData();
+      }),
     },
     Mutation: {
+      createNode: resolver<{ node: NodeTable }, NodeTable>(async (parent, args, context, info) => {
+        return (await MegapolosNode.createNode(args.node)).getData();
+      }),
+      removeNode: resolver<{ id: string }, Boolean>(async (parent, args, context, info) => {
+        const node = new MegapolosNode(args.id);
+        await node.delete();
+        return true;
+      }),
+      editNode: resolver<{ id: string, node: NodeTable }, NodeTable>(async (parent, args, context, info) => {
+        const node = new MegapolosNode(args.id);
+        return node.edit(args.node);
+      }),
       shellCommand: resolver<{ command: string, containerId: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'shellCommandStarted', data: args });
         // return shellCommand(args.command, args.containerId, context.user);
@@ -89,6 +110,11 @@ const nodeModule = createModule({
         }
         // const commandId = uuidv4();
         // shellCommand(args.command, args.containerId, context.user, commandId);
+      }),
+      updateNode: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        const node = new MegapolosNode(args.id);
+        await node.update();
+        return true;
       }),
     },
   },

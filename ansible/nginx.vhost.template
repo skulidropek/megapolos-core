@@ -11,7 +11,7 @@ server {
     # include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
 
     location / {
-        proxy_pass http://srv3.s3app.org:{{ item.outer_port }};
+        proxy_pass http://{{ data.host }}:{{ item.outer_port }};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
