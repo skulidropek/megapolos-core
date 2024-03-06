@@ -11,11 +11,11 @@ start:
   #   - main
   #   - 33-public-docker
   script:
-   - npm install -g yarn typescript
+   - npm install -g yarn
    - yarn install
    - cp config/config.sample.json config/config.json
   #  - npx eslint .
-   - tsc .
+   - npm run build
 
 publish:
   image: node:latest
