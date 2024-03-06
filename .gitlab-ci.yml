@@ -11,7 +11,7 @@ start:
   #   - main
   #   - 33-public-docker
   script:
-   - npm install -g yarn
+   - npm install yarn
    - yarn install
    - cp config/config.sample.json config/config.json
   #  - npx eslint .
