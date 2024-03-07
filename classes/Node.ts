@@ -9,7 +9,7 @@ import Container from './Container';
 import docker from '../coreDocker';
 import DockerEvent from '../modules/events/docker.event';
 import { megapolosPath } from '..';
-import { ContainerTable, DomainTable, ImageTable, NodeTable } from '../modules/models/tables';
+import { AppInstanceTable, ContainerTable, DomainTable, ImageTable, NodeTable } from '../modules/models/tables';
 import Entity from '../modules/models/Entity';
 import { knex } from '../coreRqlite';
 import config from '../config/config.json';
@@ -109,6 +109,7 @@ class MegapolosNode {
       const container = containers[i];
       const containerObject = new Container(container.id);
       const image:ImageTable = await knex('image').where({ id: container.image_id }).first();
+      const instance:AppInstanceTable = await knex('app_instance').where({ id: container.app_instance_id }).first();
       let domain:DomainTable;
       if (container.domain_id) {
         domain = await knex('domain').where({ id: container.domain_id }).first();
@@ -116,13 +117,15 @@ class MegapolosNode {
       const envs = await containerObject.getEnvs();
       const volumes = await containerObject.getVolumes();
       containerResult.auth = '';
-      containerResult.name = data.name;
-      containerResult.image = `${config.registryHost}/${image.image}`;
+      containerResult.name = instance.name + '_' + container.name;
+      containerResult.description = instance.name + '_' + container.name + '_' + container.id;
+      containerResult.image = image.repository_id ? `${config.registryHost}/${image.image}` : image.image;
       containerResult.inner_port = image.inner_port;
       containerResult.outer_port = container.outer_port;
       containerResult.envs = [];
       containerResult.domain_name = domain ? domain.name : null;
       containerResult.auth = domain ? domain.auth : '';
+      containerResult.disabled = container.life_status !== 'running';
       
       for (let i in envs) {
         let env = envs[i];

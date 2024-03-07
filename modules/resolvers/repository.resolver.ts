@@ -30,6 +30,7 @@ const repositoryModule = createModule({
             create_date: String
             update_date: String
             remove_date: String
+            branches: [String]
         }
         input RepositoryInput {
             name: String
@@ -58,6 +59,12 @@ const repositoryModule = createModule({
       createRepository: resolver<{ repository: Partial<RepositoryTable> }, RepositoryTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'createRepository', data: args });
         return (await Repository.create(args.repository)).getData();
+      }),
+    },
+    Repository: {
+      branches: resolver<RepositoryTable, string[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getBranches', data: args });
+        return new Repository(parent.id).getBranches();
       }),
     },
   },

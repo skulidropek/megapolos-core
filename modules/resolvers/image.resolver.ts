@@ -42,6 +42,7 @@ const imageModule = createModule({
         addImage(appId: String! image: ImageInput!): Boolean
         buildImage(imageId: String!): Boolean
         editImage(id: String! name: String! image: String! inner_port: Int!): Boolean
+        removeImage(id: String!): Boolean
       }
     `,
   ],
@@ -57,6 +58,11 @@ const imageModule = createModule({
       addImage: resolver<{ appId: string, image: ImageTable }, boolean>(async (parent, args, context, info) => {
         await new App(args.appId).addImage(args.image);
         EventsObserver.listener({ type: 'addImage', data: args });
+        return true;
+      }),
+      removeImage: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        await new Image(args.id).remove();
+        EventsObserver.listener({ type: 'removeImage', data: args });
         return true;
       }),
       buildImage: resolver<{ imageId: string }, boolean>(async (parent, args, context, info) => {

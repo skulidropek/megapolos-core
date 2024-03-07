@@ -65,6 +65,10 @@
         with_registry_auth: yes
         compose:
         - "{{ compose_file }}"
+  - ansible.builtin.pip:
+      name: 
+        - urllib3
+      state: absent
   - name: certificate
     shell: |
       certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ item.domain_name }} -d {{ item.domain_name }} --register-unsafely-without-email

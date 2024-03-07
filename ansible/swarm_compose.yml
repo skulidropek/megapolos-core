@@ -8,20 +8,26 @@ services:
     ports: 
       - {{ item.outer_port }}:{{ item.inner_port | default(80) }}
 {% endif %}
+{% if item.envs is defined and item.envs|length>0 %}
     environment:
-{% if item.envs is defined %}
 {% for env in item.envs %}
       - {{ env.name }}={{ env.value }}
 {% endfor %}     
 {% endif %} 
+{% if item.volumes is defined and item.volumes|length>0 %}
     volumes:
-{% if item.volumes is defined %}
 {% for volume in item.volumes %}
       - {{ volume.source }}:{{ volume.target }}
 {% endfor %}      
 {% endif %}
     deploy:
       mode: replicated
+{% if item.disabled is defined and item.disabled == True %}
+      replicas: 0
+{% else %}
       replicas: 1
+{% endif %}
+      labels:
+        description: "{{ item.description }}"
 {% endif %}
 {% endfor %}
