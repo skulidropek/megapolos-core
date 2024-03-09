@@ -24,9 +24,9 @@ const domainModule = createModule({
             id: String
             name: String
             auth: String
-            create_date: String
-            update_date: String
-            remove_date: String
+            create_date: DateTime
+            update_date: DateTime
+            remove_date: DateTime
         }
         input DomainInput {
             name: String

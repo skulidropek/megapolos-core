@@ -20,8 +20,8 @@ const appModule = createModule({
         name: String
         owner_user_id: String
         status: String
-        create_date: String
-        update_date: String
+        create_date: DateTime
+        update_date: DateTime
         images: [Image]
       }
       input AppInput {

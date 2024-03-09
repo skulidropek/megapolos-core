@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, ContainerTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
+import { AppTable, ContainerTable, DeviceTable, DomainTable, ImageTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -9,6 +9,7 @@ import Instance from '../../classes/Instance';
 import Container from '../../classes/Container';
 import Image from '../../classes/Image';
 import Repository from '../../classes/Repository';
+import Domain from '../../classes/Domain';
 
 const containerModule = createModule({
   id: 'container-module',
@@ -24,14 +25,15 @@ const containerModule = createModule({
         outer_port: Int
         app_instance_id: String
         life_status: String
-        create_date: String
-        update_date: String
-        remove_date: String
+        create_date: DateTime
+        update_date: DateTime
+        remove_date: DateTime
         devices: [ContainerDevice]
         volumes: [ContainerVolume]
         envs: [ContainerParameter]
         docker_status: String
         domain_id: String
+        domain: Domain
         image: Image
       }
 
@@ -146,6 +148,9 @@ const containerModule = createModule({
     Container: {
       image: resolver<{}, ImageTable>(async (parent, args, context, info) => {
         return new Image(parent.image_id).getData();
+      }),
+      domain: resolver<{}, DomainTable>(async (parent, args, context, info) => {
+        return new Domain(parent.domain_id).getData();
       }),
     },
   },

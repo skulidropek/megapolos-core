@@ -99,6 +99,9 @@ class MegapolosNode {
 
   async update() {
     const data = await this.getData();
+    if (data.life_status === 'updating') {
+      // throw new Error('Node is updating');
+    }
     const result: any = {
       containers: [],
       volumes: [],
@@ -146,7 +149,16 @@ class MegapolosNode {
     await fse.writeFile(jsonPath, JSON.stringify(result, null, 2));
     const command = `ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${config.registryHost} CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${config.registryPassword}' ANSIBLE_PASSWORD='${data.password}' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${data.user} -e ansible_ssh_password='{{ lookup("env", "ANSIBLE_PASSWORD") }}' --extra-vars "hosts=${data.host}" ${megapolosPath}/ansible/deploy_swarm.yml`;
     console.log(command);
-    await MegapolosNode.currentNode.shellCommand(command, new User(data.user)).output;
+    const entity = new Entity<NodeTable>('node');
+    await entity.update({ id: this.id }, { life_status: 'updating' });
+    MegapolosNode.currentNode.shellCommand(command, new User(data.user)).output.then(async () => {
+      await entity.update({ id: this.id }, { life_status: 'running', last_update_date: new Date() });
+      await fse.unlink(jsonPath);
+    }).catch(async (e) => {
+      await fse.unlink(jsonPath);
+      await entity.update({ id: this.id }, { life_status: 'running' });
+      throw e;
+    });
   }
 
   async getPort() {

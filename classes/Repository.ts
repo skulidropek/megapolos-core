@@ -34,6 +34,8 @@ class Repository {
   async fetch():Promise<void> {
     const path = await this.getPath();
     await simpleGit(path).fetch();
+    const entity = new Entity<RepositoryTable>('repository');
+    await entity.update({ id: this.id }, { last_fetch_date: new Date() });
   }
 
   async getPath():Promise<string> {
@@ -51,6 +53,8 @@ class Repository {
       data.url = data.url.replace(/^https:\/\//, 'https://' + data.user + ':' + data.password + '@');
     }
     await simpleGit().clone(data.url, path);
+    const entity = new Entity<RepositoryTable>('repository');
+    await entity.update({ id: this.id }, { last_fetch_date: new Date() });
   }
 
   async copyBranchTo(path: string, branch: string):Promise<void> {

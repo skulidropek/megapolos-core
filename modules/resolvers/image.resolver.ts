@@ -23,12 +23,13 @@ const imageModule = createModule({
         inner_port: Int
         has_state: Int
         tags: String
-        create_date: String
-        update_date: String
+        create_date: DateTime
+        update_date: DateTime
         commit_id: String
         status: String
         repository: Repository
         branch: String
+        last_build_date: DateTime
       }
       input ImageInput {
         name: String
@@ -36,6 +37,11 @@ const imageModule = createModule({
         inner_port: Int
         repository_id: String
         branch: String
+      }
+
+      type Query {
+        getImages: [Image]
+        getImage(id: String!): Image
       }
 
       type Mutation {
@@ -48,6 +54,12 @@ const imageModule = createModule({
   ],
   resolvers: {
     Query: {
+      getImages: resolver<{}, ImageTable[]>(async (parent, args, context, info) => {
+        return Image.getImagesData();
+      }),
+      getImage: resolver<{ id: string }, ImageTable>(async (parent, args, context, info) => {
+        return new Image(args.id).getData();
+      }),
     },
     Mutation: {
       editImage: resolver<{ id: string, name: string, image: string, inner_port: number }, boolean>(async (parent, args, context, info) => {

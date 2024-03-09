@@ -16,9 +16,9 @@ const userModule = createModule({
         group_user_id: String
         rest_api: String
         user_status: String
-        create_date: String
-        update_date: String
-        disable_date: String
+        create_date: DateTime
+        update_date: DateTime
+        disable_date: DateTime
         os_user_id: String
         token: String
       }

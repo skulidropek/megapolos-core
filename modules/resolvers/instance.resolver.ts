@@ -25,9 +25,9 @@ const instanceModule = createModule({
         instance_type_id: String
         deploy_strategy_id: String
         remove_strategy_id: String
-        create_date: String
-        update_date: String
-        remove_date: String
+        create_date: DateTime
+        update_date: DateTime
+        remove_date: DateTime
         containers: [Container]
       }
 

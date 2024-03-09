@@ -28,10 +28,11 @@ const repositoryModule = createModule({
             url: String
             user: String
             password: String
-            create_date: String
-            update_date: String
-            remove_date: String
+            create_date: DateTime
+            update_date: DateTime
+            remove_date: DateTime
             branches: [String]
+            last_fetch_date: DateTime
         }
         input RepositoryInput {
             name: String

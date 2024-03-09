@@ -14,6 +14,15 @@ import config from '../config/config.json';
 class Image {
   id: string;
 
+  static async getImagesData(): Promise<ImageTable[]> {
+    return new Entity<ImageTable>('image').findAll();
+  }
+
+  static async getImages(): Promise<Image[]> {
+    const data = await this.getImagesData();
+    return data.map((item) => new Image(item.id));
+  }
+
   constructor(id: string) {
     this.id = id;
   }
@@ -51,7 +60,7 @@ class Image {
           // });
           await MegapolosNode.currentNode.shellCommand(`docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}`, new User(userId)).output;
           await MegapolosNode.currentNode.shellCommand(`docker push ${config.registryHost}/${data.image}`, new User(userId)).output;
-          entity.update({ id: this.id }, { status: ImageStatus.Built });
+          entity.update({ id: this.id }, { status: ImageStatus.Built, last_build_date: new Date() });
           console.log(result);
           if (await fse.exists(path)) {
             await fse.remove(path);

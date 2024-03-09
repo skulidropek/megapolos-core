@@ -17,9 +17,9 @@ export interface AppInstanceTable {
   instance_type_id: string;
   deploy_strategy_id: string;
   remove_strategy_id: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
 }
 export interface InstanceTypeTable {
   id: string;
@@ -42,9 +42,10 @@ export interface NodeTable {
   user: string;
   password: string;
   life_status: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
+  last_update_date: Date;
 }
 export interface DriverTable {
   id: string;
@@ -62,9 +63,9 @@ export interface DeviceTable {
   url: string;
   life_status: string;
   backup_volume_id: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
 }
 export interface AppDeviceTable {
   id: string;
@@ -82,34 +83,34 @@ export interface UserTable {
   group_user_id: string;
   rest_api: string;
   user_status: string;
-  create_date: string;
-  update_date: string;
-  disable_date: string;
+  create_date: Date;
+  update_date: Date;
+  disable_date: Date;
   os_user_id: string;
 }
 export interface GroupUserTable {
   id: string;
   name: string;
   rest_api: string;
-  create_date: string;
-  update_date: string;
-  disable_date: string;
+  create_date: Date;
+  update_date: Date;
+  disable_date: Date;
 }
 export interface AppTable {
   id: string;
   name: string;
   owner_user_id: string;
   status: string;
-  create_date: string;
-  update_date: string;
+  create_date: Date;
+  update_date: Date;
 }
 export interface GroupUserTable {
   id: string;
   name: string;
   rest_api: string;
-  create_date: string;
-  update_date: string;
-  disable_date: string;
+  create_date: Date;
+  update_date: Date;
+  disable_date: Date;
 }
 export enum ImageStatus {
   NotExist = 'not_exist',
@@ -124,12 +125,13 @@ export interface ImageTable {
   inner_port: number;
   has_state: number;
   tags: string;
-  create_date: string;
-  update_date: string;
+  create_date: Date;
+  update_date: Date;
   commit_id: string;
   repository_id: string;
   branch: string;
   status: ImageStatus;
+  last_build_date: Date;
 }
 export interface ContainerDeviceEnvOptionTable {
   id: string;
@@ -152,9 +154,9 @@ export interface ContainerTable {
   outer_port: number;
   app_instance_id: string;
   life_status: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
   domain_id: string;
 }
 
@@ -206,9 +208,9 @@ export interface VolumeTable {
   type: 'auto' | 'path' | 'dynamic_auto' | 'dynamic_path';
   outer_path: string;
   node_id: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
 }
 
 export interface ContainerVolumeTable {
@@ -241,9 +243,9 @@ export interface DeviceBackupTable {
   device_name: string,
   container_id: string,
   image_id: string,
-  create_date: string,
-  update_date: string,
-  remove_date: string,
+  create_date: Date,
+  update_date: Date,
+  remove_date: Date,
 }
 
 export interface ImageDeviceTable {
@@ -374,16 +376,17 @@ export interface RepositoryTable {
   url: string,
   user: string,
   password: string,
-  create_date: string,
-  update_date: string,
-  remove_date: string,
+  create_date: Date,
+  update_date: Date,
+  remove_date: Date,
+  last_fetch_date: Date,
 }
 
 export interface DomainTable {
   id: string,
   name: string,
   auth: string,
-  create_date: string,
-  update_date: string,
-  remove_date: string,
+  create_date: Date,
+  update_date: Date,
+  remove_date: Date,
 }

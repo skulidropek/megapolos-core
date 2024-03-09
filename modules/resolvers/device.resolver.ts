@@ -45,9 +45,9 @@ const deviceModule = createModule({
         url: String
         life_status: String
         backup_volume_id: String
-        create_date: String
-        update_date: String
-        remove_date: String
+        create_date: DateTime
+        update_date: DateTime
+        remove_date: DateTime
         options: [DeviceOption]
         driver_container: Container
       }
@@ -58,9 +58,9 @@ const deviceModule = createModule({
         device_name: String
         container_id: String
         image_id: String
-        create_date: String
-        update_date: String
-        remove_date: String
+        create_date: DateTime
+        update_date: DateTime
+        remove_date: DateTime
       }
       input DeviceInput {
         name: String

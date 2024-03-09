@@ -15,7 +15,7 @@ const nodeModule = createModule({
   dirname: __dirname,
   typeDefs: [
     gql`
-      scalar Date
+      scalar DateTime
 
       type ShellCommandResult {
         stdout: String
@@ -45,12 +45,13 @@ const nodeModule = createModule({
         memory: String
         user: String
         password: String
-        lifeStatus: String
-        createDate: Date
-        updateDate: Date
-        removeDate: Date
+        life_status: String
+        create_date: DateTime
+        update_data: DateTime
+        remove_date: DateTime
         containers: [Container]
         runningContainers: [String]
+        last_update_date: DateTime
       }
 
       input NodeInput {

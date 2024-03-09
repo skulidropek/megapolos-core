@@ -26,8 +26,8 @@ const volumeModule = createModule({
         type: String
         outer_path: String
         node_id: String
-        create_date: String
-        update_date: String
+        create_date: DateTime
+        update_date: DateTime
       }
 
       type DeviceBackup {
@@ -36,9 +36,9 @@ const volumeModule = createModule({
         device_id: String
         container_id: String
         image_id: String
-        create_date: String
-        update_date: String
-        remove_date: String
+        create_date: DateTime
+        update_date: DateTime
+        remove_date: DateTime
       }
 
       input VolumeInput {
