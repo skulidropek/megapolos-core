@@ -20,6 +20,7 @@ const repositoryModule = createModule({
         createRepository(repository: RepositoryInput): Repository
         removeRepository(id: String!): Repository
         editRepository(id: String! repository: RepositoryInput): Repository
+        fetchRepository(id: String!): Boolean
       }
         type Repository {
             id: String
@@ -59,6 +60,11 @@ const repositoryModule = createModule({
       createRepository: resolver<{ repository: Partial<RepositoryTable> }, RepositoryTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'createRepository', data: args });
         return (await Repository.create(args.repository)).getData();
+      }),
+      fetchRepository: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'fetchRepository', data: args });
+        await new Repository(args.id).fetch();
+        return true;
       }),
     },
     Repository: {

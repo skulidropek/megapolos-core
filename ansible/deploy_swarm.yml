@@ -32,6 +32,51 @@
       name: 
         - jsondiff 
         - docker
+        - passlib
+  - name: Copy nginx conf file
+    template:
+      src: nginx.conf.template
+      dest: /data/nginx/nginx.conf
+  - name: nginx
+    community.docker.docker_container:
+      name: nginx
+      image: nginx
+      ports:
+        - "80:80"
+        - "443:443"
+        - "5102:5102"
+      volumes:
+        - /etc/letsencrypt:/etc/letsencrypt
+        - /data/nginx/conf:/etc/nginx/conf.d
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /data/nginx/nginx.conf:/etc/nginx/nginx.conf
+  - name: docker access
+    community.docker.docker_container_exec:
+      container: nginx
+      command: "chmod -v 0777 /var/run/docker.sock"
+  - name: docker password
+    community.general.htpasswd:
+      path: /data/nginx/conf/docker.htpasswd
+      name: megapolos
+      password: "{{ data.node.password }}"
+  - name: openssl_privatekey
+    openssl_privatekey:
+      path: /data/nginx/conf/certificate.key
+      size: 2048 
+  - name: openssl_csr
+    openssl_csr:
+      path: /data/nginx/conf/certificate.csr
+      privatekey_path: /data/nginx/conf/certificate.key
+  - name: openssl_certificate
+    openssl_certificate:
+      provider: selfsigned
+      path: /data/nginx/conf/certificate.crt
+      privatekey_path: /data/nginx/conf/certificate.key
+      csr_path: /data/nginx/conf/certificate.csr
+  - name: Copy docker nginx conf
+    template:
+      src: nginx.docker.template
+      dest: /data/nginx/conf/docker.conf
   - name: Log into private registry and force re-authorization
     docker_login:
         registry: "{{ lookup('ansible.builtin.env', 'CI_REGISTRY') }}"
@@ -47,16 +92,6 @@
     tags: stack
   - name: Pull images
     ansible.builtin.shell: docker-compose -f /opt/megapolos_swarm_compose.yml pull
-  - name: nginx
-    community.docker.docker_container:
-      name: nginx
-      image: nginx
-      ports:
-        - "80:80"
-        - "443:443"
-      volumes:
-        - /etc/letsencrypt:/etc/letsencrypt
-        - /data/nginx/conf:/etc/nginx/conf.d
   - name: Deploy stack
     docker_stack:
         state: present
@@ -76,7 +111,7 @@
       creates: /etc/letsencrypt/live/{{ item.domain_name }}/fullchain.pem
     with_items: "{{ data.containers }}"
     when: item.domain_name != None
-  - name: Copy config file
+  - name: Copy nginx virtualhosts conf
     template:
       src: nginx.vhost.template
       dest: /data/nginx/conf/{{ item.domain_name }}.conf

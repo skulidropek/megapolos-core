@@ -8,7 +8,7 @@ import packageFile from '../../package.json';
 import MegapolosNode from '../../classes/Node';
 import User from '../../classes/User';
 import Container from '../../classes/Container';
-import { NodeTable } from '../models/tables';
+import { ContainerTable, NodeTable } from '../models/tables';
 
 const nodeModule = createModule({
   id: 'node-module',
@@ -49,6 +49,8 @@ const nodeModule = createModule({
         createDate: Date
         updateDate: Date
         removeDate: Date
+        containers: [Container]
+        runningContainers: [String]
       }
 
       input NodeInput {
@@ -115,6 +117,14 @@ const nodeModule = createModule({
         const node = new MegapolosNode(args.id);
         await node.update();
         return true;
+      }),
+    },
+    Node: {
+      containers: resolver<NodeTable, ContainerTable[]>(async (parent, args, context, info) => {
+        return new MegapolosNode(parent.id).getContainers();
+      }),
+      runningContainers: resolver<NodeTable, string[]>(async (parent, args, context, info) => {
+        return new MegapolosNode(parent.id).getDockerContainers();
       }),
     },
   },

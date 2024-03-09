@@ -320,9 +320,8 @@ class Container {
   }
 
   async getDockerLog(): Promise<string> {
-    const container = await this.getDockerContainer();
-    const log = await container.logs({ stdout: true, stderr: true });
-    return log.toString();
+    const data = await this.getData();
+    return new MegapolosNode(data.node_id).getDockerContainerLog(data.id);
   }
 
   async update(noRebuild: boolean):Promise<void> {

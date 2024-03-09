@@ -71,6 +71,11 @@ const imageModule = createModule({
         return true;
       }),
     },
+    Image: {
+      repository: resolver<ImageTable, RepositoryTable>(async (parent, args, context, info) => {
+        return new Repository(parent.repository_id).getData();
+      }),
+    },
   },
 });
 

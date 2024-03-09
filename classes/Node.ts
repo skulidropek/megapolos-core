@@ -14,6 +14,7 @@ import Entity from '../modules/models/Entity';
 import { knex } from '../coreRqlite';
 import config from '../config/config.json';
 import fse from 'fs-extra';
+import Docker from 'dockerode';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -102,6 +103,7 @@ class MegapolosNode {
       containers: [],
       volumes: [],
       host: data.host,
+      node: data,
     };
     const containers:ContainerTable[] = await knex('container').where({ node_id: this.id });
     for (let i in containers) {
@@ -118,7 +120,7 @@ class MegapolosNode {
       const volumes = await containerObject.getVolumes();
       containerResult.auth = '';
       containerResult.name = instance.name + '_' + container.name;
-      containerResult.description = instance.name + '_' + container.name + '_' + container.id;
+      containerResult.description = container.id;
       containerResult.image = image.repository_id ? `${config.registryHost}/${image.image}` : image.image;
       containerResult.inner_port = image.inner_port;
       containerResult.outer_port = container.outer_port;
@@ -231,6 +233,59 @@ class MegapolosNode {
       // );
       return result;
     })() };
+  }
+
+  async getContainers(): Promise<ContainerTable[]> {
+    return new Entity<ContainerTable>('container').findAll({ node_id: this.id });
+  }
+
+  async getDocker() {
+    const data = await this.getData();
+    const docker = new Docker({
+      host: data.host,
+      port: 5102,
+      protocol: 'https',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from('megapolos:' + data.password).toString('base64'),
+      },
+    });
+    return docker;
+  }
+
+  async getDockerContainers(): Promise<string[]> {
+    const docker = await this.getDocker();
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    const containers = await new Promise<string[]>((resolve, reject) => {
+      docker.listServices((err, services) => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log(JSON.stringify(services, null, 2));
+          resolve(services.filter(c => c.Spec.Mode.Replicated.Replicas > 0).
+            map(c => JSON.stringify(c.Spec.Labels.megapolos_id)));
+        }
+      });
+    });
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
+    return containers;
+  }
+
+  async getDockerContainerLog(id: string): Promise<string> {
+    const docker = await this.getDocker();
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    const containers = await new Promise<Docker.ContainerInfo[]>((resolve, reject) => {
+      docker.listContainers((err, containers) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(containers);
+        }
+      });
+    });
+    const container = containers.find(c => c.Labels.megapolos_id === id);
+    const log = (await docker.getContainer(container.Id).logs({ stdout: true, stderr: true })).toString();
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
+    return log;
   }
 }
 

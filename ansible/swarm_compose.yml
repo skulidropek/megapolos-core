@@ -20,6 +20,8 @@ services:
       - {{ volume.source }}:{{ volume.target }}
 {% endfor %}      
 {% endif %}
+    labels:
+      megapolos_id: "{{ item.description }}"
     deploy:
       mode: replicated
 {% if item.disabled is defined and item.disabled == True %}
@@ -28,6 +30,6 @@ services:
       replicas: 1
 {% endif %}
       labels:
-        description: "{{ item.description }}"
+        megapolos_id: "{{ item.description }}"
 {% endif %}
 {% endfor %}

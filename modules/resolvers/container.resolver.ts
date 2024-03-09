@@ -32,6 +32,7 @@ const containerModule = createModule({
         envs: [ContainerParameter]
         docker_status: String
         domain_id: String
+        image: Image
       }
 
       input ContainerDeviceParameterInput {
@@ -140,6 +141,11 @@ const containerModule = createModule({
         await new Container(args.id).edit(args.data);
         EventsObserver.listener({ type: 'editContainer', data: args });
         return true;
+      }),
+    },
+    Container: {
+      image: resolver<{}, ImageTable>(async (parent, args, context, info) => {
+        return new Image(parent.image_id).getData();
       }),
     },
   },
