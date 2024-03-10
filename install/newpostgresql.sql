@@ -5,7 +5,7 @@
 -- Dumped from database version 16.1 (Debian 16.1-1.pgdg120+1)
 -- Dumped by pg_dump version 16.0
 
--- Started on 2024-03-06 18:30:32
+-- Started on 2024-03-10 13:20:22
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -413,7 +413,9 @@ ALTER TABLE public.device_type OWNER TO postgres;
 CREATE TABLE public.domain (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name character varying NOT NULL,
-    auth character varying
+    auth character varying,
+    "user" character varying,
+    password character varying
 );
 
 
@@ -468,7 +470,8 @@ CREATE TABLE public.image (
     commit_id character varying,
     repository_id uuid,
     branch character varying,
-    status public.image_status DEFAULT 'not_exist'::public.image_status NOT NULL
+    status public.image_status DEFAULT 'not_exist'::public.image_status NOT NULL,
+    last_build_date timestamp without time zone
 );
 
 
@@ -626,7 +629,8 @@ CREATE TABLE public.node (
     update_date timestamp without time zone DEFAULT now(),
     remove_date timestamp without time zone,
     "user" character varying,
-    password character varying
+    password character varying,
+    last_update_date timestamp without time zone
 );
 
 
@@ -657,7 +661,9 @@ CREATE TABLE public.repository (
     password character varying,
     create_date timestamp with time zone,
     update_date timestamp without time zone,
-    remove_date timestamp without time zone
+    remove_date timestamp without time zone,
+    name character varying,
+    last_fetch_date timestamp without time zone
 );
 
 
@@ -1924,7 +1930,7 @@ ALTER TABLE ONLY public."user"
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 
 
--- Completed on 2024-03-06 18:30:32
+-- Completed on 2024-03-10 13:20:23
 
 --
 -- PostgreSQL database dump complete

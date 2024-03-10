@@ -97,6 +97,7 @@ const containerModule = createModule({
         getContainer(id: String): Container
         getContainerDevices(id: String): [Device]
         getContainerLog(id: String): String
+        getContainers: [Container]
       }
 
       type Mutation {
@@ -117,6 +118,9 @@ const containerModule = createModule({
       }),
       getContainerLog: resolver<{ id: string }, string>(async (parent, args, context, info) => {
         return new Container(args.id).getDockerLog();
+      }),
+      getContainers: resolver<void, ContainerResult[]>(async (parent, args, context, info) => {
+        return Container.getContainersData();
       }),
     },
     Mutation: {
@@ -151,6 +155,17 @@ const containerModule = createModule({
       }),
       domain: resolver<{}, DomainTable>(async (parent, args, context, info) => {
         return new Domain(parent.domain_id).getData();
+      }),
+      envs: resolver<{}, { key: string, value: string }[]>(async (parent, args, context, info) => {
+        if (parent.envs) {
+          return parent.envs;
+        }
+        return (await new Container(parent.id).getEnvs()).map((env) => (
+          {
+            key: env.container_env_name,
+            value: env.container_env_value,
+          }
+        ));
       }),
     },
   },

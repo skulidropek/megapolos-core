@@ -31,6 +31,15 @@ export enum ContainerLifeStatus {
 class Container {
   id: string;
 
+  static async getContainersData(): Promise<ContainerTable[]> {
+    return new Entity<ContainerTable>('container').findAll();
+  }
+
+  static async getContainers(): Promise<Container[]> {
+    const data = await this.getContainersData();
+    return data.map((item) => new Container(item.id));
+  }
+
   constructor(id: string) {
     this.id = id;
   }

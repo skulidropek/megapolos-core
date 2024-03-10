@@ -38,40 +38,37 @@ class Image {
 
   async build(userId: string) {
     const data = await this.getData();
+    if (!data.repository_id) {
+      return;
+    }
     const path = megapolosPath + '/data/' + uuidv4();
     if (!await fse.exists(path)) {
       await fse.mkdir(path);
     }
     const repository = new Repository(data.repository_id);
+    await repository.fetch();
     await repository.copyBranchTo(path, data.branch);
     console.log(data);
     if (data.repository_id) {
       const entity = new Entity<ImageTable>('image');
       entity.update({ id: this.id }, { status: ImageStatus.Building });
-      MegapolosNode.currentNode.shellCommand(
-        `cd ${path} && docker build -t ${data.image} -t ${config.registryHost}/${data.image} .`, new User(userId)).output.
-        then(async result => {
-          // const stream = await docker.buildImage({ 
-          //   context: path,
-          //   src: ['.'],
-          // }, { t: data.image });
-          // const result = await new Promise((resolve, reject) => {
-          //   docker.modem.followProgress(stream, (err, res) => err ? reject(err) : resolve(res));
-          // });
-          await MegapolosNode.currentNode.shellCommand(`docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}`, new User(userId)).output;
-          await MegapolosNode.currentNode.shellCommand(`docker push ${config.registryHost}/${data.image}`, new User(userId)).output;
-          entity.update({ id: this.id }, { status: ImageStatus.Built, last_build_date: new Date() });
-          console.log(result);
-          if (await fse.exists(path)) {
-            await fse.remove(path);
-          }
-        }).catch(async (error) => {
-          entity.update({ id: this.id }, { status: ImageStatus.NotExist });
-          console.error(error);
-          if (await fse.exists(path)) {
-            await fse.remove(path);
-          }
-        });
+      try {
+        const result = await MegapolosNode.currentNode.shellCommand(
+          `cd ${path} && docker build -t ${data.image} -t ${config.registryHost}:443/${data.image} .`, new User(userId)).output;
+        await MegapolosNode.currentNode.shellCommand(`docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}:443`, new User(userId)).output;
+        await MegapolosNode.currentNode.shellCommand(`docker push ${config.registryHost}:443/${data.image}`, new User(userId)).output;
+        entity.update({ id: this.id }, { status: ImageStatus.Built, last_build_date: new Date() });
+        console.log(result);
+        if (await fse.exists(path)) {
+          await fse.remove(path);
+        }    
+      } catch (error) {
+        entity.update({ id: this.id }, { status: ImageStatus.NotExist });
+        console.error(error);
+        if (await fse.exists(path)) {
+          await fse.remove(path);
+        }
+      }
     }
   }
 

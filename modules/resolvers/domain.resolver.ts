@@ -24,6 +24,8 @@ const domainModule = createModule({
             id: String
             name: String
             auth: String
+            user: String
+            password: String
             create_date: DateTime
             update_date: DateTime
             remove_date: DateTime
@@ -31,6 +33,8 @@ const domainModule = createModule({
         input DomainInput {
             name: String
             auth: String
+            user: String
+            password: String
         }
     `,
   ],
@@ -49,6 +53,12 @@ const domainModule = createModule({
       createDomain: resolver<{ domain: Partial<DomainTable> }, DomainTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'createDomain', data: args });
         return (await Domain.create(args.domain)).getData();
+      }),
+      editDomain: resolver<{ id: string, domain: Partial<DomainTable> }, DomainTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'editDomain', data: args });
+        const domain = new Domain(args.id);
+        await domain.edit(args.domain);
+        return domain.getData();
       }),
     },
   },

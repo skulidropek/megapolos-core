@@ -5,7 +5,7 @@ server {
     ssl_certificate /etc/nginx/conf.d/certificate.crt;
     ssl_certificate_key /etc/nginx/conf.d/certificate.key;
 
-    server_name {{ data.host }};
+    server_name {{ data.node.host }};
     location / {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Host $http_host;

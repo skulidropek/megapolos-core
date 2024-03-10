@@ -78,7 +78,7 @@ const imageModule = createModule({
         return true;
       }),
       buildImage: resolver<{ imageId: string }, boolean>(async (parent, args, context, info) => {
-        await new Image(args.imageId).build(context.user.id);
+        new Image(args.imageId).build(context.user.id);
         EventsObserver.listener({ type: 'buildImage', data: args });
         return true;
       }),

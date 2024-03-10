@@ -34,7 +34,10 @@ const nodeModule = createModule({
         editNode(id: String! node: NodeInput): Node
         shellCommand(command: String! containerId: String): ShellCommandResult
         shellCommandStart(command: String! containerId: String): String
-        updateNode(id: String!): Boolean
+        updateNode(id: String! init: Boolean withRebuild: Boolean): Boolean
+        initNode(id: String!): Boolean
+        prepareNodeForCore(id: String!): Boolean
+        installRegistryToNode(id: String!): Boolean
       }
 
       type Node {
@@ -114,9 +117,24 @@ const nodeModule = createModule({
         // const commandId = uuidv4();
         // shellCommand(args.command, args.containerId, context.user, commandId);
       }),
-      updateNode: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+      updateNode: resolver<{ id: string, init: boolean, withRebuild: boolean }, boolean>(async (parent, args, context, info) => {
         const node = new MegapolosNode(args.id);
-        await node.update();
+        node.update(args.init, args.withRebuild);
+        return true;
+      }),
+      initNode: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        const node = new MegapolosNode(args.id);
+        await node.init();
+        return true;
+      }),
+      prepareNodeForCore: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        const node = new MegapolosNode(args.id);
+        await node.prepareForCore();
+        return true;
+      }),
+      installRegistryToNode: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        const node = new MegapolosNode(args.id);
+        await node.installRegistry();
         return true;
       }),
     },

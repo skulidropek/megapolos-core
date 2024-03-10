@@ -4,79 +4,14 @@
     compose_file: /opt/megapolos_swarm_compose.yml
     data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
   tasks:
-  - name: swarm directory
-    ansible.builtin.file:
-      path: /opt/megapolos_swarm_compose
-      state: directory
-  - name: nginx directory
-    ansible.builtin.file:
-      path: /data/nginx/conf
-      state: directory
-  - name: certbot cron
-    ansible.builtin.cron:
-      name: "certbot cron"
-      minute: "0"
-      hour: "3"
-      job: "certbot renew --quiet --pre-hook \"docker stop nginx\" --post-hook \"docker start nginx\""
+  - name: init
+    import_tasks: init_include.yml
+    when: data.init is defined and data.init != None
   - name: volume directories
     ansible.builtin.file:
       path: "{{ item }}"
       state: directory
     with_items: "{{ data.volumes }}"
-  - name: Install pip
-    ansible.builtin.apt:
-      name: pip
-      state: present
-  - name: Install packages
-    ansible.builtin.pip:
-      name: 
-        - jsondiff 
-        - docker
-        - passlib
-  - name: Copy nginx conf file
-    template:
-      src: nginx.conf.template
-      dest: /data/nginx/nginx.conf
-  - name: nginx
-    community.docker.docker_container:
-      name: nginx
-      image: nginx
-      ports:
-        - "80:80"
-        - "443:443"
-        - "5102:5102"
-      volumes:
-        - /etc/letsencrypt:/etc/letsencrypt
-        - /data/nginx/conf:/etc/nginx/conf.d
-        - /var/run/docker.sock:/var/run/docker.sock
-        - /data/nginx/nginx.conf:/etc/nginx/nginx.conf
-  - name: docker access
-    community.docker.docker_container_exec:
-      container: nginx
-      command: "chmod -v 0777 /var/run/docker.sock"
-  - name: docker password
-    community.general.htpasswd:
-      path: /data/nginx/conf/docker.htpasswd
-      name: megapolos
-      password: "{{ data.node.password }}"
-  - name: openssl_privatekey
-    openssl_privatekey:
-      path: /data/nginx/conf/certificate.key
-      size: 2048 
-  - name: openssl_csr
-    openssl_csr:
-      path: /data/nginx/conf/certificate.csr
-      privatekey_path: /data/nginx/conf/certificate.key
-  - name: openssl_certificate
-    openssl_certificate:
-      provider: selfsigned
-      path: /data/nginx/conf/certificate.crt
-      privatekey_path: /data/nginx/conf/certificate.key
-      csr_path: /data/nginx/conf/certificate.csr
-  - name: Copy docker nginx conf
-    template:
-      src: nginx.docker.template
-      dest: /data/nginx/conf/docker.conf
   - name: Log into private registry and force re-authorization
     docker_login:
         registry: "{{ lookup('ansible.builtin.env', 'CI_REGISTRY') }}"
@@ -111,12 +46,22 @@
       creates: /etc/letsencrypt/live/{{ item.domain_name }}/fullchain.pem
     with_items: "{{ data.containers }}"
     when: item.domain_name != None
+  - name: remove conf
+    shell: |
+      rm -f /data/nginx/conf/*.vhost.conf
   - name: Copy nginx virtualhosts conf
     template:
       src: nginx.vhost.template
-      dest: /data/nginx/conf/{{ item.domain_name }}.conf
+      dest: /data/nginx/conf/{{ item.domain_name }}.vhost.conf
     with_items: "{{ data.containers }}"
     when: item.domain_name != None
+  - name: domain password
+    community.general.htpasswd:
+      path: /data/nginx/conf/{{ item.domain_name }}.htpasswd
+      name: "{{ item.auth_user }}"
+      password: "{{ item.auth_password }}"
+    with_items: "{{ data.containers }}"
+    when: item.auth_user is defined
   - name: ensure a nginx is running
     docker_container:
       name: nginx

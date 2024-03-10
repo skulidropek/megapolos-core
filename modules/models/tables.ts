@@ -386,6 +386,8 @@ export interface DomainTable {
   id: string,
   name: string,
   auth: string,
+  user: string,
+  password: string,
   create_date: Date,
   update_date: Date,
   remove_date: Date,

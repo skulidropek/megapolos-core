@@ -30,6 +30,10 @@ class Domain {
     return new Entity<DomainTable>('domain').findOne({ id: this.id });
   }
 
+  async edit(data: Partial<DomainTable>) {
+    await new Entity<DomainTable>('domain').update({ id: this.id }, data);
+  }
+
 }
 
 export default Domain;
