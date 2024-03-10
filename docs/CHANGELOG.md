@@ -1,3 +1,10 @@
+# [0.3.0](https://gitlab.com/megapolos/megapolos-core/compare/v0.2.0...v0.3.0) (2024-03-10)
+
+
+### Features
+
+* working version ([e4df776](https://gitlab.com/megapolos/megapolos-core/commit/e4df776792f1ff90febbb4ee2fc39a65672996c0))
+
 # [0.2.0](https://gitlab.com/megapolos/megapolos-core/compare/v0.1.0...v0.2.0) (2024-03-06)
 
 
