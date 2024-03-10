@@ -297,7 +297,6 @@ class MegapolosNode {
 
   async getDockerContainers(): Promise<string[]> {
     const docker = await this.getDocker();
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
     const containers = await new Promise<string[]>((resolve, reject) => {
       docker.listServices((err, services) => {
         if (err) {
@@ -309,13 +308,11 @@ class MegapolosNode {
         }
       });
     });
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
     return containers;
   }
 
   async getDockerContainerLog(id: string): Promise<string> {
     const docker = await this.getDocker();
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
     const containers = await new Promise<Docker.ContainerInfo[]>((resolve, reject) => {
       docker.listContainers((err, containers) => {
         if (err) {
@@ -327,7 +324,6 @@ class MegapolosNode {
     });
     const container = containers.find(c => c.Labels.megapolos_id === id);
     const log = (await docker.getContainer(container.Id).logs({ stdout: true, stderr: true })).toString();
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
     return log;
   }
 }

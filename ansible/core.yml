@@ -51,3 +51,18 @@
     community.general.npm:
       name: pm2
       global: true
+
+  - name: Copy docker nginx conf
+    template:
+      src: nginx.core.template
+      dest: /data/nginx/conf/core.conf
+
+  - name: ensure a nginx is running
+    docker_container:
+      name: nginx
+      state: started
+
+  - name: reload nginx
+    community.docker.docker_container_exec:
+      container: nginx
+      command: nginx -s reload

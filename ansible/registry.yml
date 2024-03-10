@@ -39,6 +39,10 @@
     community.docker.docker_compose:
       project_src: /data/registry
       restarted: true
+  - ansible.builtin.pip:
+      name: 
+        - urllib3
+      state: absent
   - name: certificate
     shell: |
       certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ data.registry_domain }} -d {{ data.registry_domain }} --register-unsafely-without-email

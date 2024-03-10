@@ -34,6 +34,7 @@
       - "80:80"
       - "443:443"
       - "5102:5102"
+      - "5104:5104"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - /data/nginx/conf:/etc/nginx/conf.d
@@ -48,20 +49,29 @@
     path: /data/nginx/conf/docker.htpasswd
     name: megapolos
     password: "{{ data.node.password }}"
-- name: openssl_privatekey
-  openssl_privatekey:
-    path: /data/nginx/conf/certificate.key
-    size: 2048 
-- name: openssl_csr
-  openssl_csr:
-    path: /data/nginx/conf/certificate.csr
-    privatekey_path: /data/nginx/conf/certificate.key
-- name: openssl_certificate
-  openssl_certificate:
-    provider: selfsigned
-    path: /data/nginx/conf/certificate.crt
-    privatekey_path: /data/nginx/conf/certificate.key
-    csr_path: /data/nginx/conf/certificate.csr
+# - name: openssl_privatekey
+#   openssl_privatekey:
+#     path: /data/nginx/conf/certificate.key
+#     size: 2048 
+# - name: openssl_csr
+#   openssl_csr:
+#     path: /data/nginx/conf/certificate.csr
+#     privatekey_path: /data/nginx/conf/certificate.key
+# - name: openssl_certificate
+#   openssl_certificate:
+#     provider: selfsigned
+#     path: /data/nginx/conf/certificate.crt
+#     privatekey_path: /data/nginx/conf/certificate.key
+#     csr_path: /data/nginx/conf/certificate.csr
+- ansible.builtin.pip:
+    name: 
+      - urllib3
+    state: absent
+- name: certificate
+  shell: |
+    certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ data.node.host }} -d {{ data.node.host }} --register-unsafely-without-email
+  args: 
+    creates: /etc/letsencrypt/live/{{ data.node.host }}/fullchain.pem
 - name: Copy docker nginx conf
   template:
     src: nginx.docker.template
