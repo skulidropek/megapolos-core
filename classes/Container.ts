@@ -45,10 +45,10 @@ class Container {
   }
 
   static async create(instanceId: string, data: Partial<ContainerTable>): Promise<Container> {
+    const node = new MegapolosNode(data.node_id);
     const entity = new Entity<ContainerTable>('container');
-    let outerPort = await MegapolosNode.currentNode.getPort();
+    let outerPort = await node.getPort();
     if (data.outer_port) {
-      const node = new MegapolosNode(data.node_id);
       await node.checkPort(data.outer_port);
       outerPort = data.outer_port;
     }
