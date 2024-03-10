@@ -178,7 +178,7 @@ class MegapolosNode {
     data.node = node;
     const jsonPath = megapolosPath + `/ansible/${node.name}.json`;
     await fse.writeFile(jsonPath, JSON.stringify(data, null, 2));
-    const command = `ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${config.registryHost}:443 CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${config.registryPassword}' ANSIBLE_PASSWORD='${node.password}' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${node.user} -e ansible_ssh_password='{{ lookup("env", "ANSIBLE_PASSWORD") }}' -l ${node.host} ${playbook}`;
+    const command = `ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${config.registryHost}:443 CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${config.registryPassword}' ANSIBLE_PASSWORD='${node.password}' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${node.user} -e ansible_ssh_password='{{ lookup("env", "ANSIBLE_PASSWORD") }}' -i ${node.host}, ${playbook}`;
     const entity = new Entity<NodeTable>('node');
     try {
       await entity.update({ id: this.id }, { life_status: 'updating' });
