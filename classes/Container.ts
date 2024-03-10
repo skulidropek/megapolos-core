@@ -48,7 +48,8 @@ class Container {
     const entity = new Entity<ContainerTable>('container');
     let outerPort = await MegapolosNode.currentNode.getPort();
     if (data.outer_port) {
-      await MegapolosNode.currentNode.checkPort(data.outer_port);
+      const node = new MegapolosNode(data.node_id);
+      await node.checkPort(data.outer_port);
       outerPort = data.outer_port;
     }
     data.outer_port = outerPort;
@@ -96,7 +97,8 @@ class Container {
     const entity = await this.getData();
     if (data.outer_port) {
       if (data.outer_port !== entity.outer_port) {
-        await MegapolosNode.currentNode.checkPort(data.outer_port);
+        const node = new MegapolosNode(data.node_id || entity.node_id);
+        await node.checkPort(data.outer_port);
       }
     }
     await new Entity<ContainerTable>('container').update({ id: this.id }, data);
