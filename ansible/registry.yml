@@ -48,6 +48,10 @@
       certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ data.registry_domain }} -d {{ data.registry_domain }} --register-unsafely-without-email
     args: 
       creates: /etc/letsencrypt/live/{{ data.registry_domain }}/fullchain.pem
+  - ansible.builtin.pip:
+      name: 
+        - urllib3
+      state: present
   - name: ensure a nginx is running
     docker_container:
       name: nginx

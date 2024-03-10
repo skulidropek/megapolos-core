@@ -46,6 +46,10 @@
       creates: /etc/letsencrypt/live/{{ item.domain_name }}/fullchain.pem
     with_items: "{{ data.containers }}"
     when: item.domain_name != None
+  - ansible.builtin.pip:
+      name: 
+        - urllib3
+      state: present
   - name: remove conf
     shell: |
       rm -f /data/nginx/conf/*.vhost.conf

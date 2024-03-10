@@ -20,8 +20,9 @@
   ansible.builtin.pip:
     name: 
       - jsondiff 
-      - docker
+      - "docker==6.1.3"
       - passlib
+      - urllib3
 - name: Copy nginx conf file
   template:
     src: nginx.conf.template
@@ -63,10 +64,6 @@
 #     path: /data/nginx/conf/certificate.crt
 #     privatekey_path: /data/nginx/conf/certificate.key
 #     csr_path: /data/nginx/conf/certificate.csr
-- ansible.builtin.pip:
-    name: 
-      - urllib3
-    state: absent
 - name: certificate
   shell: |
     certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ data.node.host }} -d {{ data.node.host }} --register-unsafely-without-email
