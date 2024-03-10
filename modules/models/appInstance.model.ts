@@ -70,8 +70,8 @@ class AppInstanceModel {
     await knex<ContainerTable>('container').delete().where('id', containerId);
   }
 
-  static async getUsedPorts():Promise<ContainerTable[]> {
-    return knex<ContainerTable>('container').select('container.outer_port');
+  static async getUsedPorts(nodeId: string):Promise<ContainerTable[]> {
+    return knex<ContainerTable>('container').select('container.outer_port').where('node_id', nodeId);
   }
 
   static async removeAppInstance(appInstanceId: string) {

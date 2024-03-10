@@ -193,7 +193,7 @@ class MegapolosNode {
   }
 
   async getPort() {
-    const usedPorts = (await AppInstanceModel.getUsedPorts()).map((app) => app.outer_port);
+    const usedPorts = (await AppInstanceModel.getUsedPorts(this.id)).map((app) => app.outer_port);
     for (let i = 10000; i < 20000; i++) {
       if (!usedPorts.includes(i)) {
         return i;
@@ -203,7 +203,7 @@ class MegapolosNode {
   }
 
   async checkPort(port: number) {
-    const usedPorts = (await AppInstanceModel.getUsedPorts()).map((app) => app.outer_port);
+    const usedPorts = (await AppInstanceModel.getUsedPorts(this.id)).map((app) => app.outer_port);
     if (usedPorts.includes(port)) {
       throw new Error('No available port');
     }
