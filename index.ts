@@ -21,7 +21,8 @@ exec('mount --make-shared /');
   // await MegapolosNode.currentNode.dockerEvents();
   // await MegapolosNode.currentNode.restoreContainers();
 
-  await User.createRootUser();
+  const user = await User.createRootUser();
+  console.log((await user.getDataWithToken()).token);
 
   graphqlServer();
 })();
