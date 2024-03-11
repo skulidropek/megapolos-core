@@ -110,14 +110,19 @@ class MegapolosNode {
       node: data,
     };
     const containers:ContainerTable[] = await knex('container').where({ node_id: this.id });
+
+    const builded = [];
     for (let i in containers) {
       const containerResult: any = {};
       const container = containers[i];
       const containerObject = new Container(container.id);
       const image:ImageTable = await knex('image').where({ id: container.image_id }).first();
       if (withRebuild) {
-        const imageObject = new Image(image.id);
-        await imageObject.build('root');
+        if (!builded.includes(image.id)) {
+          const imageObject = new Image(image.id);
+          await imageObject.build('root');
+          builded.push(image.id);
+        }
       }
       const instance:AppInstanceTable = await knex('app_instance').where({ id: container.app_instance_id }).first();
       let domain:DomainTable;

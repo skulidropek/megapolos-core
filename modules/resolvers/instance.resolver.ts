@@ -48,6 +48,7 @@ const instanceModule = createModule({
         restartAppInstance(id: String!): Boolean
         removeAppInstance(id: String!): Boolean
         editAppInstance(id: String! name: String!): Boolean
+        buildAppInstance(id: String!): Boolean
       }
     `,
   ],
@@ -91,6 +92,11 @@ const instanceModule = createModule({
       editAppInstance: resolver<{ id: string, name: string }, boolean>(async (parent, args, context, info) => {
         await new Instance(args.id).edit(args.name);
         EventsObserver.listener({ type: 'editAppInstance', data: args });
+        return true;
+      }),
+      buildAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        new Instance(args.id).build();
+        EventsObserver.listener({ type: 'buildAppInstance', data: args });
         return true;
       }),
     },

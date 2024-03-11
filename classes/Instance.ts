@@ -113,6 +113,20 @@ class Instance {
     return (await AppInstanceModel.getAppInstanceContainers(this.id)).map((container) => new Container(container.id));
   }
 
+  async build() {
+    const containers = await this.getContainers();
+    const builded = [];
+    for (const i in containers) {
+      const container = containers[i];
+      const image = await container.getImage();
+      if (builded.includes(image.id)) {
+        continue;
+      }
+      await image.build('root');
+      builded.push(image.id);
+    }
+  }
+
 }
 
 export default Instance;
