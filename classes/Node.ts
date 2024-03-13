@@ -16,6 +16,7 @@ import config from '../config/config.json';
 import fse from 'fs-extra';
 import Docker from 'dockerode';
 import Image from './Image';
+import Dockerode from 'dockerode';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -316,7 +317,7 @@ class MegapolosNode {
     return containers;
   }
 
-  async getDockerContainerLog(id: string): Promise<string> {
+  async getDockerContainer(id: string): Promise<Docker.Container> {
     const docker = await this.getDocker();
     const containers = await new Promise<Docker.ContainerInfo[]>((resolve, reject) => {
       docker.listContainers((err, containers) => {
@@ -327,8 +328,12 @@ class MegapolosNode {
         }
       });
     });
-    const container = containers.find(c => c.Labels.megapolos_id === id);
-    const log = (await docker.getContainer(container.Id).logs({ stdout: true, stderr: true })).toString();
+    return docker.getContainer(containers.find(c => c.Labels.megapolos_id === id).Id);
+  }
+
+  async getDockerContainerLog(id: string): Promise<string> {
+    const container = await this.getDockerContainer(id);
+    const log = (await container.logs({ stdout: true, stderr: true })).toString();
     return log;
   }
 }

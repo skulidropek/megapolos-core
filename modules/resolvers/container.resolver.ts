@@ -98,6 +98,8 @@ const containerModule = createModule({
         getContainerDevices(id: String): [Device]
         getContainerLog(id: String): String
         getContainers: [Container]
+        listContainerFiles(id: String! path: String!): [String]
+        showContainerFile(id: String! path: String!): String
       }
 
       type Mutation {
@@ -121,6 +123,12 @@ const containerModule = createModule({
       }),
       getContainers: resolver<void, ContainerResult[]>(async (parent, args, context, info) => {
         return Container.getContainersData();
+      }),
+      listContainerFiles: resolver<{ id: string, path: string }, string[]>(async (parent, args, context, info) => {
+        return new Container(args.id).listFiles(args.path);
+      }),
+      showContainerFile: resolver<{ id: string, path: string }, string>(async (parent, args, context, info) => {
+        return new Container(args.id).showFile(args.path);
       }),
     },
     Mutation: {

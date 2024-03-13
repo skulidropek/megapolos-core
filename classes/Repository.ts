@@ -71,6 +71,16 @@ class Repository {
     return [...(await simpleGit(path).branch()).all, ...(await simpleGit(path).tags()).all];
   }
 
+  async listFiles(branch: string, path: string):Promise<string[]> {
+    const repositoryPath = await this.getPath();
+    return (await simpleGit(repositoryPath).raw(['ls-tree', '--name-only', branch, path])).split('\n');
+  }
+
+  async showFile(branch: string, path: string):Promise<string> {
+    const repositoryPath = await this.getPath();
+    return simpleGit(repositoryPath).show([branch + ':' + path]);
+  }
+
 }
 
 export default Repository;

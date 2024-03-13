@@ -68,7 +68,8 @@ class Container {
 
   async getDockerContainer() {
     const data = await this.getData();
-    return docker.getContainer(data.docker_runtime_id);
+    const node = new MegapolosNode(data.node_id);
+    return node.getDockerContainer(this.id);
   }
 
   async start() {
@@ -353,6 +354,16 @@ class Container {
     }
     const containerCreate = new ContainerCreate();
     await containerCreate.build(this, noRebuild);
+  }
+
+  async listFiles(path: string): Promise<string[]> {
+    const output = await this.shellCommand(`ls ${path}`).output;
+    return output.stdout.split('\n');
+  }
+
+  async showFile(path: string): Promise<string> {
+    const output = await this.shellCommand(`cat ${path}`).output;
+    return output.stdout;
   }
 }
 
