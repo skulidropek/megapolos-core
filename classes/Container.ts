@@ -356,9 +356,21 @@ class Container {
     await containerCreate.build(this, noRebuild);
   }
 
-  async listFiles(path: string): Promise<string[]> {
-    const output = await this.shellCommand(`ls ${path}`).output;
-    return output.stdout.split('\n');
+  async listFiles(path: string): Promise<{ files: string[], directories: string[] }> {
+    const output = await this.shellCommand(`ls -p ${path}`).output;
+    const files: string[] = [];
+    const directories: string[] = [];
+    output.stdout.split('\n').forEach((line) => {
+      if (line === '') {
+        return;
+      }
+      if (line.endsWith('/')) {
+        directories.push((path === '/' ? path : path + '/') + line.slice(0, -1));
+      } else {
+        files.push((path === '/' ? path : path + '/') + line);
+      }
+    });
+    return { files, directories };
   }
 
   async showFile(path: string): Promise<string> {

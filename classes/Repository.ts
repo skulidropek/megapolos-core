@@ -71,9 +71,30 @@ class Repository {
     return [...(await simpleGit(path).branch()).all, ...(await simpleGit(path).tags()).all];
   }
 
-  async listFiles(branch: string, path: string):Promise<string[]> {
+  async listFiles(branch: string, path: string):Promise<{ files: string[], directories: string[] }> {
+    if (path === '') {
+      path = '.';
+    } else {
+      path += '/.';
+    }
     const repositoryPath = await this.getPath();
-    return (await simpleGit(repositoryPath).raw(['ls-tree', '--name-only', branch, path])).split('\n');
+    const files:string[] = [];
+    const directories:string[] = [];
+    const lines = (await simpleGit(repositoryPath).raw(['ls-tree', branch, path])).split('\n');
+    for (const line of lines) {
+      const parts = line.split(/\s+/);
+      console.log(parts);
+      if (parts.length > 1) {
+        const name = parts[3];
+        const type = parts[1];
+        if (type === 'blob') {
+          files.push(name);
+        } else if (type === 'tree') {
+          directories.push(name);
+        }
+      }
+    }
+    return { files, directories };
   }
 
   async showFile(branch: string, path: string):Promise<string> {

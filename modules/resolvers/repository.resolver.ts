@@ -15,7 +15,7 @@ const repositoryModule = createModule({
         getRepositories: [Repository]
         getRepository(id: String!): Repository
         getBranches(id: String!): [String]
-        listRepositoryFiles(id: String! branch: String! path: String!): [String]
+        listRepositoryFiles(id: String! branch: String! path: String!): RepositoryFiles
         showRepositoryFile(id: String! branch: String! path: String!): String
       }
       type Mutation {
@@ -35,6 +35,10 @@ const repositoryModule = createModule({
             remove_date: DateTime
             branches: [String]
             last_fetch_date: DateTime
+        }
+        type RepositoryFiles {
+          files: [String]
+          directories: [String]
         }
         input RepositoryInput {
             name: String
@@ -58,7 +62,9 @@ const repositoryModule = createModule({
         EventsObserver.listener({ type: 'getBranches', data: args });
         return new Repository(args.id).getBranches();
       }),
-      listRepositoryFiles: resolver<{ id: string, branch: string, path: string }, string[]>(async (parent, args, context, info) => {
+      listRepositoryFiles: resolver<{ id: string, branch: string, path: string }, 
+      { files: string[], directories: string[] }
+      >(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'listRepositoryFiles', data: args });
         return new Repository(args.id).listFiles(args.branch, args.path);
       }),

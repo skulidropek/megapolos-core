@@ -98,7 +98,7 @@ const containerModule = createModule({
         getContainerDevices(id: String): [Device]
         getContainerLog(id: String): String
         getContainers: [Container]
-        listContainerFiles(id: String! path: String!): [String]
+        listContainerFiles(id: String! path: String!): ContainerFiles
         showContainerFile(id: String! path: String!): String
       }
 
@@ -107,6 +107,11 @@ const containerModule = createModule({
         updateContainer(id: String! noRebuild: Boolean): Boolean
         changeContainerEnvs(id: String!, envs: [ContainerParameterInput]): Boolean
         editContainer(id: String! data: ContainerInput!): Boolean
+      }
+
+      type ContainerFiles {
+        files: [String]
+        directories: [String]
       }
     `,
   ],
@@ -124,7 +129,7 @@ const containerModule = createModule({
       getContainers: resolver<void, ContainerResult[]>(async (parent, args, context, info) => {
         return Container.getContainersData();
       }),
-      listContainerFiles: resolver<{ id: string, path: string }, string[]>(async (parent, args, context, info) => {
+      listContainerFiles: resolver<{ id: string, path: string }, { files: string[], directories: string[] }>(async (parent, args, context, info) => {
         return new Container(args.id).listFiles(args.path);
       }),
       showContainerFile: resolver<{ id: string, path: string }, string>(async (parent, args, context, info) => {
