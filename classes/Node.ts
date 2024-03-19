@@ -17,6 +17,7 @@ import fse from 'fs-extra';
 import Docker from 'dockerode';
 import Image from './Image';
 import Dockerode from 'dockerode';
+import ExternalProcess from './ExternalProcess';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -256,7 +257,12 @@ class MegapolosNode {
   shellCommand(command: string, user: User): { id: string, output: Promise<{ stdout: string, stderr: string }> } {
     const commandId = uuidv4();
     return { id: commandId, output: (async () => {
-      const process = new Process(command, user);
+      let process:BaseProcess; 
+      if (this.id) {
+        process = new ExternalProcess(command, this);
+      } else {
+        process = new Process(command, user);
+      }
       this.commands[commandId] = process;
       // const osUserId = (await (user.getData())).os_user_id;
       // if (!osUserId) {

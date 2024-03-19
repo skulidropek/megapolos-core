@@ -32,8 +32,8 @@ const nodeModule = createModule({
         createNode(node: NodeInput): Node
         removeNode(id: String!): Boolean
         editNode(id: String! node: NodeInput): Node
-        shellCommand(command: String! containerId: String): ShellCommandResult
-        shellCommandStart(command: String! containerId: String): String
+        shellCommand(command: String! containerId: String nodeId: String): ShellCommandResult
+        shellCommandStart(command: String! containerId: String nodeId: String): String
         updateNode(id: String! init: Boolean withRebuild: Boolean): Boolean
         initNode(id: String!): Boolean
         prepareNodeForCore(id: String!): Boolean
@@ -94,21 +94,26 @@ const nodeModule = createModule({
         const node = new MegapolosNode(args.id);
         return node.edit(args.node);
       }),
-      shellCommand: resolver<{ command: string, containerId: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
+      shellCommand: resolver<{ command: string, containerId: string, nodeId: string }, { stdout: string, stderr: string }>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'shellCommandStarted', data: args });
         // return shellCommand(args.command, args.containerId, context.user);
         if (args.containerId) {
           const container = new Container(args.containerId);
           return container.shellCommand(args.command).output;
+        } else if (args.nodeId) {
+          return new MegapolosNode(args.nodeId).shellCommand(args.command, new User(context.user.id)).output;
         } else {
           return MegapolosNode.currentNode.shellCommand(args.command, new User(context.user.id)).output;
         }
       }),
-      shellCommandStart: resolver<{ command: string, containerId: string }, string>(async (parent, args, context, info) => {
+      shellCommandStart: resolver<{ command: string, containerId: string, nodeId: string }, string>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'shellCommandStarted', data: args });
         if (args.containerId) {
           const container = new Container(args.containerId);
           const result = container.shellCommand(args.command);
+          return result.id;
+        } else if (args.nodeId) {
+          const result = new MegapolosNode(args.nodeId).shellCommand(args.command, new User(context.user.id));
           return result.id;
         } else {
           const result = MegapolosNode.currentNode.shellCommand(args.command, new User(context.user.id));
