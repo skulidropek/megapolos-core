@@ -7,11 +7,11 @@
  * API call
  */
 export default class DataResultError extends Error {
-    constructor(...args: any[]);
-    code: string;
-    /**
+  constructor(...args: any[]);
+  code: string;
+  /**
      * Get the result data error as plain object
      * @returns {Object} The data as an object
      */
-    toObject(): any;
+  toObject(): any;
 }

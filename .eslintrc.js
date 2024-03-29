@@ -13,5 +13,5 @@ module.exports = {
       },
     },
   ],
-  ignorePatterns: ['node_modules', 'dist', 'data', 'volumes'],
+  ignorePatterns: ['node_modules', 'dist', 'data', 'volumes', 'repositories'],
 };
