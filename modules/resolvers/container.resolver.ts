@@ -107,6 +107,9 @@ const containerModule = createModule({
         updateContainer(id: String! noRebuild: Boolean): Boolean
         changeContainerEnvs(id: String!, envs: [ContainerParameterInput]): Boolean
         editContainer(id: String! data: ContainerInput!): Boolean
+        removeContainer(id: String!): Boolean
+        startContainer(id: String!): Boolean
+        stopContainer(id: String!): Boolean
       }
 
       type ContainerFiles {
@@ -159,6 +162,21 @@ const containerModule = createModule({
       editContainer: resolver<{ id: string, data: ContainerTable }, boolean>(async (parent, args, context, info) => {
         await new Container(args.id).edit(args.data);
         EventsObserver.listener({ type: 'editContainer', data: args });
+        return true;
+      }),
+      removeContainer: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        await new Container(args.id).remove();
+        EventsObserver.listener({ type: 'removeContainer', data: args });
+        return true;
+      }),
+      startContainer: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        await new Container(args.id).start();
+        EventsObserver.listener({ type: 'startContainer', data: args });
+        return true;
+      }),
+      stopContainer: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        await new Container(args.id).stop();
+        EventsObserver.listener({ type: 'stopContainer', data: args });
         return true;
       }),
     },

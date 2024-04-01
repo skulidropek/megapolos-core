@@ -21,11 +21,11 @@ class AppInstanceModel {
   }
 
   static async getAppInstances():Promise<AppInstanceTable[]> {
-    return knex<AppInstanceTable>('app_instance').select('app_instance.*');
+    return knex<AppInstanceTable>('app_instance').select('app_instance.*').orderBy('name');
   }
 
   static async getAppInstanceContainers(appInstanceId: string):Promise<ContainerTable[]> {
-    return knex<ContainerTable>('container').select('container.*').where('container.app_instance_id', appInstanceId);
+    return knex<ContainerTable>('container').select('container.*').where('container.app_instance_id', appInstanceId).orderBy('name');
   }
 
   static async getContainer(containerId: string):Promise<ContainerTable> {

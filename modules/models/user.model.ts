@@ -7,7 +7,7 @@ import { GroupUserTable, UserTable } from './tables';
 class UserModel {
   static async getUsers():Promise<(UserTable & { user: string })[]> {
     return knex<UserTable>('user').select('user.*', 'group_user.name as role')
-      .leftJoin('group_user', 'group_user.id', 'user.group_user_id');
+      .leftJoin('group_user', 'group_user.id', 'user.group_user_id').orderBy('user.name');
   }
 
   static async getUsersByRole(role: string):Promise<UserTable[]> {

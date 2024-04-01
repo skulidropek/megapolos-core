@@ -5,7 +5,7 @@ import { ContainerVolumeTable, DeviceBackupTable, DeviceTable, VolumeTable } fro
 
 class VolumeModel {
   static async getVolumes(): Promise<VolumeTable[]> {
-    return knex<VolumeTable>('volume').select('volume.*');
+    return knex<VolumeTable>('volume').select('volume.*').orderBy('name');
   }
 
   static async getVolume(id: string): Promise<VolumeTable> {

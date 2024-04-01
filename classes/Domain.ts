@@ -14,7 +14,7 @@ class Domain {
   }
 
   static async getAllData():Promise<DomainTable[]> {
-    return new Entity<DomainTable>('domain').findAll();
+    return new Entity<DomainTable>('domain').findAll(null, 'name');
   }
 
   static async getAll():Promise<Domain[]> {

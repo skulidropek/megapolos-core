@@ -47,7 +47,7 @@ const imageModule = createModule({
       type Mutation {
         addImage(appId: String! image: ImageInput!): Boolean
         buildImage(imageId: String!): Boolean
-        editImage(id: String! name: String! image: String! inner_port: Int!): Boolean
+        editImage(id: String! image: ImageInput!): Boolean
         removeImage(id: String!): Boolean
       }
     `,
@@ -62,8 +62,8 @@ const imageModule = createModule({
       }),
     },
     Mutation: {
-      editImage: resolver<{ id: string, name: string, image: string, inner_port: number }, boolean>(async (parent, args, context, info) => {
-        await new Image(args.id).edit(args);
+      editImage: resolver<{ id: string, image: ImageTable }, boolean>(async (parent, args, context, info) => {
+        await new Image(args.id).edit(args.image);
         EventsObserver.listener({ type: 'editImage', data: args });
         return true;
       }),

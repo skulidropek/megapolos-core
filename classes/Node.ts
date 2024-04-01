@@ -291,7 +291,7 @@ class MegapolosNode {
   }
 
   async getContainers(): Promise<ContainerTable[]> {
-    return new Entity<ContainerTable>('container').findAll({ node_id: this.id });
+    return new Entity<ContainerTable>('container').findAll({ node_id: this.id }, 'name');
   }
 
   async getDocker() {

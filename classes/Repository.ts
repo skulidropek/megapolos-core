@@ -83,7 +83,6 @@ class Repository {
     const lines = (await simpleGit(repositoryPath).raw(['ls-tree', branch, path])).split('\n');
     for (const line of lines) {
       const parts = line.split(/\s+/);
-      console.log(parts);
       if (parts.length > 1) {
         const name = parts[3];
         const type = parts[1];

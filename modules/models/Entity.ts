@@ -7,10 +7,13 @@ class Entity<T> {
     this.table = table;
   }
 
-  async findAll(where?: Partial<T>): Promise<T[]> {
+  async findAll(where: Partial<T> = null, order = null): Promise<T[]> {
     const query = knex(this.table).select('*');
     if (where) {
       query.where(where);
+    }
+    if (order) {
+      query.orderBy(order);
     }
     return query;
   }
