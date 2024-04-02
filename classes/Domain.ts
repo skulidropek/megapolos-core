@@ -34,6 +34,10 @@ class Domain {
     await new Entity<DomainTable>('domain').update({ id: this.id }, data);
   }
 
+  async remove() {
+    await new Entity<DomainTable>('domain').delete({ id: this.id });
+  }
+
 }
 
 export default Domain;

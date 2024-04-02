@@ -17,7 +17,7 @@ const domainModule = createModule({
       }
       type Mutation {
         createDomain(domain: DomainInput): Domain
-        removeDomain(id: String!): Domain
+        removeDomain(id: String!): Boolean
         editDomain(id: String! domain: DomainInput): Domain
       }
         type Domain {
@@ -59,6 +59,12 @@ const domainModule = createModule({
         const domain = new Domain(args.id);
         await domain.edit(args.domain);
         return domain.getData();
+      }),
+      removeDomain: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'removeDomain', data: args });
+        const domain = new Domain(args.id);
+        await domain.remove();
+        return true;
       }),
     },
   },

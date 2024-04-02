@@ -25,10 +25,24 @@ class Repository {
 
   constructor(id: string) {
     this.id = id;
+    if (!id) {
+      throw new Error('Repository id is required');
+    }
   }
 
   async getData():Promise<RepositoryTable> {
     return new Entity<RepositoryTable>('repository').findOne({ id: this.id });
+  }
+
+  async edit(data: Partial<RepositoryTable>):Promise<Repository> {
+    await new Entity<RepositoryTable>('repository').update({ id: this.id }, data);
+    return this;
+  }
+
+  async remove():Promise<void> {
+    const path = await this.getPath();
+    await fse.remove(path);
+    await new Entity<RepositoryTable>('repository').delete({ id: this.id });
   }
 
   async fetch():Promise<void> {

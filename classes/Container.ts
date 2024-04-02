@@ -183,7 +183,7 @@ class Container {
       const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id + '/' + volumeContainer.id;
       MegapolosNode.currentNode.validatePath(volumePath);
       try {
-        await exec(`umount ${volumePath}`);
+        // await exec(`umount ${volumePath}`);
       } catch (e) {
         console.trace(e);
         EventsObserver.listener({ type: 'volumeError', data: { containerId: this.id, error: e } });

@@ -13,7 +13,7 @@ if (process.getuid() != 0) {
 
 export const megapolosPath = __dirname;
 
-exec('mount --make-shared /');
+// exec('mount --make-shared /');
 
 (async () => {
   MegapolosNode.createCurrentNode();

@@ -20,7 +20,7 @@ const repositoryModule = createModule({
       }
       type Mutation {
         createRepository(repository: RepositoryInput): Repository
-        removeRepository(id: String!): Repository
+        removeRepository(id: String!): Boolean
         editRepository(id: String! repository: RepositoryInput): Repository
         fetchRepository(id: String!): Boolean
       }
@@ -81,6 +81,15 @@ const repositoryModule = createModule({
       fetchRepository: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'fetchRepository', data: args });
         await new Repository(args.id).fetch();
+        return true;
+      }),
+      editRepository: resolver<{ id: string, repository: Partial<RepositoryTable> }, RepositoryTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'editRepository', data: args });
+        return (await new Repository(args.id).edit(args.repository)).getData();
+      }),
+      removeRepository: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'removeRepository', data: args });
+        await new Repository(args.id).remove();
         return true;
       }),
     },
