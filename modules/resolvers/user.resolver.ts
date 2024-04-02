@@ -2,7 +2,7 @@
 
 import { createModule, gql } from 'graphql-modules';
 import { resolver, UserInput } from '../../types';
-import { UserTable } from '../models/tables';
+import { GroupUserTable, UserTable } from '../models/tables';
 import User from '../../classes/User';
 
 const userModule = createModule({
@@ -10,10 +10,16 @@ const userModule = createModule({
   dirname: __dirname,
   typeDefs: [
     gql`
+      type GroupUser {
+        id: String
+        name: String
+      }
+
       type User {
         id: String
         name: String
         group_user_id: String
+        group: GroupUser
         rest_api: String
         user_status: String
         create_date: DateTime
@@ -51,6 +57,11 @@ const userModule = createModule({
       addUser: resolver<{ input: UserInput }, boolean>(async (parent, args, context, info) => {
         await User.createUser({ name: args.input.name, groupUserId: 'name' });
         return true;
+      }),
+    },
+    User: {
+      group: resolver<UserTable, GroupUserTable>(async (parent, args, context, info) => {
+        return new User(parent.id).getGroup();
       }),
     },
   },

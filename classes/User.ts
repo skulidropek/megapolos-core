@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { UserTable } from '../modules/models/tables';
+import { GroupUserTable, UserTable } from '../modules/models/tables';
 import UserModel from '../modules/models/user.model';
 import { promisify } from 'util';
 
@@ -69,6 +69,11 @@ class User {
 
   createToken(): string {
     return jwt.sign({ id: this.id }, config.secret);
+  }
+
+  async getGroup():Promise<GroupUserTable> {
+    const data = await this.getData();
+    return UserModel.getUserGroupById(data.group_user_id);
   }
 
   async remove():Promise<void> {
