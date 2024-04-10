@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import dns from 'dns';
 import { v4 as uuidv4 } from 'uuid';
 import EventsObserver from '../modules/events/eventsObserver';
 import User from './User';
@@ -47,6 +48,15 @@ function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string
           stderr,
           code });
       }
+    });
+  });
+}
+
+async function lookupPromise(domain: string) {
+  return new Promise<string>((resolve, reject) => {
+    dns.lookup(domain, (err, address, family) => {
+      if (err) reject(err);
+      resolve(address);
     });
   });
 }
@@ -341,6 +351,11 @@ class MegapolosNode {
     const container = await this.getDockerContainer(id);
     const log = (await container.logs({ stdout: true, stderr: true })).toString();
     return log;
+  }
+
+  async getIp() {
+    const data = await this.getData();
+    return lookupPromise(data.host);
   }
 }
 

@@ -55,6 +55,7 @@ const nodeModule = createModule({
         containers: [Container]
         runningContainers: [String]
         last_update_date: DateTime
+        ip: String
       }
 
       input NodeInput {
@@ -149,6 +150,9 @@ const nodeModule = createModule({
       }),
       runningContainers: resolver<NodeTable, string[]>(async (parent, args, context, info) => {
         return new MegapolosNode(parent.id).getDockerContainers();
+      }),
+      ip: resolver<NodeTable, string>(async (parent, args, context, info) => {
+        return new MegapolosNode(parent.id).getIp();
       }),
     },
   },
