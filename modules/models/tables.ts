@@ -392,3 +392,31 @@ export interface DomainTable {
   update_date: Date,
   remove_date: Date,
 }
+
+export interface DbmsTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+}
+
+export interface DbTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+  dbms_id: string,
+}
+
+export interface DbUserTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+  dbms_id: string,
+}
+
+export interface DbDbUserTable {
+  db_id: string,
+  db_user_id: string,
+}

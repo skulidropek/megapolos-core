@@ -171,7 +171,7 @@ class MegapolosNode {
       result.containers.push(containerResult);
       result.init = init;
     }
-    this.runAnsible(`${megapolosPath}/ansible/deploy_swarm.yml`, result);
+    await this.runAnsible(`${megapolosPath}/ansible/deploy_swarm.yml`, result);
   }
 
   async init() {

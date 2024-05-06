@@ -47,8 +47,10 @@ const imageModule = createModule({
       type Mutation {
         addImage(appId: String! image: ImageInput!): Boolean
         buildImage(imageId: String!): Boolean
+        buildImages(imageIds: [String]!): Boolean
         editImage(id: String! image: ImageInput!): Boolean
         removeImage(id: String!): Boolean
+        updateNodesOfImage(imageId: String!): Boolean
       }
     `,
   ],
@@ -80,6 +82,22 @@ const imageModule = createModule({
       buildImage: resolver<{ imageId: string }, boolean>(async (parent, args, context, info) => {
         new Image(args.imageId).build(context.user.id);
         EventsObserver.listener({ type: 'buildImage', data: args });
+        return true;
+      }),
+      buildImages: resolver<{ imageIds: string[] }, boolean>(async (parent, args, context, info) => {
+        (async () => {
+          for (let i in args.imageIds) {
+            const imageId = args.imageIds[i];
+            await new Image(imageId).build(context.user.id);
+          }
+        })();
+        EventsObserver.listener({ type: 'buildImages', data: args });
+        return true;
+      }),
+      updateNodesOfImage: resolver<{ imageId: string }, boolean>(async (parent, args, context, info) => {
+        const image = new Image(args.imageId);
+        image.updateNodes();
+        EventsObserver.listener({ type: 'updateNodesOfImage', data: args });
         return true;
       }),
     },

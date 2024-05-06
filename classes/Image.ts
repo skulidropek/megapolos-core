@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import fse from 'fs-extra';
 import AppModel from '../modules/models/app.model';
-import { ImageStatus, ImageTable } from '../modules/models/tables';
+import { ContainerTable, ImageStatus, ImageTable } from '../modules/models/tables';
 import App from './App';
 import Entity from '../modules/models/Entity';
 import docker from '../coreDocker';
@@ -84,6 +84,21 @@ class Image {
     const data = await this.getData();
     return new App(data.app_id);
   }
+  
+  async updateNodes(): Promise<void> {
+    const containerEntity = new Entity<ContainerTable>('container');
+    const containers = await containerEntity.findAll({ image_id: this.id });
+    const nodes: string[] = [];
+    for (let i in containers) {
+      const container = containers[i];
+      if (container.node_id && !nodes.includes(container.node_id)) {
+        nodes.push(container.node_id);
+        await new MegapolosNode(container.node_id).update();
+      }
+    }
+    console.log(nodes);
+  }
+
 }
 
 export default Image;
