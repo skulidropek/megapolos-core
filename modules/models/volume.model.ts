@@ -1,6 +1,6 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { knex } from '../../coreRqlite';
+import { knex } from '../../corePostgres';
 import { ContainerVolumeTable, DeviceBackupTable, DeviceTable, VolumeTable } from './tables';
 
 class VolumeModel {

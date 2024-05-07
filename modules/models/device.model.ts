@@ -1,6 +1,6 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { knex } from '../../coreRqlite';
+import { knex } from '../../corePostgres';
 import { ContainerDeviceCertificateTable, ContainerDeviceDbTable, ContainerDeviceDomainTable, ContainerDeviceEnvOptionTable, ContainerDeviceAuxOptionTable, ContainerTable, DeviceOptionTable, DeviceTable, DriverTable, ContainerDeviceRepositoryTable, ContainerDeviceTable } from './tables';
 import { v4 as uuidv4 } from 'uuid';
 

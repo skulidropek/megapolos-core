@@ -12,7 +12,7 @@ import DockerEvent from '../modules/events/docker.event';
 import { megapolosPath } from '..';
 import { AppInstanceTable, ContainerTable, DomainTable, ImageTable, NodeTable } from '../modules/models/tables';
 import Entity from '../modules/models/Entity';
-import { knex } from '../coreRqlite';
+import { knex } from '../corePostgres';
 import config from '../config/config.json';
 import fse from 'fs-extra';
 import Docker from 'dockerode';

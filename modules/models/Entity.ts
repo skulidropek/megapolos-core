@@ -1,4 +1,4 @@
-import { knex } from '../../coreRqlite';
+import { knex } from '../../corePostgres';
 
 class Entity<T> {
   table: string;
