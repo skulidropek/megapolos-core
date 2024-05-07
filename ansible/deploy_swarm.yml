@@ -1,4 +1,5 @@
 - hosts: all
+  no_log: "{{ lookup('ansible.builtin.env', 'MEGAPOLOS_DEBUG') == '0' }}"
   vars: 
     name: "megapolos"
     compose_file: /opt/megapolos_swarm_compose.yml

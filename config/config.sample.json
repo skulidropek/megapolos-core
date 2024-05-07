@@ -3,5 +3,6 @@
     "connectionString": "",
     "registryHost": "",
     "registryUser": "",
-    "registryPassword": ""
+    "registryPassword": "",
+    "debug": false
 }
