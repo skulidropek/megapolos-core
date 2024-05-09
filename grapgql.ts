@@ -22,6 +22,7 @@ import instanceModule from './modules/resolvers/instance.resolver';
 import containerModule from './modules/resolvers/container.resolver';
 import imageModule from './modules/resolvers/image.resolver';
 import domainModule from './modules/resolvers/domain.resolver';
+import dbmsModule from './modules/resolvers/dbms.resolver';
 
 const graphqlServer = async () => {
   try {
@@ -34,6 +35,7 @@ const graphqlServer = async () => {
         containerModule,
         imageModule,
         domainModule,
+        dbmsModule,
       ],
     });
    

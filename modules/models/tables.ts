@@ -396,6 +396,10 @@ export interface DomainTable {
 export interface DbmsTable {
   id: string,
   name: string,
+  user: string,
+  password: string,
+  host: string,
+  type: string,
   create_date: Date,
   update_date: Date,
 }
@@ -414,9 +418,55 @@ export interface DbUserTable {
   create_date: Date,
   update_date: Date,
   dbms_id: string,
+  password: string,
+}
+
+export interface DbBackupTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+  dbms_id: string,
 }
 
 export interface DbDbUserTable {
   db_id: string,
   db_user_id: string,
+}
+
+export interface ArtifactTable {
+  id: string,
+  name: string,
+  type: string,
+  create_date: Date,
+  update_date: Date,
+}
+
+export interface LogTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+}
+
+export interface DbSchemaSchemaField {
+  name: string,
+  type: string,
+}
+
+export interface DbSchemaSchemaTable {
+  name: string,
+  fields: DbSchemaSchemaField[],
+}
+
+export interface DbSchemaSchema {
+  tables: DbSchemaSchemaTable[]
+}
+
+export interface DbSchemaTable {
+  id: string,
+  schema: DbSchemaSchema,
+  name: string,
+  create_date: Date,
+  update_date: Date,
 }
