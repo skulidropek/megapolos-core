@@ -1,11 +1,17 @@
 import { megapolosPath } from '..';
 import { ArtifactTable, DbmsTable } from '../modules/models/tables';
 import BaseRepository from './BaseRepository';
-import {readFile, writeFile} from 'fs-extra';
+import {readFile, writeFile, mkdir} from 'fs-extra';
 
 class Artifact extends BaseRepository<ArtifactTable> {
   getTable(): string {
     return 'artifact';
+  }
+
+  async create(entity: Partial<ArtifactTable>): Promise<ArtifactTable> {
+    const result = await super.create(entity);
+    await mkdir(await this.getPath());
+    return result;
   }
 
   async getPath():Promise<string> {

@@ -1,6 +1,11 @@
 import Knex from 'knex';
 import BaseDbms from './BaseDbms';
-import { DbSchemaSchema, DbSchemaSchemaTable, DbSchemaTable, DbTable, DbUserTable } from '../modules/models/tables';
+import { ArtifactTable, DbBackupTable, DbSchemaSchema, DbSchemaSchemaTable, DbSchemaTable, DbTable, DbUserTable } from '../modules/models/tables';
+import Artifact from './Artifact';
+import MegapolosNode from './Node';
+import User from './User';
+import Db from './Db';
+import DbBackup from './DbBackup';
 
 class PostgresDmbs extends BaseDbms {
   async getKnex(db: string) {
@@ -66,6 +71,28 @@ class PostgresDmbs extends BaseDbms {
       result.tables.push(table);
     }
     return result;
+  }
+
+  async backupProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<DbBackupTable> {
+    const data = await this.getData();
+    const dbData = await db.getData();
+    if (data.host === 'localhost') {
+      data.host = '172.17.0.1';
+    }
+    const file = await artifact.getPath() + '/backup.sql';
+    await MegapolosNode.currentNode.shellCommand(`docker run -i --rm -e PGPASSWORD=${data.password} postgres pg_dump -c -h ${data.host} -U ${data.user} ${dbData.name} > ${file}`, new User('')).output;
+    return backup.getData();
+  }
+
+  async restoreProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<boolean> {
+    const data = await this.getData();
+    const dbData = await db.getData();
+    if (data.host === 'localhost') {
+      data.host = '172.17.0.1';
+    }
+    const file = await artifact.getPath() + '/backup.sql';
+    await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User('')).output;
+    return true;
   }
 }
 

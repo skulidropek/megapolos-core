@@ -1,7 +1,9 @@
 import { knex } from '../corePostgres';
-import { DbSchemaSchema, DbTable, DbUserTable, DbmsTable } from '../modules/models/tables';
+import { ArtifactTable, DbBackupTable, DbSchemaSchema, DbTable, DbUserTable, DbmsTable } from '../modules/models/tables';
+import Artifact from './Artifact';
 import BaseRepository from './BaseRepository';
 import Db from './Db';
+import DbBackup from './DbBackup';
 import DbUser from './DbUser';
 import PostgresDmbs from './PostgresDbms';
 
@@ -57,6 +59,38 @@ class BaseDbms extends BaseRepository<DbmsTable> {
 
   async getUsers(): Promise<DbUserTable[]> {
     return new DbUser().getByFields({ dbms_id: this.id });
+  }
+
+  async backup(dbId: string): Promise<DbBackupTable> {
+    const data = await this.getData();
+    const artifact = new Artifact();
+    await artifact.create({
+      name: 'backup',
+      type: 'backup',
+    });
+    const backup = new DbBackup();
+    await backup.create({
+      name: 'backup',
+      artifact_id: artifact.id,
+      type: data.type,
+    });
+    const db = new Db(dbId);
+    return this.backupProcess(db, backup, artifact);
+  }
+
+  async backupProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<DbBackupTable> {
+    return new DbBackup().getData();
+  }
+
+  async restore(dbId: string, backupId: string): Promise<boolean> {
+    const db = new Db(dbId);
+    const backup = new DbBackup(backupId);
+    const artifact = await backup.getArtifact();
+    return this.restoreProcess(db, backup, artifact);
+  }
+
+  async restoreProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<boolean> {
+    return true;
   }
 
   async getSchema(db: string): Promise<DbSchemaSchema> {

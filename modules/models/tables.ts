@@ -426,7 +426,8 @@ export interface DbBackupTable {
   name: string,
   create_date: Date,
   update_date: Date,
-  dbms_id: string,
+  artifact_id: string,
+  type: string,
 }
 
 export interface DbDbUserTable {

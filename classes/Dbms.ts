@@ -1,6 +1,7 @@
 import { knex } from '../corePostgres';
 import { DbmsTable } from '../modules/models/tables';
 import BaseDbms from './BaseDbms';
+import Db from './Db';
 import PostgresDmbs from './PostgresDbms';
 
 class Dbms {
@@ -17,6 +18,49 @@ class Dbms {
       return new PostgresDmbs();
     }
     throw new Error('Dbms type not found');
+  }
+
+  static async compareDbs(db1id: string, db2id: string): Promise<string[]> {
+    const db1 = await new Db(db1id).getData();
+    const db2 = await new Db(db2id).getData();
+    const dbms1 = await this.getById(db1.dbms_id);
+    const dbms2 = await this.getById(db2.dbms_id);
+    const schema1 = await dbms1.getSchema(db1.name);
+    const schema2 = await dbms2.getSchema(db2.name);
+    const result: string[] = ['', ''];
+    schema1.tables.forEach((table1) => {
+      const table2 = schema2.tables.find((table) => table.name === table1.name);
+      if (!table2) {
+        result[0] += `Table ${table1.name}\n`;
+        result[1] += '\n';
+      } else {
+        table1.fields.forEach((field1) => {
+          const field2 = table2.fields.find((field) => field.name === field1.name);
+          if (!field2) {
+            result[0] += `Field ${table1.name}.${field1.name}\n`;
+            result[1] += '\n';
+          } else if (field1.type !== field2.type) {
+            result[0] += `Field ${table1.name}.${field1.name} type ${field1.type}\n`;
+            result[1] += `Field ${table2.name}.${field2.name} type ${field2.type}\n`;
+          }
+        });
+        table2.fields.forEach((field2) => {
+          const field1 = table1.fields.find((field) => field.name === field2.name);
+          if (!field1) {
+            result[0] += '\n';
+            result[1] += `Field ${table2.name}.${field2.name}\n`;
+          }
+        });
+      }
+    });
+    schema2.tables.forEach((table2) => {
+      const table1 = schema1.tables.find((table) => table.name === table2.name);
+      if (!table1) {
+        result[0] += '\n';
+        result[1] += `Table ${table2.name}\n`;
+      }
+    });
+    return result;
   }
 }
 
