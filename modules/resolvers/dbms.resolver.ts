@@ -3,11 +3,13 @@
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import { resolver } from '../../types';
-import { DbBackupTable, DbSchemaSchema, DbTable, DbUserTable, DbmsTable } from '../models/tables';
+import { DbBackupTable, DbSchemaSchema, DbSchemaTable, DbTable, DbUserTable, DbmsTable } from '../models/tables';
 import BaseDbms from '../../classes/BaseDbms';
 import Dbms from '../../classes/Dbms';
 import DbUser from '../../classes/DbUser';
 import Db from '../../classes/Db';
+import DbBackup from '../../classes/DbBackup';
+import DbSchema from '../../classes/DbSchema';
 
 const dbmsModule = createModule({
   id: 'dbms-module',
@@ -17,7 +19,14 @@ const dbmsModule = createModule({
       type Query {
         getDbmss: [Dbms]
         getDbms(id: String!): Dbms
+        getDbs: [Db]
+        getDb(id: String!): Db
+        getDbBackups: [DbBackup]
+        getDbBackup(id: String!): DbBackup
+        getDbSchemas: [DbSchema]
+        getDbSchema(id: String!): DbSchema
         compareDbs(dbId1: String! dbId2: String!): [String]
+        downloadBackupText(dbmsId: String! backupId: String!): String
       }
       type Mutation {
         createDbms(dbms: DbmsInput): Dbms
@@ -26,8 +35,10 @@ const dbmsModule = createModule({
         createDb(db: DbInput! withoutChange: Boolean): Db
         createDbUser(user: DbUserInput! withoutChange: Boolean): DbUser
         addDbUserToDb(userId: String! dbId: String! withoutChange: Boolean): Boolean
+        saveDbSchema(dbId: String! name: String!): DbSchema
         backupDb(dbId: String!): DbBackup
         restoreDb(dbId: String! backupId: String!): Boolean
+        uploadBackupText(dbmsId: String! backupText: String!): DbBackup
       }
       type DbSchemaSchemaField {
         name: String
@@ -39,6 +50,13 @@ const dbmsModule = createModule({
       }
       type DbSchemaSchema {
         tables: [DbSchemaSchemaTable]
+      }
+      type DbSchema {
+        id: String
+        name: String
+        schema: DbSchemaSchema
+        create_date: DateTime
+        update_date: DateTime
       }
         type Dbms {
             id: String
@@ -108,9 +126,37 @@ const dbmsModule = createModule({
         EventsObserver.listener({ type: 'getDbms', data: args });
         return (await Dbms.getById(args.id)).getData();
       }),
+      getDbs: resolver<{}, DbTable[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getDbs', data: args });
+        return new Db().getAll();
+      }),
+      getDb: resolver<{ id: string }, DbTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getDb', data: args });
+        return new Db(args.id).getData();
+      }),
+      getDbBackups: resolver<{}, DbBackupTable[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getDbBackups', data: args });
+        return new DbBackup().getAll();
+      }),
+      getDbBackup: resolver<{ id: string }, DbBackupTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getDbBackup', data: args });
+        return new DbBackup(args.id).getData();
+      }),
+      getDbSchemas: resolver<{}, DbSchemaTable[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getDbSchemas', data: args });
+        return new DbSchema().getAll();
+      }),
+      getDbSchema: resolver<{ id: string }, DbSchemaTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getDbSchema', data: args });
+        return new DbSchema(args.id).getData();
+      }),
       compareDbs: resolver<{ dbId1: string, dbId2: string }, string[]>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'compareDbs', data: args });
         return Dbms.compareDbs(args.dbId1, args.dbId2);
+      }),
+      downloadBackupText: resolver<{ dbmsId: string, backupId: string }, string>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'downloadBackupText', data: args });
+        return (await Dbms.getById(args.dbmsId)).downloadBackupText(args.backupId);
       }),
     },
     Mutation: {
@@ -137,7 +183,13 @@ const dbmsModule = createModule({
       }),
       addDbUserToDb: resolver<{ userId: string, dbId: string, withoutChange: boolean }, boolean>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'addDbUserToDb', data: args });
-        return (await Dbms.getById(args.userId)).addUserToDb(args.userId, args.dbId, args.withoutChange);
+        const db = await new Db(args.dbId).getData();
+        return (await Dbms.getById(db.dbms_id)).addUserToDb(args.userId, args.dbId, args.withoutChange);
+      }),
+      saveDbSchema: resolver<{ dbId: string, name: string }, DbSchemaTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'saveDbSchema', data: args });
+        const db = await new Db(args.dbId).getData();
+        return (await Dbms.getById(db.dbms_id)).saveSchema(args.dbId, args.name);
       }),
       backupDb: resolver<{ dbId: string }, DbBackupTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'backupDb', data: args });
@@ -150,6 +202,10 @@ const dbmsModule = createModule({
         const db = await new Db(args.dbId).getData();
         const dbms = await Dbms.getById(db.dbms_id);
         return dbms.restore(db.id, args.backupId);
+      }),
+      uploadBackupText: resolver<{ dbmsId: string, backupText: string }, DbBackupTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'uploadBackupText', data: args });
+        return (await Dbms.getById(args.dbmsId)).uploadBackupText(args.backupText);
       }),
     },
     Dbms: {

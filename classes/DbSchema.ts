@@ -6,3 +6,5 @@ class DbSchema extends BaseRepository<DbSchemaTable> {
     return 'db_schema';
   }
 }
+
+export default DbSchema;

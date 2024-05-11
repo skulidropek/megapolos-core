@@ -6,6 +6,7 @@ import MegapolosNode from './Node';
 import User from './User';
 import Db from './Db';
 import DbBackup from './DbBackup';
+import { readFile, writeFile } from 'fs-extra';
 
 class PostgresDmbs extends BaseDbms {
   async getKnex(db: string) {
@@ -36,8 +37,11 @@ class PostgresDmbs extends BaseDbms {
     return true;
   }
 
-  async createDbUserChange(user: Partial<DbUserTable>): Promise<boolean> {
-    await (await this.getKnex('postgres')).raw(`CREATE USER IF NOT EXISTS ${user.name} WITH PASSWORD '${user.password}'`);
+  async createUserChange(user: Partial<DbUserTable>): Promise<boolean> {
+    const exists = await (await this.getKnex('postgres')).raw(`SELECT 1 FROM pg_roles WHERE rolname = '${user.name}'`);
+    if (!exists.rows.length) {
+      await (await this.getKnex('postgres')).raw(`CREATE USER ${user.name} LOGIN PASSWORD '${user.password}'`);
+    }
     return true;
   }
 
@@ -61,11 +65,11 @@ class PostgresDmbs extends BaseDbms {
         name: tables[k].table_name,
         fields: [],
       };
-      const fields = await knex('information_schema.columns').select('column_name', 'data_type').where('table_name', table.name);
+      const fields = await knex('information_schema.columns').select('column_name', 'data_type', 'udt_name').where('table_name', table.name);
       for (let k2 in fields) {
         table.fields.push({
           name: fields[k2].column_name,
-          type: fields[k2].data_type,
+          type: fields[k2].data_type === 'USER-DEFINED' ? fields[k2].udt_name : fields[k2].data_type,
         });
       }
       result.tables.push(table);
@@ -93,6 +97,17 @@ class PostgresDmbs extends BaseDbms {
     const file = await artifact.getPath() + '/backup.sql';
     await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User('')).output;
     return true;
+  }
+
+  async downloadBackupTextProcess(backup: DbBackup, artifact: Artifact): Promise<string> {
+    const file = await artifact.getPath() + '/backup.sql';
+    return readFile(file, 'utf8');
+  }
+
+  async uploadBackupTextProcess(text: string, backup: DbBackup, artifact: Artifact): Promise<DbBackupTable> {
+    const file = await artifact.getPath() + '/backup.sql';
+    await writeFile(file, text);
+    return backup.getData();
   }
 }
 
