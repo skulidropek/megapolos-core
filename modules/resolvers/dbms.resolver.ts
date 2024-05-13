@@ -26,7 +26,9 @@ const dbmsModule = createModule({
         getDbSchemas: [DbSchema]
         getDbSchema(id: String!): DbSchema
         compareDbs(dbId1: String! dbId2: String!): [String]
-        downloadBackupText(dbmsId: String! backupId: String!): String
+        compareSchemas(schema1id: String! schema2id: String!): [String]
+        compareDbSchema(dbid: String! schemaid: String!): [String]
+        downloadBackupText(backupId: String!): String
       }
       type Mutation {
         createDbms(dbms: DbmsInput): Dbms
@@ -38,7 +40,7 @@ const dbmsModule = createModule({
         saveDbSchema(dbId: String! name: String!): DbSchema
         backupDb(dbId: String!): DbBackup
         restoreDb(dbId: String! backupId: String!): Boolean
-        uploadBackupText(dbmsId: String! backupText: String!): DbBackup
+        uploadBackupText(type: String! backupText: String!): DbBackup
       }
       type DbSchemaSchemaField {
         name: String
@@ -69,6 +71,8 @@ const dbmsModule = createModule({
             remove_date: DateTime
             dbs: [Db]
             users: [DbUser]
+            internalDbs: [String]
+            internalUsers: [String]
             type: String
         }
         input DbmsInput {
@@ -154,9 +158,18 @@ const dbmsModule = createModule({
         EventsObserver.listener({ type: 'compareDbs', data: args });
         return Dbms.compareDbs(args.dbId1, args.dbId2);
       }),
-      downloadBackupText: resolver<{ dbmsId: string, backupId: string }, string>(async (parent, args, context, info) => {
+      compareSchemas: resolver<{ schema1id: string, schema2id: string }, string[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'compareSchemas', data: args });
+        return Dbms.compareSchemas(args.schema1id, args.schema2id);
+      }),
+      compareDbSchema: resolver<{ dbid: string, schemaid: string }, string[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'compareDbSchema', data: args });
+        return Dbms.compareDbSchema(args.dbid, args.schemaid);
+      }),
+      downloadBackupText: resolver<{ backupId: string }, string>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'downloadBackupText', data: args });
-        return (await Dbms.getById(args.dbmsId)).downloadBackupText(args.backupId);
+        const dbBackup = await new DbBackup(args.backupId).getData();
+        return (await Dbms.getByType(dbBackup.type)).downloadBackupText(args.backupId);
       }),
     },
     Mutation: {
@@ -189,7 +202,7 @@ const dbmsModule = createModule({
       saveDbSchema: resolver<{ dbId: string, name: string }, DbSchemaTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'saveDbSchema', data: args });
         const db = await new Db(args.dbId).getData();
-        return (await Dbms.getById(db.dbms_id)).saveSchema(args.dbId, args.name);
+        return (await Dbms.getById(db.dbms_id)).saveSchema(args.dbId);
       }),
       backupDb: resolver<{ dbId: string }, DbBackupTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'backupDb', data: args });
@@ -203,9 +216,9 @@ const dbmsModule = createModule({
         const dbms = await Dbms.getById(db.dbms_id);
         return dbms.restore(db.id, args.backupId);
       }),
-      uploadBackupText: resolver<{ dbmsId: string, backupText: string }, DbBackupTable>(async (parent, args, context, info) => {
+      uploadBackupText: resolver<{ type: string, backupText: string }, DbBackupTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'uploadBackupText', data: args });
-        return (await Dbms.getById(args.dbmsId)).uploadBackupText(args.backupText);
+        return (await Dbms.getByType(args.type)).uploadBackupText(args.backupText, args.type);
       }),
     },
     Dbms: {
@@ -213,9 +226,17 @@ const dbmsModule = createModule({
         EventsObserver.listener({ type: 'Dbms.dbs', data: args });
         return (await Dbms.getById(parent.id)).getDbs();
       }),
+      internalDbs: resolver<DbmsTable, string[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'Dbms.internalDbs', data: args });
+        return (await Dbms.getById(parent.id)).getInternalDbs();
+      }),
       users: resolver<DbmsTable, DbUserTable[]>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'Dbms.users', data: args });
         return (await Dbms.getById(parent.id)).getUsers();
+      }),
+      internalUsers: resolver<DbmsTable, string[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'Dbms.internalUsers', data: args });
+        return (await Dbms.getById(parent.id)).getInternalUsers();
       }),
     },
     Db: {

@@ -1,7 +1,8 @@
 import { knex } from '../corePostgres';
-import { DbmsTable } from '../modules/models/tables';
+import { DbSchemaSchema, DbmsTable } from '../modules/models/tables';
 import BaseDbms from './BaseDbms';
 import Db from './Db';
+import DbSchema from './DbSchema';
 import PostgresDmbs from './PostgresDbms';
 
 class Dbms {
@@ -27,6 +28,24 @@ class Dbms {
     const dbms2 = await this.getById(db2.dbms_id);
     const schema1 = await dbms1.getSchema(db1.name);
     const schema2 = await dbms2.getSchema(db2.name);
+    return this.compareSchemaSchemas(schema1, schema2);
+  }
+
+  static async compareSchemas(schema1id: string, schema2id: string): Promise<string[]> {
+    const schema1 = await new DbSchema(schema1id).getData();
+    const schema2 = await new DbSchema(schema2id).getData();
+    return this.compareSchemaSchemas(schema1.schema, schema2.schema);
+  }
+
+  static async compareDbSchema(dbid: string, schemaid: string): Promise<string[]> {
+    const db = await new Db(dbid).getData();
+    const dbms = await this.getById(db.dbms_id);
+    const schema1 = await dbms.getSchema(db.name);
+    const schema2 = await new DbSchema(schemaid).getData();
+    return this.compareSchemaSchemas(schema1, schema2.schema);
+  }
+
+  static async compareSchemaSchemas(schema1: DbSchemaSchema, schema2: DbSchemaSchema): Promise<string[]> {
     const result: string[] = ['', ''];
     schema1.tables.forEach((table1) => {
       const table2 = schema2.tables.find((table) => table.name === table1.name);

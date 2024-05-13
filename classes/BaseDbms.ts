@@ -1,3 +1,4 @@
+import moment from 'moment';
 import { knex } from '../corePostgres';
 import { ArtifactTable, DbBackupTable, DbSchemaSchema, DbSchemaTable, DbTable, DbUserTable, DbmsTable } from '../modules/models/tables';
 import Artifact from './Artifact';
@@ -62,20 +63,30 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return new DbUser().getByFields({ dbms_id: this.id });
   }
 
+  async getInternalDbs(): Promise<string[]> {
+    return [];
+  }
+
+  async getInternalUsers(): Promise<string[]> {
+    return [];
+  }
+
   async backup(dbId: string): Promise<DbBackupTable> {
     const data = await this.getData();
     const artifact = new Artifact();
+    const db = new Db(dbId);
+    const dbData = await db.getData();
+    const name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
     await artifact.create({
-      name: 'backup',
+      name: 'Db backup ' + name,
       type: 'backup',
     });
     const backup = new DbBackup();
     await backup.create({
-      name: 'backup',
+      name: name,
       artifact_id: artifact.id,
       type: data.type,
     });
-    const db = new Db(dbId);
     return this.backupProcess(db, backup, artifact);
   }
 
@@ -104,8 +115,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return '';
   }
 
-  async uploadBackupText(text: string): Promise<DbBackupTable> {
-    const data = await this.getData();
+  async uploadBackupText(text: string, type: string): Promise<DbBackupTable> {
     const artifact = new Artifact();
     await artifact.create({
       name: 'backup',
@@ -115,7 +125,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     await backup.create({
       name: 'backup',
       artifact_id: artifact.id,
-      type: data.type,
+      type: type,
     });
     return this.uploadBackupTextProcess(text, backup, artifact);
   }
@@ -130,8 +140,11 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     };
   }
 
-  async saveSchema(dbId: string, name: string): Promise<DbSchemaTable> {
+  async saveSchema(dbId: string): Promise<DbSchemaTable> {
+    const data = await this.getData();
     const db = await new Db(dbId).getData();
+    const dbData = await this.getData();
+    const name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
     const schema = await this.getSchema(db.name);
     return new DbSchema().create({
       schema,

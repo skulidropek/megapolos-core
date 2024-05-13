@@ -43,6 +43,7 @@
     "is-wsl": "^2.2.0",
     "jsonwebtoken": "^8.5.1",
     "knex": "^3.0.1",
+    "moment": "^2.30.1",
     "node-fetch": "^3.3.0",
     "pg": "^8.11.3",
     "rqlite-js": "2.5.5",

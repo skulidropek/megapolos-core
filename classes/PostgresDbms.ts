@@ -109,6 +109,18 @@ class PostgresDmbs extends BaseDbms {
     await writeFile(file, text);
     return backup.getData();
   }
+
+  async getInternalDbs(): Promise<string[]> {
+    return (await (await this.getKnex('postgres'))
+      .select('datname').from('pg_database').whereRaw('datistemplate = false'))
+      .map((row: any) => row.datname);
+  }
+
+  async getInternalUsers(): Promise<string[]> {
+    return (await (await this.getKnex('postgres'))
+      .select('rolname').from('pg_roles').whereRaw('rolname NOT LIKE \'pg_%\''))
+      .map((row: any) => row.rolname);
+  }
 }
 
 export default PostgresDmbs;
