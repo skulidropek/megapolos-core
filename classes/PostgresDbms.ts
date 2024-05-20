@@ -53,10 +53,74 @@ class PostgresDmbs extends BaseDbms {
     await knex.raw(`ALTER DEFAULT PRIVILEGES FOR USER ${userName} IN SCHEMA public GRANT INSERT, UPDATE, DELETE, SELECT ON TABLES TO ${userName}`);
     return true;
   }
+
+  /*
+  SELECT table_name, column_name, is_nullable
+  FROM information_schema.columns
+  
+  SELECT
+    tc.table_schema, 
+    tc.constraint_name, 
+    tc.table_name, 
+    kcu.column_name, 
+    ccu.table_schema AS foreign_table_schema,
+    ccu.table_name AS foreign_table_name,
+    ccu.column_name AS foreign_column_name 
+FROM information_schema.table_constraints AS tc 
+JOIN information_schema.key_column_usage AS kcu
+    ON tc.constraint_name = kcu.constraint_name
+    AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage AS ccu
+    ON ccu.constraint_name = tc.constraint_name
+WHERE tc.table_schema = 'public'
+
+SELECT c.table_name, c.column_name, c.data_type, tc.constraint_type
+FROM information_schema.table_constraints tc 
+JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) 
+JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
+  AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND tc.table_schema = 'public'
+  */
   
   async getSchema(db: string): Promise<DbSchemaSchema> {
     const knex = await this.getKnex(db);
     const tables = await knex('information_schema.tables').select('table_name').where('table_schema', 'public');
+    const foreignKeys = await knex.raw(`
+    WITH unnested_confkey AS (
+      SELECT oid, unnest(confkey) as confkey
+      FROM pg_constraint
+    ),
+    unnested_conkey AS (
+      SELECT oid, unnest(conkey) as conkey
+      FROM pg_constraint
+    )
+    select
+      c.conname                   AS constraint_name,
+      c.contype                   AS constraint_type,
+      tbl.relname                 AS constraint_table,
+      col.attname                 AS constraint_column,
+      referenced_tbl.relname      AS referenced_table,
+      referenced_field.attname    AS referenced_column,
+      pg_get_constraintdef(c.oid) AS definition
+    FROM pg_constraint c
+    LEFT JOIN unnested_conkey con ON c.oid = con.oid
+    LEFT JOIN pg_class tbl ON tbl.oid = c.conrelid
+    LEFT JOIN pg_attribute col ON (col.attrelid = tbl.oid AND col.attnum = con.conkey)
+    LEFT JOIN pg_class referenced_tbl ON c.confrelid = referenced_tbl.oid
+    LEFT JOIN unnested_confkey conf ON c.oid = conf.oid
+    LEFT JOIN pg_attribute referenced_field ON (referenced_field.attrelid = c.confrelid AND referenced_field.attnum = conf.confkey)
+    WHERE c.contype = 'f'
+    ORDER BY constraint_table
+    `);
+    const contraints = await knex.raw(`
+  SELECT DISTINCT c.table_name, c.column_name, c.data_type, tc.constraint_type
+  FROM information_schema.table_constraints tc 
+  JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) 
+  JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
+    AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+  WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND tc.table_schema = 'public'
+    `);
+
     const result: DbSchemaSchema = {
       tables: [],
     };
@@ -64,14 +128,33 @@ class PostgresDmbs extends BaseDbms {
       const table:DbSchemaSchemaTable = {
         name: tables[k].table_name,
         fields: [],
+        foreignKeys: [],
       };
-      const fields = await knex('information_schema.columns').select('column_name', 'data_type', 'udt_name').where('table_name', table.name);
-      for (let k2 in fields) {
+      const fields = await knex('information_schema.columns')
+        .select('column_name', 'data_type', 'udt_name', 'is_nullable')
+        .where('table_name', table.name);
+      fields.forEach((field: any) => {
         table.fields.push({
-          name: fields[k2].column_name,
-          type: fields[k2].data_type === 'USER-DEFINED' ? fields[k2].udt_name : fields[k2].data_type,
+          name: field.column_name,
+          type: field.data_type === 'USER-DEFINED' ? field.udt_name : field.data_type,
+          notNull: field.is_nullable === 'NO',
+          unique: contraints.rows.find((row: any) => 
+            row.table_name === table.name && row.column_name === field.column_name && 
+          row.constraint_type === 'UNIQUE',
+          ) !== undefined,
+          primaryKey: contraints.rows.find((row: any) => 
+            row.table_name === table.name && row.column_name === field.column_name &&
+          row.constraint_type === 'PRIMARY KEY',
+          ) !== undefined,
         });
-      }
+      });
+      table.foreignKeys = 
+        foreignKeys.rows.filter((row: any) => row.constraint_table === table.name).map((row: any) => ({
+          name: row.constraint_name,
+          field: row.constraint_column,
+          foreignTable: row.referenced_table,
+          foreignField: row.referenced_column,
+        }));
       result.tables.push(table);
     }
     return result;

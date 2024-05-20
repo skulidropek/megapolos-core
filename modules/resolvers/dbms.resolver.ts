@@ -45,10 +45,20 @@ const dbmsModule = createModule({
       type DbSchemaSchemaField {
         name: String
         type: String
+        notNull: Boolean
+        unique: Boolean
+        primaryKey: Boolean
+      }
+      type DbSchemaSchemaForeignKey {
+        name: String
+        field: String
+        foreignTable: String
+        foreignField: String
       }
       type DbSchemaSchemaTable {
         name: String
         fields: [DbSchemaSchemaField]
+        foreignKeys: [DbSchemaSchemaForeignKey]
       }
       type DbSchemaSchema {
         tables: [DbSchemaSchemaTable]

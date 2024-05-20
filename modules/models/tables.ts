@@ -453,11 +453,22 @@ export interface LogTable {
 export interface DbSchemaSchemaField {
   name: string,
   type: string,
+  notNull: boolean,
+  unique: boolean,
+  primaryKey: boolean,
+}
+
+export interface DbSchemaSchemaForeignKey {
+  name: string,
+  field: string,
+  foreignTable: string,
+  foreignField: string,
 }
 
 export interface DbSchemaSchemaTable {
   name: string,
   fields: DbSchemaSchemaField[],
+  foreignKeys: DbSchemaSchemaForeignKey[],
 }
 
 export interface DbSchemaSchema {
