@@ -71,12 +71,14 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return [];
   }
 
-  async backup(dbId: string): Promise<DbBackupTable> {
+  async backup(dbId: string, name: string): Promise<DbBackupTable> {
     const data = await this.getData();
     const artifact = new Artifact();
     const db = new Db(dbId);
     const dbData = await db.getData();
-    const name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
+    if (!name) {
+      name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
+    }
     await artifact.create({
       name: 'Db backup ' + name,
       type: 'backup',
@@ -140,11 +142,13 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     };
   }
 
-  async saveSchema(dbId: string): Promise<DbSchemaTable> {
+  async saveSchema(dbId: string, name: string): Promise<DbSchemaTable> {
     const data = await this.getData();
     const db = await new Db(dbId).getData();
     const dbData = await this.getData();
-    const name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
+    if (!name) {
+      name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
+    }
     const schema = await this.getSchema(db.name);
     return new DbSchema().create({
       schema,

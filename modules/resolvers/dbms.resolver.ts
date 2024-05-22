@@ -37,8 +37,8 @@ const dbmsModule = createModule({
         createDb(db: DbInput! withoutChange: Boolean): Db
         createDbUser(user: DbUserInput! withoutChange: Boolean): DbUser
         addDbUserToDb(userId: String! dbId: String! withoutChange: Boolean): Boolean
-        saveDbSchema(dbId: String! name: String!): DbSchema
-        backupDb(dbId: String!): DbBackup
+        saveDbSchema(dbId: String! name: String): DbSchema
+        backupDb(dbId: String! name: String): DbBackup
         restoreDb(dbId: String! backupId: String!): Boolean
         uploadBackupText(type: String! backupText: String!): DbBackup
       }
@@ -212,13 +212,13 @@ const dbmsModule = createModule({
       saveDbSchema: resolver<{ dbId: string, name: string }, DbSchemaTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'saveDbSchema', data: args });
         const db = await new Db(args.dbId).getData();
-        return (await Dbms.getById(db.dbms_id)).saveSchema(args.dbId);
+        return (await Dbms.getById(db.dbms_id)).saveSchema(args.dbId, args.name);
       }),
-      backupDb: resolver<{ dbId: string }, DbBackupTable>(async (parent, args, context, info) => {
+      backupDb: resolver<{ dbId: string, name: string }, DbBackupTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'backupDb', data: args });
         const db = await new Db(args.dbId).getData();
         const dbms = await Dbms.getById(db.dbms_id);
-        return dbms.backup(db.id);
+        return dbms.backup(db.id, args.name);
       }),
       restoreDb: resolver<{ dbId: string, backupId: string }, boolean>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'restoreDb', data: args });
