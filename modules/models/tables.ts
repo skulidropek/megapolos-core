@@ -449,6 +449,8 @@ export interface LogTable {
   name: string,
   create_date: Date,
   update_date: Date,
+  is_closed: boolean,
+  close_date: Date,
 }
 
 export interface DbSchemaSchemaField {

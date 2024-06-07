@@ -7,6 +7,7 @@ import User from './User';
 import Db from './Db';
 import DbBackup from './DbBackup';
 import { readFile, writeFile } from 'fs-extra';
+import Log from './Log';
 
 class PostgresDmbs extends BaseDbms {
   async getKnex(db: string) {
@@ -167,7 +168,10 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
       data.host = '172.17.0.1';
     }
     const file = await artifact.getPath() + '/backup.sql';
-    await MegapolosNode.currentNode.shellCommand(`docker run -i --rm -e PGPASSWORD=${data.password} postgres pg_dump -c -h ${data.host} -U ${data.user} ${withoutData ? '-s' : ''} ${dbData.name} > ${file}`, new User('')).output;
+    const backupData = await backup.getData();
+    const log = new Log();
+    await log.create({ name: 'Backup postgrsql db ' + data.name + '.' + dbData.name + ' to backup ' + backupData.name });
+    await MegapolosNode.currentNode.shellCommand(`docker run -i --rm -e PGPASSWORD=${data.password} postgres pg_dump -c -h ${data.host} -U ${data.user} ${withoutData ? '-s' : ''} --if-exists --no-owner --no-privileges ${dbData.name} > ${file}`, new User(''), log).output;
     return backup.getData();
   }
 
@@ -178,6 +182,9 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
       data.host = '172.17.0.1';
     }
     const file = await artifact.getPath() + '/backup.sql';
+    const backupData = await backup.getData();
+    const log = new Log();
+    await log.create({ name: 'Restore postgrsql db ' + data.name + '.' + dbData.name + ' from backup ' + backupData.name });
     await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User('')).output;
     return true;
   }

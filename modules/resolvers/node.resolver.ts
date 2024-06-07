@@ -35,6 +35,7 @@ const nodeModule = createModule({
         shellCommand(command: String! containerId: String nodeId: String): ShellCommandResult
         shellCommandStart(command: String! containerId: String nodeId: String): String
         updateNode(id: String! init: Boolean withRebuild: Boolean): Boolean
+        updateNodes(nodeIds: [String]!): Boolean
         initNode(id: String!): Boolean
         prepareNodeForCore(id: String!): Boolean
         installRegistryToNode(id: String!): Boolean
@@ -128,6 +129,16 @@ const nodeModule = createModule({
       updateNode: resolver<{ id: string, init: boolean, withRebuild: boolean }, boolean>(async (parent, args, context, info) => {
         const node = new MegapolosNode(args.id);
         node.update(args.init, args.withRebuild);
+        return true;
+      }),
+      updateNodes: resolver<{ nodeIds: string[] }, boolean>(async (parent, args, context, info) => {
+        (async () => {
+          for (let i in args.nodeIds) {
+            const nodeId = args.nodeIds[i];
+            const node = new MegapolosNode(nodeId);
+            await node.update();
+          }
+        })();
         return true;
       }),
       initNode: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {

@@ -74,23 +74,27 @@ abstract class BaseRepository<T extends IEntity> {
     return `${this.getTable()}.create_date`;
   }
 
+  orderByDirection(): 'asc' | 'desc' {
+    return 'desc';
+  }
+
   async getAll(): Promise<T[]> {
     const result = await this.filterEntities(knex.select(`${this.getTable()}.*`).from(this.getTable())
-      .orderBy(this.orderBy(), 'asc'));
+      .orderBy(this.orderBy(), this.orderByDirection()));
     return result;
   }
 
   async getByIds(ids: string[]): Promise<T[]> {
     const result = await this.filterEntities(knex.select(`${this.getTable()}.*`)
       .from(this.getTable()).whereIn(`${this.getTable()}.id`, ids)
-      .orderBy(this.orderBy(), 'asc'));
+      .orderBy(this.orderBy(), this.orderByDirection()));
     return result;
   }
 
   async getByFields(fields: Partial<T>): Promise<T[]> {
     const result = await this.filterEntities(knex.select(`${this.getTable()}.*`)
       .from(this.getTable()).where(fields)
-      .orderBy(this.orderBy(), 'asc'));
+      .orderBy(this.orderBy(), this.orderByDirection()));
     return result;
   }
 
@@ -98,7 +102,7 @@ abstract class BaseRepository<T extends IEntity> {
     const result = await this.filterEntities(
       callback(
         knex.select(`${this.getTable()}.*`).from(this.getTable())
-          .orderBy(this.orderBy(), 'asc'),
+          .orderBy(this.orderBy(), this.orderByDirection()),
       ),
     );
     return result;

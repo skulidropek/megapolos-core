@@ -19,6 +19,7 @@ import Docker from 'dockerode';
 import Image from './Image';
 import Dockerode from 'dockerode';
 import ExternalProcess from './ExternalProcess';
+import Log from './Log';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -171,35 +172,48 @@ class MegapolosNode {
       result.containers.push(containerResult);
       result.init = init;
     }
-    await this.runAnsible(`${megapolosPath}/ansible/deploy_swarm.yml`, result);
+    const log = new Log();
+    await log.create({ name: 'Update node ' + data.name });
+
+    await this.runAnsible(`${megapolosPath}/ansible/deploy_swarm.yml`, result, log);
   }
 
   async init() {
-    this.runAnsible(`${megapolosPath}/ansible/init.yml`, {});
+    const data = await this.getData();
+    const log = new Log();
+    await log.create({ name: 'Init node ' + data.name });
+    this.runAnsible(`${megapolosPath}/ansible/init.yml`, {}, log);
   }
 
   async prepareForCore() {
-    this.runAnsible(`${megapolosPath}/ansible/core.yml`, {});
+    const data = await this.getData();
+    const log = new Log();
+    await log.create({ name: 'Prepare for core node ' + data.name });
+    this.runAnsible(`${megapolosPath}/ansible/core.yml`, {}, log);
   }
 
   async installRegistry() {
+    const data = await this.getData();
+    const log = new Log();
+    await log.create({ name: 'Install registry on node ' + data.name });
     this.runAnsible(`${megapolosPath}/ansible/registry.yml`, {
       registry_domain: config.registryHost,
       registry_user: config.registryUser,
       registry_password: config.registryPassword,
-    });
+    }, 
+    log);
   }
 
-  async runAnsible(playbook: string, data: any) {
+  async runAnsible(playbook: string, data: any, log?: Log) {
     const node = await this.getData();
     data.node = node;
-    const jsonPath = megapolosPath + `/ansible/${node.name}.json`;
+    const jsonPath = megapolosPath + `/ansible/${uuidv4()}.json`;
     await fse.writeFile(jsonPath, JSON.stringify(data, null, 2));
     const command = `MEGAPOLOS_DEBUG=${config.debug ? '1' : '0'} ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${config.registryHost}:443 CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${config.registryPassword}' ANSIBLE_PASSWORD='${node.password}' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${node.user} -e ansible_ssh_password='{{ lookup("env", "ANSIBLE_PASSWORD") }}' -i ${node.host}, ${playbook}`;
     const entity = new Entity<NodeTable>('node');
     try {
       await entity.update({ id: this.id }, { life_status: 'updating' });
-      await MegapolosNode.currentNode.shellCommand(command, new User(data.user)).output;
+      await MegapolosNode.currentNode.shellCommand(command, new User(data.user), log).output;
       await entity.update({ id: this.id }, { life_status: 'running', last_update_date: new Date() });
       await fse.unlink(jsonPath);
     } catch (e) {
@@ -264,7 +278,7 @@ class MegapolosNode {
     EventsObserver.listener({ 'type': 'dockerEvents' });
   }
   
-  shellCommand(command: string, user: User): { id: string, output: Promise<{ stdout: string, stderr: string }> } {
+  shellCommand(command: string, user: User, log?: Log): { id: string, output: Promise<{ stdout: string, stderr: string }> } {
     const commandId = uuidv4();
     return { id: commandId, output: (async () => {
       let process:BaseProcess; 
@@ -281,12 +295,27 @@ class MegapolosNode {
       // }
       process.onoutput = (data) => {
         EventsObserver.listener({ type: 'shellCommandOutput', data: data });
+        if (log) {
+          log.append(data);
+        }
       };
       process.onerror = (data) => {
         EventsObserver.listener({ type: 'shellCommandError', data: data });
+        if (log) {
+          log.append(data);
+        }
       };
 
-      await process.start();
+      try {
+        await process.start();
+      } catch (e) {
+
+        if (log) {
+          await log.close();
+        }
+        throw e; 
+      }
+      await log.close();
 
       const result = {
         stdout: process.stdout,

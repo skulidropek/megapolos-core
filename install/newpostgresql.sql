@@ -3,9 +3,7 @@
 --
 
 -- Dumped from database version 16.1 (Debian 16.1-1.pgdg120+1)
--- Dumped by pg_dump version 16.0
-
--- Started on 2024-04-11 14:13:16
+-- Dumped by pg_dump version 16.1 (Debian 16.1-1.pgdg120+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -18,28 +16,217 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.web_server DROP CONSTRAINT IF EXISTS web_server_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public."user" DROP CONSTRAINT IF EXISTS user_group_user_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.resource_repository DROP CONSTRAINT IF EXISTS resource_repository_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.resource_domain DROP CONSTRAINT IF EXISTS resource_domain_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.resource_docker_image DROP CONSTRAINT IF EXISTS resource_docker_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.resource DROP CONSTRAINT IF EXISTS resource_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.resource_device_aux_option DROP CONSTRAINT IF EXISTS resource_device_aux_option_resource_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.resource_device_aux_option DROP CONSTRAINT IF EXISTS resource_device_aux_option_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.resource_db DROP CONSTRAINT IF EXISTS resource_db_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.resource_certificate DROP CONSTRAINT IF EXISTS resource_certificate_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_volume_requirement DROP CONSTRAINT IF EXISTS image_volume_requirement_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_volume DROP CONSTRAINT IF EXISTS image_volume_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_resource_requirement DROP CONSTRAINT IF EXISTS image_resource_requirement_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image DROP CONSTRAINT IF EXISTS image_repository_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_env_requirement DROP CONSTRAINT IF EXISTS image_env_requirement_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_env_option DROP CONSTRAINT IF EXISTS image_env_option_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_device DROP CONSTRAINT IF EXISTS image_device_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_device_env_option DROP CONSTRAINT IF EXISTS image_device_env_option_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_device_env_option DROP CONSTRAINT IF EXISTS image_device_env_option_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_device DROP CONSTRAINT IF EXISTS image_device_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_device_aux_option DROP CONSTRAINT IF EXISTS image_device_aux_option_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image_device_aux_option DROP CONSTRAINT IF EXISTS image_device_aux_option_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.image DROP CONSTRAINT IF EXISTS image_app_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.driver DROP CONSTRAINT IF EXISTS driver_app_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.docker_registry DROP CONSTRAINT IF EXISTS docker_registry_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.device_option DROP CONSTRAINT IF EXISTS device_option_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.device DROP CONSTRAINT IF EXISTS device_node_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.device DROP CONSTRAINT IF EXISTS device_driver_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.device DROP CONSTRAINT IF EXISTS device_device_type_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.device DROP CONSTRAINT IF EXISTS device_backup_volume_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.device_backup DROP CONSTRAINT IF EXISTS device_backup_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.device_backup DROP CONSTRAINT IF EXISTS device_backup_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.device_backup DROP CONSTRAINT IF EXISTS device_backup_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.db_user DROP CONSTRAINT IF EXISTS db_user_dbms_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.db DROP CONSTRAINT IF EXISTS db_dbms_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.db_db_user DROP CONSTRAINT IF EXISTS db_db_user_db_user_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.db_db_user DROP CONSTRAINT IF EXISTS db_db_user_db_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.db_backup DROP CONSTRAINT IF EXISTS db_backup_artifact_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_volume DROP CONSTRAINT IF EXISTS container_volume_volume_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_volume DROP CONSTRAINT IF EXISTS container_volume_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_resource DROP CONSTRAINT IF EXISTS container_resource_resource_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_resource_env_option DROP CONSTRAINT IF EXISTS container_resource_env_option_resource_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_resource_env_option DROP CONSTRAINT IF EXISTS container_resource_env_option_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_resource DROP CONSTRAINT IF EXISTS container_resource_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container DROP CONSTRAINT IF EXISTS container_node_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container DROP CONSTRAINT IF EXISTS container_image_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_env_option DROP CONSTRAINT IF EXISTS container_env_option_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container DROP CONSTRAINT IF EXISTS container_domain_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_repository DROP CONSTRAINT IF EXISTS container_device_repository_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_repository DROP CONSTRAINT IF EXISTS container_device_repository_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_env_option DROP CONSTRAINT IF EXISTS container_device_env_option_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_env_option DROP CONSTRAINT IF EXISTS container_device_env_option_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_domain DROP CONSTRAINT IF EXISTS container_device_domain_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_domain DROP CONSTRAINT IF EXISTS container_device_domain_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device DROP CONSTRAINT IF EXISTS container_device_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_db DROP CONSTRAINT IF EXISTS container_device_db_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_db DROP CONSTRAINT IF EXISTS container_device_db_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device DROP CONSTRAINT IF EXISTS container_device_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_certificate DROP CONSTRAINT IF EXISTS container_device_certificate_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_certificate DROP CONSTRAINT IF EXISTS container_device_certificate_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_aux_option DROP CONSTRAINT IF EXISTS container_device_aux_option_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_aux_option DROP CONSTRAINT IF EXISTS container_device_aux_option_container_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.container DROP CONSTRAINT IF EXISTS container_app_instance_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app DROP CONSTRAINT IF EXISTS app_owner_user_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_instance DROP CONSTRAINT IF EXISTS app_instance_user_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_instance DROP CONSTRAINT IF EXISTS app_instance_remove_strategy_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_instance DROP CONSTRAINT IF EXISTS app_instance_instance_type_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_instance_device DROP CONSTRAINT IF EXISTS app_instance_device_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_instance_device DROP CONSTRAINT IF EXISTS app_instance_device_app_instance_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_instance DROP CONSTRAINT IF EXISTS app_instance_deploy_strategy_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_instance DROP CONSTRAINT IF EXISTS app_instance_app_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_device DROP CONSTRAINT IF EXISTS app_device_device_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.app_device DROP CONSTRAINT IF EXISTS app_device_app_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.volume DROP CONSTRAINT IF EXISTS volume_pkey;
+ALTER TABLE IF EXISTS ONLY public."user" DROP CONSTRAINT IF EXISTS user_pkey;
+ALTER TABLE IF EXISTS ONLY public.resource_repository DROP CONSTRAINT IF EXISTS resource_repository_pkey;
+ALTER TABLE IF EXISTS ONLY public.resource DROP CONSTRAINT IF EXISTS resource_pkey;
+ALTER TABLE IF EXISTS ONLY public.resource_domain DROP CONSTRAINT IF EXISTS resource_domain_pkey;
+ALTER TABLE IF EXISTS ONLY public.resource_docker_image DROP CONSTRAINT IF EXISTS resource_docker_image_pkey;
+ALTER TABLE IF EXISTS ONLY public.resource_device_aux_option DROP CONSTRAINT IF EXISTS resource_device_aux_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.resource_db DROP CONSTRAINT IF EXISTS resource_db_pkey;
+ALTER TABLE IF EXISTS ONLY public.resource_certificate DROP CONSTRAINT IF EXISTS resource_certificate_pkey;
+ALTER TABLE IF EXISTS ONLY public.repository DROP CONSTRAINT IF EXISTS repository_pkey;
+ALTER TABLE IF EXISTS ONLY public.remove_strategy DROP CONSTRAINT IF EXISTS remove_strategy_pkey;
+ALTER TABLE IF EXISTS ONLY public.remove_strategy DROP CONSTRAINT IF EXISTS remove_strategy_name_key;
+ALTER TABLE IF EXISTS ONLY public.node DROP CONSTRAINT IF EXISTS node_pkey;
+ALTER TABLE IF EXISTS ONLY public.node DROP CONSTRAINT IF EXISTS node_name_key;
+ALTER TABLE IF EXISTS ONLY public.log DROP CONSTRAINT IF EXISTS log_pkey;
+ALTER TABLE IF EXISTS ONLY public.instance_type DROP CONSTRAINT IF EXISTS instance_type_pkey;
+ALTER TABLE IF EXISTS ONLY public.instance_type DROP CONSTRAINT IF EXISTS instance_type_name_key;
+ALTER TABLE IF EXISTS ONLY public.image_volume_requirement DROP CONSTRAINT IF EXISTS image_volume_requirement_pkey;
+ALTER TABLE IF EXISTS ONLY public.image_volume DROP CONSTRAINT IF EXISTS image_volume_pkey;
+ALTER TABLE IF EXISTS ONLY public.image_resource_requirement DROP CONSTRAINT IF EXISTS image_resource_requirement_pkey;
+ALTER TABLE IF EXISTS ONLY public.image DROP CONSTRAINT IF EXISTS image_pkey;
+ALTER TABLE IF EXISTS ONLY public.image DROP CONSTRAINT IF EXISTS image_name_key;
+ALTER TABLE IF EXISTS ONLY public.image_env_requirement DROP CONSTRAINT IF EXISTS image_env_requirement_pkey;
+ALTER TABLE IF EXISTS ONLY public.image_env_option DROP CONSTRAINT IF EXISTS image_env_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.image_device DROP CONSTRAINT IF EXISTS image_device_pkey;
+ALTER TABLE IF EXISTS ONLY public.image_device_env_option DROP CONSTRAINT IF EXISTS image_device_env_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.image_device_aux_option DROP CONSTRAINT IF EXISTS image_device_aux_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.group_user DROP CONSTRAINT IF EXISTS group_user_pkey;
+ALTER TABLE IF EXISTS ONLY public.driver DROP CONSTRAINT IF EXISTS driver_pkey;
+ALTER TABLE IF EXISTS ONLY public.driver DROP CONSTRAINT IF EXISTS driver_name_key;
+ALTER TABLE IF EXISTS ONLY public.domain DROP CONSTRAINT IF EXISTS domain_pkey;
+ALTER TABLE IF EXISTS ONLY public.device_type DROP CONSTRAINT IF EXISTS device_type_pkey;
+ALTER TABLE IF EXISTS ONLY public.device_type DROP CONSTRAINT IF EXISTS device_type_name_key;
+ALTER TABLE IF EXISTS ONLY public.device DROP CONSTRAINT IF EXISTS device_pkey;
+ALTER TABLE IF EXISTS ONLY public.device_option DROP CONSTRAINT IF EXISTS device_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.device DROP CONSTRAINT IF EXISTS device_name_key;
+ALTER TABLE IF EXISTS ONLY public.device_backup DROP CONSTRAINT IF EXISTS device_backup_pkey;
+ALTER TABLE IF EXISTS ONLY public.deploy_strategy DROP CONSTRAINT IF EXISTS deploy_strategy_pkey;
+ALTER TABLE IF EXISTS ONLY public.deploy_strategy DROP CONSTRAINT IF EXISTS deploy_strategy_name_key;
+ALTER TABLE IF EXISTS ONLY public.dbms DROP CONSTRAINT IF EXISTS dbms_pkey;
+ALTER TABLE IF EXISTS ONLY public.db_user DROP CONSTRAINT IF EXISTS db_user_pkey;
+ALTER TABLE IF EXISTS ONLY public.db_schema DROP CONSTRAINT IF EXISTS db_schema_pkey;
+ALTER TABLE IF EXISTS ONLY public.db DROP CONSTRAINT IF EXISTS db_pkey;
+ALTER TABLE IF EXISTS ONLY public.db_backup DROP CONSTRAINT IF EXISTS db_backup_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_volume DROP CONSTRAINT IF EXISTS container_volume_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_resource DROP CONSTRAINT IF EXISTS container_resource_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_resource_env_option DROP CONSTRAINT IF EXISTS container_resource_env_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.container DROP CONSTRAINT IF EXISTS container_pkey;
+ALTER TABLE IF EXISTS ONLY public.container DROP CONSTRAINT IF EXISTS container_name_key;
+ALTER TABLE IF EXISTS ONLY public.container_env_option DROP CONSTRAINT IF EXISTS container_env_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_repository DROP CONSTRAINT IF EXISTS container_device_repository_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_device DROP CONSTRAINT IF EXISTS container_device_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_env_option DROP CONSTRAINT IF EXISTS container_device_env_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_domain DROP CONSTRAINT IF EXISTS container_device_domain_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_db DROP CONSTRAINT IF EXISTS container_device_db_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_certificate DROP CONSTRAINT IF EXISTS container_device_certificate_pkey;
+ALTER TABLE IF EXISTS ONLY public.container_device_aux_option DROP CONSTRAINT IF EXISTS container_device_aux_option_pkey;
+ALTER TABLE IF EXISTS ONLY public.artifact DROP CONSTRAINT IF EXISTS artifact_pkey;
+ALTER TABLE IF EXISTS ONLY public.app DROP CONSTRAINT IF EXISTS app_pkey;
+ALTER TABLE IF EXISTS ONLY public.app DROP CONSTRAINT IF EXISTS app_name_key;
+ALTER TABLE IF EXISTS ONLY public.app_instance DROP CONSTRAINT IF EXISTS app_instance_pkey;
+ALTER TABLE IF EXISTS ONLY public.app_instance DROP CONSTRAINT IF EXISTS app_instance_name_key;
+ALTER TABLE IF EXISTS ONLY public.app_instance_device DROP CONSTRAINT IF EXISTS app_instance_device_pkey;
+ALTER TABLE IF EXISTS ONLY public.app_device DROP CONSTRAINT IF EXISTS app_device_pkey;
+DROP TABLE IF EXISTS public.web_server;
+DROP TABLE IF EXISTS public.volume;
+DROP TABLE IF EXISTS public."user";
+DROP TABLE IF EXISTS public.resource_repository;
+DROP TABLE IF EXISTS public.resource_domain;
+DROP TABLE IF EXISTS public.resource_docker_image;
+DROP TABLE IF EXISTS public.resource_device_aux_option;
+DROP TABLE IF EXISTS public.resource_db;
+DROP TABLE IF EXISTS public.resource_certificate;
+DROP TABLE IF EXISTS public.resource;
+DROP TABLE IF EXISTS public.repository;
+DROP TABLE IF EXISTS public.remove_strategy;
+DROP TABLE IF EXISTS public.node;
+DROP TABLE IF EXISTS public.log;
+DROP TABLE IF EXISTS public.instance_type;
+DROP TABLE IF EXISTS public.image_volume_requirement;
+DROP TABLE IF EXISTS public.image_volume;
+DROP TABLE IF EXISTS public.image_resource_requirement;
+DROP TABLE IF EXISTS public.image_env_requirement;
+DROP TABLE IF EXISTS public.image_env_option;
+DROP TABLE IF EXISTS public.image_device_env_option;
+DROP TABLE IF EXISTS public.image_device_aux_option;
+DROP TABLE IF EXISTS public.image_device;
+DROP TABLE IF EXISTS public.image;
+DROP TABLE IF EXISTS public.group_user;
+DROP TABLE IF EXISTS public.driver;
+DROP TABLE IF EXISTS public.domain;
+DROP TABLE IF EXISTS public.docker_registry;
+DROP TABLE IF EXISTS public.device_type;
+DROP TABLE IF EXISTS public.device_option;
+DROP TABLE IF EXISTS public.device_backup;
+DROP TABLE IF EXISTS public.device;
+DROP TABLE IF EXISTS public.deploy_strategy;
+DROP TABLE IF EXISTS public.dbms;
+DROP TABLE IF EXISTS public.db_user;
+DROP TABLE IF EXISTS public.db_schema;
+DROP TABLE IF EXISTS public.db_db_user;
+DROP TABLE IF EXISTS public.db_backup;
+DROP TABLE IF EXISTS public.db;
+DROP TABLE IF EXISTS public.container_volume;
+DROP TABLE IF EXISTS public.container_resource_env_option;
+DROP TABLE IF EXISTS public.container_resource;
+DROP TABLE IF EXISTS public.container_env_option;
+DROP TABLE IF EXISTS public.container_device_repository;
+DROP TABLE IF EXISTS public.container_device_env_option;
+DROP TABLE IF EXISTS public.container_device_domain;
+DROP TABLE IF EXISTS public.container_device_db;
+DROP TABLE IF EXISTS public.container_device_certificate;
+DROP TABLE IF EXISTS public.container_device_aux_option;
+DROP TABLE IF EXISTS public.container_device;
+DROP TABLE IF EXISTS public.container;
+DROP TABLE IF EXISTS public.artifact;
+DROP TABLE IF EXISTS public.app_instance_device;
+DROP TABLE IF EXISTS public.app_instance;
+DROP TABLE IF EXISTS public.app_device;
+DROP TABLE IF EXISTS public.app;
+DROP TYPE IF EXISTS public.image_status;
+-- *not* dropping schema, since initdb creates it
 --
--- TOC entry 5 (class 2615 OID 60424)
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
 
 -- *not* creating schema, since initdb creates it
 
 
-ALTER SCHEMA public OWNER TO postgres;
-
 --
--- TOC entry 3840 (class 0 OID 0)
--- Dependencies: 5
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
 --
 
 COMMENT ON SCHEMA public IS '';
 
 
 --
--- TOC entry 888 (class 1247 OID 81925)
--- Name: image_status; Type: TYPE; Schema: public; Owner: postgres
+-- Name: image_status; Type: TYPE; Schema: public; Owner: -
 --
 
 CREATE TYPE public.image_status AS ENUM (
@@ -49,15 +236,12 @@ CREATE TYPE public.image_status AS ENUM (
 );
 
 
-ALTER TYPE public.image_status OWNER TO postgres;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- TOC entry 220 (class 1259 OID 60486)
--- Name: app; Type: TABLE; Schema: public; Owner: postgres
+-- Name: app; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.app (
@@ -70,11 +254,8 @@ CREATE TABLE public.app (
 );
 
 
-ALTER TABLE public.app OWNER TO postgres;
-
 --
--- TOC entry 230 (class 1259 OID 60697)
--- Name: app_device; Type: TABLE; Schema: public; Owner: postgres
+-- Name: app_device; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.app_device (
@@ -84,11 +265,8 @@ CREATE TABLE public.app_device (
 );
 
 
-ALTER TABLE public.app_device OWNER TO postgres;
-
 --
--- TOC entry 225 (class 1259 OID 60556)
--- Name: app_instance; Type: TABLE; Schema: public; Owner: postgres
+-- Name: app_instance; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.app_instance (
@@ -107,11 +285,8 @@ CREATE TABLE public.app_instance (
 );
 
 
-ALTER TABLE public.app_instance OWNER TO postgres;
-
 --
--- TOC entry 231 (class 1259 OID 60715)
--- Name: app_instance_device; Type: TABLE; Schema: public; Owner: postgres
+-- Name: app_instance_device; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.app_instance_device (
@@ -121,11 +296,21 @@ CREATE TABLE public.app_instance_device (
 );
 
 
-ALTER TABLE public.app_instance_device OWNER TO postgres;
+--
+-- Name: artifact; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.artifact (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone,
+    type character varying
+);
+
 
 --
--- TOC entry 226 (class 1259 OID 60598)
--- Name: container; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container (
@@ -144,11 +329,8 @@ CREATE TABLE public.container (
 );
 
 
-ALTER TABLE public.container OWNER TO postgres;
-
 --
--- TOC entry 232 (class 1259 OID 60733)
--- Name: container_device; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_device; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_device (
@@ -158,11 +340,8 @@ CREATE TABLE public.container_device (
 );
 
 
-ALTER TABLE public.container_device OWNER TO postgres;
-
 --
--- TOC entry 250 (class 1259 OID 61037)
--- Name: container_device_aux_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_device_aux_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_device_aux_option (
@@ -174,11 +353,8 @@ CREATE TABLE public.container_device_aux_option (
 );
 
 
-ALTER TABLE public.container_device_aux_option OWNER TO postgres;
-
 --
--- TOC entry 240 (class 1259 OID 60864)
--- Name: container_device_certificate; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_device_certificate; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_device_certificate (
@@ -190,11 +366,8 @@ CREATE TABLE public.container_device_certificate (
 );
 
 
-ALTER TABLE public.container_device_certificate OWNER TO postgres;
-
 --
--- TOC entry 242 (class 1259 OID 60897)
--- Name: container_device_db; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_device_db; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_device_db (
@@ -209,11 +382,8 @@ CREATE TABLE public.container_device_db (
 );
 
 
-ALTER TABLE public.container_device_db OWNER TO postgres;
-
 --
--- TOC entry 238 (class 1259 OID 60829)
--- Name: container_device_domain; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_device_domain; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_device_domain (
@@ -225,11 +395,8 @@ CREATE TABLE public.container_device_domain (
 );
 
 
-ALTER TABLE public.container_device_domain OWNER TO postgres;
-
 --
--- TOC entry 247 (class 1259 OID 60977)
--- Name: container_device_env_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_device_env_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_device_env_option (
@@ -241,11 +408,8 @@ CREATE TABLE public.container_device_env_option (
 );
 
 
-ALTER TABLE public.container_device_env_option OWNER TO postgres;
-
 --
--- TOC entry 244 (class 1259 OID 60930)
--- Name: container_device_repository; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_device_repository; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_device_repository (
@@ -256,11 +420,8 @@ CREATE TABLE public.container_device_repository (
 );
 
 
-ALTER TABLE public.container_device_repository OWNER TO postgres;
-
 --
--- TOC entry 255 (class 1259 OID 61131)
--- Name: container_env_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_env_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_env_option (
@@ -271,11 +432,8 @@ CREATE TABLE public.container_env_option (
 );
 
 
-ALTER TABLE public.container_env_option OWNER TO postgres;
-
 --
--- TOC entry 233 (class 1259 OID 60751)
--- Name: container_resource; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_resource; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_resource (
@@ -285,11 +443,8 @@ CREATE TABLE public.container_resource (
 );
 
 
-ALTER TABLE public.container_resource OWNER TO postgres;
-
 --
--- TOC entry 248 (class 1259 OID 60997)
--- Name: container_resource_env_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_resource_env_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_resource_env_option (
@@ -301,11 +456,8 @@ CREATE TABLE public.container_resource_env_option (
 );
 
 
-ALTER TABLE public.container_resource_env_option OWNER TO postgres;
-
 --
--- TOC entry 253 (class 1259 OID 61097)
--- Name: container_volume; Type: TABLE; Schema: public; Owner: postgres
+-- Name: container_volume; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.container_volume (
@@ -318,11 +470,91 @@ CREATE TABLE public.container_volume (
 );
 
 
-ALTER TABLE public.container_volume OWNER TO postgres;
+--
+-- Name: db; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.db (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone,
+    dbms_id uuid NOT NULL,
+    is_core boolean DEFAULT false
+);
+
 
 --
--- TOC entry 222 (class 1259 OID 60526)
--- Name: deploy_strategy; Type: TABLE; Schema: public; Owner: postgres
+-- Name: db_backup; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.db_backup (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone,
+    type character varying,
+    backup text,
+    artifact_id uuid
+);
+
+
+--
+-- Name: db_db_user; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.db_db_user (
+    db_id uuid NOT NULL,
+    db_user_id uuid NOT NULL
+);
+
+
+--
+-- Name: db_schema; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.db_schema (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone,
+    type character varying,
+    schema json
+);
+
+
+--
+-- Name: db_user; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.db_user (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone,
+    dbms_id uuid NOT NULL,
+    password character varying
+);
+
+
+--
+-- Name: dbms; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dbms (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    type character varying NOT NULL,
+    host character varying,
+    "user" character varying,
+    password character varying,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone
+);
+
+
+--
+-- Name: deploy_strategy; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.deploy_strategy (
@@ -331,11 +563,8 @@ CREATE TABLE public.deploy_strategy (
 );
 
 
-ALTER TABLE public.deploy_strategy OWNER TO postgres;
-
 --
--- TOC entry 228 (class 1259 OID 60646)
--- Name: device; Type: TABLE; Schema: public; Owner: postgres
+-- Name: device; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.device (
@@ -355,11 +584,8 @@ CREATE TABLE public.device (
 );
 
 
-ALTER TABLE public.device OWNER TO postgres;
-
 --
--- TOC entry 258 (class 1259 OID 61173)
--- Name: device_backup; Type: TABLE; Schema: public; Owner: postgres
+-- Name: device_backup; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.device_backup (
@@ -375,11 +601,8 @@ CREATE TABLE public.device_backup (
 );
 
 
-ALTER TABLE public.device_backup OWNER TO postgres;
-
 --
--- TOC entry 257 (class 1259 OID 61159)
--- Name: device_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: device_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.device_option (
@@ -390,11 +613,8 @@ CREATE TABLE public.device_option (
 );
 
 
-ALTER TABLE public.device_option OWNER TO postgres;
-
 --
--- TOC entry 216 (class 1259 OID 60436)
--- Name: device_type; Type: TABLE; Schema: public; Owner: postgres
+-- Name: device_type; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.device_type (
@@ -403,11 +623,25 @@ CREATE TABLE public.device_type (
 );
 
 
-ALTER TABLE public.device_type OWNER TO postgres;
+--
+-- Name: docker_registry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.docker_registry (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone,
+    host character varying,
+    "user" character varying,
+    password character varying,
+    container_id uuid,
+    is_default boolean DEFAULT false
+);
+
 
 --
--- TOC entry 260 (class 1259 OID 81932)
--- Name: domain; Type: TABLE; Schema: public; Owner: postgres
+-- Name: domain; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.domain (
@@ -419,11 +653,8 @@ CREATE TABLE public.domain (
 );
 
 
-ALTER TABLE public.domain OWNER TO postgres;
-
 --
--- TOC entry 227 (class 1259 OID 60630)
--- Name: driver; Type: TABLE; Schema: public; Owner: postgres
+-- Name: driver; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.driver (
@@ -433,11 +664,8 @@ CREATE TABLE public.driver (
 );
 
 
-ALTER TABLE public.driver OWNER TO postgres;
-
 --
--- TOC entry 218 (class 1259 OID 60459)
--- Name: group_user; Type: TABLE; Schema: public; Owner: postgres
+-- Name: group_user; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.group_user (
@@ -450,11 +678,8 @@ CREATE TABLE public.group_user (
 );
 
 
-ALTER TABLE public.group_user OWNER TO postgres;
-
 --
--- TOC entry 221 (class 1259 OID 60505)
--- Name: image; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image (
@@ -475,11 +700,8 @@ CREATE TABLE public.image (
 );
 
 
-ALTER TABLE public.image OWNER TO postgres;
-
 --
--- TOC entry 234 (class 1259 OID 60769)
--- Name: image_device; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image_device; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image_device (
@@ -489,11 +711,8 @@ CREATE TABLE public.image_device (
 );
 
 
-ALTER TABLE public.image_device OWNER TO postgres;
-
 --
--- TOC entry 251 (class 1259 OID 61057)
--- Name: image_device_aux_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image_device_aux_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image_device_aux_option (
@@ -505,11 +724,8 @@ CREATE TABLE public.image_device_aux_option (
 );
 
 
-ALTER TABLE public.image_device_aux_option OWNER TO postgres;
-
 --
--- TOC entry 249 (class 1259 OID 61017)
--- Name: image_device_env_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image_device_env_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image_device_env_option (
@@ -521,11 +737,8 @@ CREATE TABLE public.image_device_env_option (
 );
 
 
-ALTER TABLE public.image_device_env_option OWNER TO postgres;
-
 --
--- TOC entry 256 (class 1259 OID 61145)
--- Name: image_env_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image_env_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image_env_option (
@@ -536,11 +749,8 @@ CREATE TABLE public.image_env_option (
 );
 
 
-ALTER TABLE public.image_env_option OWNER TO postgres;
-
 --
--- TOC entry 237 (class 1259 OID 60815)
--- Name: image_env_requirement; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image_env_requirement; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image_env_requirement (
@@ -552,11 +762,8 @@ CREATE TABLE public.image_env_requirement (
 );
 
 
-ALTER TABLE public.image_env_requirement OWNER TO postgres;
-
 --
--- TOC entry 235 (class 1259 OID 60787)
--- Name: image_resource_requirement; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image_resource_requirement; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image_resource_requirement (
@@ -567,11 +774,8 @@ CREATE TABLE public.image_resource_requirement (
 );
 
 
-ALTER TABLE public.image_resource_requirement OWNER TO postgres;
-
 --
--- TOC entry 254 (class 1259 OID 61117)
--- Name: image_volume; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image_volume; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image_volume (
@@ -583,11 +787,8 @@ CREATE TABLE public.image_volume (
 );
 
 
-ALTER TABLE public.image_volume OWNER TO postgres;
-
 --
--- TOC entry 236 (class 1259 OID 60801)
--- Name: image_volume_requirement; Type: TABLE; Schema: public; Owner: postgres
+-- Name: image_volume_requirement; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.image_volume_requirement (
@@ -598,11 +799,8 @@ CREATE TABLE public.image_volume_requirement (
 );
 
 
-ALTER TABLE public.image_volume_requirement OWNER TO postgres;
-
 --
--- TOC entry 223 (class 1259 OID 60536)
--- Name: instance_type; Type: TABLE; Schema: public; Owner: postgres
+-- Name: instance_type; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.instance_type (
@@ -611,11 +809,22 @@ CREATE TABLE public.instance_type (
 );
 
 
-ALTER TABLE public.instance_type OWNER TO postgres;
+--
+-- Name: log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.log (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone,
+    is_closed boolean DEFAULT false,
+    close_date timestamp without time zone
+);
+
 
 --
--- TOC entry 217 (class 1259 OID 60446)
--- Name: node; Type: TABLE; Schema: public; Owner: postgres
+-- Name: node; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.node (
@@ -630,15 +839,13 @@ CREATE TABLE public.node (
     remove_date timestamp without time zone,
     "user" character varying,
     password character varying,
-    last_update_date timestamp without time zone
+    last_update_date timestamp without time zone,
+    docker_mirrors character varying[]
 );
 
 
-ALTER TABLE public.node OWNER TO postgres;
-
 --
--- TOC entry 224 (class 1259 OID 60546)
--- Name: remove_strategy; Type: TABLE; Schema: public; Owner: postgres
+-- Name: remove_strategy; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.remove_strategy (
@@ -647,11 +854,8 @@ CREATE TABLE public.remove_strategy (
 );
 
 
-ALTER TABLE public.remove_strategy OWNER TO postgres;
-
 --
--- TOC entry 259 (class 1259 OID 73732)
--- Name: repository; Type: TABLE; Schema: public; Owner: postgres
+-- Name: repository; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.repository (
@@ -667,11 +871,8 @@ CREATE TABLE public.repository (
 );
 
 
-ALTER TABLE public.repository OWNER TO postgres;
-
 --
--- TOC entry 229 (class 1259 OID 60683)
--- Name: resource; Type: TABLE; Schema: public; Owner: postgres
+-- Name: resource; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.resource (
@@ -683,11 +884,8 @@ CREATE TABLE public.resource (
 );
 
 
-ALTER TABLE public.resource OWNER TO postgres;
-
 --
--- TOC entry 241 (class 1259 OID 60884)
--- Name: resource_certificate; Type: TABLE; Schema: public; Owner: postgres
+-- Name: resource_certificate; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.resource_certificate (
@@ -698,11 +896,8 @@ CREATE TABLE public.resource_certificate (
 );
 
 
-ALTER TABLE public.resource_certificate OWNER TO postgres;
-
 --
--- TOC entry 243 (class 1259 OID 60917)
--- Name: resource_db; Type: TABLE; Schema: public; Owner: postgres
+-- Name: resource_db; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.resource_db (
@@ -715,11 +910,8 @@ CREATE TABLE public.resource_db (
 );
 
 
-ALTER TABLE public.resource_db OWNER TO postgres;
-
 --
--- TOC entry 252 (class 1259 OID 61077)
--- Name: resource_device_aux_option; Type: TABLE; Schema: public; Owner: postgres
+-- Name: resource_device_aux_option; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.resource_device_aux_option (
@@ -731,11 +923,8 @@ CREATE TABLE public.resource_device_aux_option (
 );
 
 
-ALTER TABLE public.resource_device_aux_option OWNER TO postgres;
-
 --
--- TOC entry 246 (class 1259 OID 60963)
--- Name: resource_docker_image; Type: TABLE; Schema: public; Owner: postgres
+-- Name: resource_docker_image; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.resource_docker_image (
@@ -746,11 +935,8 @@ CREATE TABLE public.resource_docker_image (
 );
 
 
-ALTER TABLE public.resource_docker_image OWNER TO postgres;
-
 --
--- TOC entry 239 (class 1259 OID 60850)
--- Name: resource_domain; Type: TABLE; Schema: public; Owner: postgres
+-- Name: resource_domain; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.resource_domain (
@@ -760,11 +946,8 @@ CREATE TABLE public.resource_domain (
 );
 
 
-ALTER TABLE public.resource_domain OWNER TO postgres;
-
 --
--- TOC entry 245 (class 1259 OID 60950)
--- Name: resource_repository; Type: TABLE; Schema: public; Owner: postgres
+-- Name: resource_repository; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.resource_repository (
@@ -773,11 +956,8 @@ CREATE TABLE public.resource_repository (
 );
 
 
-ALTER TABLE public.resource_repository OWNER TO postgres;
-
 --
--- TOC entry 219 (class 1259 OID 60469)
--- Name: user; Type: TABLE; Schema: public; Owner: postgres
+-- Name: user; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public."user" (
@@ -793,11 +973,8 @@ CREATE TABLE public."user" (
 );
 
 
-ALTER TABLE public."user" OWNER TO postgres;
-
 --
--- TOC entry 215 (class 1259 OID 60425)
--- Name: volume; Type: TABLE; Schema: public; Owner: postgres
+-- Name: volume; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.volume (
@@ -812,11 +989,21 @@ CREATE TABLE public.volume (
 );
 
 
-ALTER TABLE public.volume OWNER TO postgres;
+--
+-- Name: web_server; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.web_server (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    create_date timestamp without time zone DEFAULT now(),
+    update_date timestamp without time zone,
+    container_id uuid
+);
+
 
 --
--- TOC entry 3565 (class 2606 OID 60704)
--- Name: app_device app_device_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_device app_device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_device
@@ -824,8 +1011,7 @@ ALTER TABLE ONLY public.app_device
 
 
 --
--- TOC entry 3567 (class 2606 OID 60722)
--- Name: app_instance_device app_instance_device_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance_device app_instance_device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance_device
@@ -833,8 +1019,7 @@ ALTER TABLE ONLY public.app_instance_device
 
 
 --
--- TOC entry 3547 (class 2606 OID 60572)
--- Name: app_instance app_instance_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance app_instance_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance
@@ -842,8 +1027,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3549 (class 2606 OID 60570)
--- Name: app_instance app_instance_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance app_instance_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance
@@ -851,8 +1035,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3527 (class 2606 OID 60499)
--- Name: app app_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app app_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app
@@ -860,8 +1043,7 @@ ALTER TABLE ONLY public.app
 
 
 --
--- TOC entry 3529 (class 2606 OID 60497)
--- Name: app app_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app app_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app
@@ -869,8 +1051,15 @@ ALTER TABLE ONLY public.app
 
 
 --
--- TOC entry 3605 (class 2606 OID 61046)
--- Name: container_device_aux_option container_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: artifact artifact_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artifact
+    ADD CONSTRAINT artifact_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: container_device_aux_option container_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_aux_option
@@ -878,8 +1067,7 @@ ALTER TABLE ONLY public.container_device_aux_option
 
 
 --
--- TOC entry 3585 (class 2606 OID 60873)
--- Name: container_device_certificate container_device_certificate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_certificate container_device_certificate_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_certificate
@@ -887,8 +1075,7 @@ ALTER TABLE ONLY public.container_device_certificate
 
 
 --
--- TOC entry 3589 (class 2606 OID 60906)
--- Name: container_device_db container_device_db_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_db container_device_db_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_db
@@ -896,8 +1083,7 @@ ALTER TABLE ONLY public.container_device_db
 
 
 --
--- TOC entry 3581 (class 2606 OID 60839)
--- Name: container_device_domain container_device_domain_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_domain container_device_domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_domain
@@ -905,8 +1091,7 @@ ALTER TABLE ONLY public.container_device_domain
 
 
 --
--- TOC entry 3599 (class 2606 OID 60986)
--- Name: container_device_env_option container_device_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_env_option container_device_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_env_option
@@ -914,8 +1099,7 @@ ALTER TABLE ONLY public.container_device_env_option
 
 
 --
--- TOC entry 3569 (class 2606 OID 60740)
--- Name: container_device container_device_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device container_device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device
@@ -923,8 +1107,7 @@ ALTER TABLE ONLY public.container_device
 
 
 --
--- TOC entry 3593 (class 2606 OID 60939)
--- Name: container_device_repository container_device_repository_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_repository container_device_repository_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_repository
@@ -932,8 +1115,7 @@ ALTER TABLE ONLY public.container_device_repository
 
 
 --
--- TOC entry 3615 (class 2606 OID 61139)
--- Name: container_env_option container_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_env_option container_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_env_option
@@ -941,8 +1123,7 @@ ALTER TABLE ONLY public.container_env_option
 
 
 --
--- TOC entry 3551 (class 2606 OID 60614)
--- Name: container container_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container container_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container
@@ -950,8 +1131,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3553 (class 2606 OID 60612)
--- Name: container container_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container container_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container
@@ -959,8 +1139,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3601 (class 2606 OID 61006)
--- Name: container_resource_env_option container_resource_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_resource_env_option container_resource_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_resource_env_option
@@ -968,8 +1147,7 @@ ALTER TABLE ONLY public.container_resource_env_option
 
 
 --
--- TOC entry 3571 (class 2606 OID 60758)
--- Name: container_resource container_resource_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_resource container_resource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_resource
@@ -977,8 +1155,7 @@ ALTER TABLE ONLY public.container_resource
 
 
 --
--- TOC entry 3611 (class 2606 OID 61106)
--- Name: container_volume container_volume_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_volume container_volume_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_volume
@@ -986,8 +1163,47 @@ ALTER TABLE ONLY public.container_volume
 
 
 --
--- TOC entry 3535 (class 2606 OID 60535)
--- Name: deploy_strategy deploy_strategy_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: db_backup db_backup_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db_backup
+    ADD CONSTRAINT db_backup_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: db db_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db
+    ADD CONSTRAINT db_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: db_schema db_schema_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db_schema
+    ADD CONSTRAINT db_schema_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: db_user db_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db_user
+    ADD CONSTRAINT db_user_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dbms dbms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dbms
+    ADD CONSTRAINT dbms_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: deploy_strategy deploy_strategy_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.deploy_strategy
@@ -995,8 +1211,7 @@ ALTER TABLE ONLY public.deploy_strategy
 
 
 --
--- TOC entry 3537 (class 2606 OID 60533)
--- Name: deploy_strategy deploy_strategy_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: deploy_strategy deploy_strategy_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.deploy_strategy
@@ -1004,8 +1219,7 @@ ALTER TABLE ONLY public.deploy_strategy
 
 
 --
--- TOC entry 3621 (class 2606 OID 61183)
--- Name: device_backup device_backup_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device_backup device_backup_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device_backup
@@ -1013,8 +1227,7 @@ ALTER TABLE ONLY public.device_backup
 
 
 --
--- TOC entry 3559 (class 2606 OID 60662)
--- Name: device device_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device device_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device
@@ -1022,8 +1235,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3619 (class 2606 OID 61167)
--- Name: device_option device_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device_option device_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device_option
@@ -1031,8 +1243,7 @@ ALTER TABLE ONLY public.device_option
 
 
 --
--- TOC entry 3561 (class 2606 OID 60660)
--- Name: device device_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device
@@ -1040,8 +1251,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3515 (class 2606 OID 60445)
--- Name: device_type device_type_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device_type device_type_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device_type
@@ -1049,8 +1259,7 @@ ALTER TABLE ONLY public.device_type
 
 
 --
--- TOC entry 3517 (class 2606 OID 60443)
--- Name: device_type device_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device_type device_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device_type
@@ -1058,8 +1267,7 @@ ALTER TABLE ONLY public.device_type
 
 
 --
--- TOC entry 3625 (class 2606 OID 81939)
--- Name: domain domain_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: domain domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.domain
@@ -1067,8 +1275,7 @@ ALTER TABLE ONLY public.domain
 
 
 --
--- TOC entry 3555 (class 2606 OID 60640)
--- Name: driver driver_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: driver driver_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.driver
@@ -1076,8 +1283,7 @@ ALTER TABLE ONLY public.driver
 
 
 --
--- TOC entry 3557 (class 2606 OID 60638)
--- Name: driver driver_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: driver driver_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.driver
@@ -1085,8 +1291,7 @@ ALTER TABLE ONLY public.driver
 
 
 --
--- TOC entry 3523 (class 2606 OID 60468)
--- Name: group_user group_user_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: group_user group_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.group_user
@@ -1094,8 +1299,7 @@ ALTER TABLE ONLY public.group_user
 
 
 --
--- TOC entry 3607 (class 2606 OID 61066)
--- Name: image_device_aux_option image_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device_aux_option image_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device_aux_option
@@ -1103,8 +1307,7 @@ ALTER TABLE ONLY public.image_device_aux_option
 
 
 --
--- TOC entry 3603 (class 2606 OID 61026)
--- Name: image_device_env_option image_device_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device_env_option image_device_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device_env_option
@@ -1112,8 +1315,7 @@ ALTER TABLE ONLY public.image_device_env_option
 
 
 --
--- TOC entry 3573 (class 2606 OID 60776)
--- Name: image_device image_device_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device image_device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device
@@ -1121,8 +1323,7 @@ ALTER TABLE ONLY public.image_device
 
 
 --
--- TOC entry 3617 (class 2606 OID 61153)
--- Name: image_env_option image_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_env_option image_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_env_option
@@ -1130,8 +1331,7 @@ ALTER TABLE ONLY public.image_env_option
 
 
 --
--- TOC entry 3579 (class 2606 OID 60823)
--- Name: image_env_requirement image_env_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_env_requirement image_env_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_env_requirement
@@ -1139,8 +1339,7 @@ ALTER TABLE ONLY public.image_env_requirement
 
 
 --
--- TOC entry 3531 (class 2606 OID 60520)
--- Name: image image_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image image_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image
@@ -1148,8 +1347,7 @@ ALTER TABLE ONLY public.image
 
 
 --
--- TOC entry 3533 (class 2606 OID 60518)
--- Name: image image_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image image_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image
@@ -1157,8 +1355,7 @@ ALTER TABLE ONLY public.image
 
 
 --
--- TOC entry 3575 (class 2606 OID 60795)
--- Name: image_resource_requirement image_resource_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_resource_requirement image_resource_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_resource_requirement
@@ -1166,8 +1363,7 @@ ALTER TABLE ONLY public.image_resource_requirement
 
 
 --
--- TOC entry 3613 (class 2606 OID 61125)
--- Name: image_volume image_volume_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_volume image_volume_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_volume
@@ -1175,8 +1371,7 @@ ALTER TABLE ONLY public.image_volume
 
 
 --
--- TOC entry 3577 (class 2606 OID 60809)
--- Name: image_volume_requirement image_volume_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_volume_requirement image_volume_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_volume_requirement
@@ -1184,8 +1379,7 @@ ALTER TABLE ONLY public.image_volume_requirement
 
 
 --
--- TOC entry 3539 (class 2606 OID 60545)
--- Name: instance_type instance_type_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: instance_type instance_type_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.instance_type
@@ -1193,8 +1387,7 @@ ALTER TABLE ONLY public.instance_type
 
 
 --
--- TOC entry 3541 (class 2606 OID 60543)
--- Name: instance_type instance_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: instance_type instance_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.instance_type
@@ -1202,8 +1395,15 @@ ALTER TABLE ONLY public.instance_type
 
 
 --
--- TOC entry 3519 (class 2606 OID 60458)
--- Name: node node_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: log log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.log
+    ADD CONSTRAINT log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: node node_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.node
@@ -1211,8 +1411,7 @@ ALTER TABLE ONLY public.node
 
 
 --
--- TOC entry 3521 (class 2606 OID 60456)
--- Name: node node_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: node node_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.node
@@ -1220,8 +1419,7 @@ ALTER TABLE ONLY public.node
 
 
 --
--- TOC entry 3543 (class 2606 OID 60555)
--- Name: remove_strategy remove_strategy_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: remove_strategy remove_strategy_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.remove_strategy
@@ -1229,8 +1427,7 @@ ALTER TABLE ONLY public.remove_strategy
 
 
 --
--- TOC entry 3545 (class 2606 OID 60553)
--- Name: remove_strategy remove_strategy_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: remove_strategy remove_strategy_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.remove_strategy
@@ -1238,8 +1435,7 @@ ALTER TABLE ONLY public.remove_strategy
 
 
 --
--- TOC entry 3623 (class 2606 OID 73738)
--- Name: repository repository_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: repository repository_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.repository
@@ -1247,8 +1443,7 @@ ALTER TABLE ONLY public.repository
 
 
 --
--- TOC entry 3587 (class 2606 OID 60891)
--- Name: resource_certificate resource_certificate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_certificate resource_certificate_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_certificate
@@ -1256,8 +1451,7 @@ ALTER TABLE ONLY public.resource_certificate
 
 
 --
--- TOC entry 3591 (class 2606 OID 60924)
--- Name: resource_db resource_db_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_db resource_db_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_db
@@ -1265,8 +1459,7 @@ ALTER TABLE ONLY public.resource_db
 
 
 --
--- TOC entry 3609 (class 2606 OID 61086)
--- Name: resource_device_aux_option resource_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_device_aux_option resource_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_device_aux_option
@@ -1274,8 +1467,7 @@ ALTER TABLE ONLY public.resource_device_aux_option
 
 
 --
--- TOC entry 3597 (class 2606 OID 60971)
--- Name: resource_docker_image resource_docker_image_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_docker_image resource_docker_image_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_docker_image
@@ -1283,8 +1475,7 @@ ALTER TABLE ONLY public.resource_docker_image
 
 
 --
--- TOC entry 3583 (class 2606 OID 60858)
--- Name: resource_domain resource_domain_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_domain resource_domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_domain
@@ -1292,8 +1483,7 @@ ALTER TABLE ONLY public.resource_domain
 
 
 --
--- TOC entry 3563 (class 2606 OID 60691)
--- Name: resource resource_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource resource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource
@@ -1301,8 +1491,7 @@ ALTER TABLE ONLY public.resource
 
 
 --
--- TOC entry 3595 (class 2606 OID 60957)
--- Name: resource_repository resource_repository_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_repository resource_repository_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_repository
@@ -1310,8 +1499,7 @@ ALTER TABLE ONLY public.resource_repository
 
 
 --
--- TOC entry 3525 (class 2606 OID 60480)
--- Name: user user_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."user"
@@ -1319,8 +1507,7 @@ ALTER TABLE ONLY public."user"
 
 
 --
--- TOC entry 3513 (class 2606 OID 60435)
--- Name: volume volume_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: volume volume_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.volume
@@ -1328,8 +1515,7 @@ ALTER TABLE ONLY public.volume
 
 
 --
--- TOC entry 3645 (class 2606 OID 60705)
--- Name: app_device app_device_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_device app_device_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_device
@@ -1337,8 +1523,7 @@ ALTER TABLE ONLY public.app_device
 
 
 --
--- TOC entry 3646 (class 2606 OID 60710)
--- Name: app_device app_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_device app_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_device
@@ -1346,8 +1531,7 @@ ALTER TABLE ONLY public.app_device
 
 
 --
--- TOC entry 3630 (class 2606 OID 60583)
--- Name: app_instance app_instance_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance app_instance_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance
@@ -1355,8 +1539,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3631 (class 2606 OID 60573)
--- Name: app_instance app_instance_deploy_strategy_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance app_instance_deploy_strategy_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance
@@ -1364,8 +1547,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3647 (class 2606 OID 60723)
--- Name: app_instance_device app_instance_device_app_instance_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance_device app_instance_device_app_instance_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance_device
@@ -1373,8 +1555,7 @@ ALTER TABLE ONLY public.app_instance_device
 
 
 --
--- TOC entry 3648 (class 2606 OID 60728)
--- Name: app_instance_device app_instance_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance_device app_instance_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance_device
@@ -1382,8 +1563,7 @@ ALTER TABLE ONLY public.app_instance_device
 
 
 --
--- TOC entry 3632 (class 2606 OID 60588)
--- Name: app_instance app_instance_instance_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance app_instance_instance_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance
@@ -1391,8 +1571,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3633 (class 2606 OID 60578)
--- Name: app_instance app_instance_remove_strategy_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance app_instance_remove_strategy_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance
@@ -1400,8 +1579,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3634 (class 2606 OID 60593)
--- Name: app_instance app_instance_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app_instance app_instance_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app_instance
@@ -1409,8 +1587,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3627 (class 2606 OID 60500)
--- Name: app app_owner_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: app app_owner_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.app
@@ -1418,8 +1595,7 @@ ALTER TABLE ONLY public.app
 
 
 --
--- TOC entry 3635 (class 2606 OID 60625)
--- Name: container container_app_instance_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container container_app_instance_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container
@@ -1427,8 +1603,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3677 (class 2606 OID 61052)
--- Name: container_device_aux_option container_device_aux_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_aux_option container_device_aux_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_aux_option
@@ -1436,8 +1611,7 @@ ALTER TABLE ONLY public.container_device_aux_option
 
 
 --
--- TOC entry 3678 (class 2606 OID 61047)
--- Name: container_device_aux_option container_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_aux_option container_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_aux_option
@@ -1445,8 +1619,7 @@ ALTER TABLE ONLY public.container_device_aux_option
 
 
 --
--- TOC entry 3661 (class 2606 OID 60874)
--- Name: container_device_certificate container_device_certificate_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_certificate container_device_certificate_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_certificate
@@ -1454,8 +1627,7 @@ ALTER TABLE ONLY public.container_device_certificate
 
 
 --
--- TOC entry 3662 (class 2606 OID 60879)
--- Name: container_device_certificate container_device_certificate_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_certificate container_device_certificate_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_certificate
@@ -1463,8 +1635,7 @@ ALTER TABLE ONLY public.container_device_certificate
 
 
 --
--- TOC entry 3649 (class 2606 OID 60746)
--- Name: container_device container_device_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device container_device_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device
@@ -1472,8 +1643,7 @@ ALTER TABLE ONLY public.container_device
 
 
 --
--- TOC entry 3664 (class 2606 OID 60912)
--- Name: container_device_db container_device_db_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_db container_device_db_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_db
@@ -1481,8 +1651,7 @@ ALTER TABLE ONLY public.container_device_db
 
 
 --
--- TOC entry 3665 (class 2606 OID 60907)
--- Name: container_device_db container_device_db_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_db container_device_db_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_db
@@ -1490,8 +1659,7 @@ ALTER TABLE ONLY public.container_device_db
 
 
 --
--- TOC entry 3650 (class 2606 OID 60741)
--- Name: container_device container_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device container_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device
@@ -1499,8 +1667,7 @@ ALTER TABLE ONLY public.container_device
 
 
 --
--- TOC entry 3658 (class 2606 OID 60845)
--- Name: container_device_domain container_device_domain_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_domain container_device_domain_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_domain
@@ -1508,8 +1675,7 @@ ALTER TABLE ONLY public.container_device_domain
 
 
 --
--- TOC entry 3659 (class 2606 OID 60840)
--- Name: container_device_domain container_device_domain_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_domain container_device_domain_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_domain
@@ -1517,8 +1683,7 @@ ALTER TABLE ONLY public.container_device_domain
 
 
 --
--- TOC entry 3671 (class 2606 OID 60992)
--- Name: container_device_env_option container_device_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_env_option container_device_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_env_option
@@ -1526,8 +1691,7 @@ ALTER TABLE ONLY public.container_device_env_option
 
 
 --
--- TOC entry 3672 (class 2606 OID 60987)
--- Name: container_device_env_option container_device_env_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_env_option container_device_env_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_env_option
@@ -1535,8 +1699,7 @@ ALTER TABLE ONLY public.container_device_env_option
 
 
 --
--- TOC entry 3667 (class 2606 OID 60945)
--- Name: container_device_repository container_device_repository_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_repository container_device_repository_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_repository
@@ -1544,8 +1707,7 @@ ALTER TABLE ONLY public.container_device_repository
 
 
 --
--- TOC entry 3668 (class 2606 OID 60940)
--- Name: container_device_repository container_device_repository_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_device_repository container_device_repository_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_device_repository
@@ -1553,8 +1715,7 @@ ALTER TABLE ONLY public.container_device_repository
 
 
 --
--- TOC entry 3636 (class 2606 OID 81940)
--- Name: container container_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container container_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container
@@ -1562,8 +1723,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3686 (class 2606 OID 61140)
--- Name: container_env_option container_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_env_option container_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_env_option
@@ -1571,8 +1731,7 @@ ALTER TABLE ONLY public.container_env_option
 
 
 --
--- TOC entry 3637 (class 2606 OID 60620)
--- Name: container container_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container container_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container
@@ -1580,8 +1739,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3638 (class 2606 OID 60615)
--- Name: container container_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container container_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container
@@ -1589,8 +1747,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3651 (class 2606 OID 60759)
--- Name: container_resource container_resource_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_resource container_resource_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_resource
@@ -1598,8 +1755,7 @@ ALTER TABLE ONLY public.container_resource
 
 
 --
--- TOC entry 3673 (class 2606 OID 61012)
--- Name: container_resource_env_option container_resource_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_resource_env_option container_resource_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_resource_env_option
@@ -1607,8 +1763,7 @@ ALTER TABLE ONLY public.container_resource_env_option
 
 
 --
--- TOC entry 3674 (class 2606 OID 61007)
--- Name: container_resource_env_option container_resource_env_option_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_resource_env_option container_resource_env_option_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_resource_env_option
@@ -1616,8 +1771,7 @@ ALTER TABLE ONLY public.container_resource_env_option
 
 
 --
--- TOC entry 3652 (class 2606 OID 60764)
--- Name: container_resource container_resource_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_resource container_resource_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_resource
@@ -1625,8 +1779,7 @@ ALTER TABLE ONLY public.container_resource
 
 
 --
--- TOC entry 3683 (class 2606 OID 61112)
--- Name: container_volume container_volume_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_volume container_volume_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_volume
@@ -1634,8 +1787,7 @@ ALTER TABLE ONLY public.container_volume
 
 
 --
--- TOC entry 3684 (class 2606 OID 61107)
--- Name: container_volume container_volume_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: container_volume container_volume_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.container_volume
@@ -1643,8 +1795,47 @@ ALTER TABLE ONLY public.container_volume
 
 
 --
--- TOC entry 3689 (class 2606 OID 61194)
--- Name: device_backup device_backup_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: db_backup db_backup_artifact_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db_backup
+    ADD CONSTRAINT db_backup_artifact_id_fkey FOREIGN KEY (artifact_id) REFERENCES public.artifact(id) NOT VALID;
+
+
+--
+-- Name: db_db_user db_db_user_db_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db_db_user
+    ADD CONSTRAINT db_db_user_db_id_fkey FOREIGN KEY (db_id) REFERENCES public.db(id);
+
+
+--
+-- Name: db_db_user db_db_user_db_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db_db_user
+    ADD CONSTRAINT db_db_user_db_user_id_fkey FOREIGN KEY (db_user_id) REFERENCES public.db_user(id);
+
+
+--
+-- Name: db db_dbms_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db
+    ADD CONSTRAINT db_dbms_id_fkey FOREIGN KEY (dbms_id) REFERENCES public.dbms(id) NOT VALID;
+
+
+--
+-- Name: db_user db_user_dbms_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.db_user
+    ADD CONSTRAINT db_user_dbms_id_fkey FOREIGN KEY (dbms_id) REFERENCES public.dbms(id) NOT VALID;
+
+
+--
+-- Name: device_backup device_backup_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device_backup
@@ -1652,8 +1843,7 @@ ALTER TABLE ONLY public.device_backup
 
 
 --
--- TOC entry 3690 (class 2606 OID 61184)
--- Name: device_backup device_backup_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device_backup device_backup_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device_backup
@@ -1661,8 +1851,7 @@ ALTER TABLE ONLY public.device_backup
 
 
 --
--- TOC entry 3691 (class 2606 OID 61189)
--- Name: device_backup device_backup_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device_backup device_backup_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device_backup
@@ -1670,8 +1859,7 @@ ALTER TABLE ONLY public.device_backup
 
 
 --
--- TOC entry 3640 (class 2606 OID 60678)
--- Name: device device_backup_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device device_backup_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device
@@ -1679,8 +1867,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3641 (class 2606 OID 60668)
--- Name: device device_device_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device device_device_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device
@@ -1688,8 +1875,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3642 (class 2606 OID 60673)
--- Name: device device_driver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device device_driver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device
@@ -1697,8 +1883,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3643 (class 2606 OID 60663)
--- Name: device device_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device device_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device
@@ -1706,8 +1891,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3688 (class 2606 OID 61168)
--- Name: device_option device_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: device_option device_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.device_option
@@ -1715,8 +1899,15 @@ ALTER TABLE ONLY public.device_option
 
 
 --
--- TOC entry 3639 (class 2606 OID 60641)
--- Name: driver driver_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: docker_registry docker_registry_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.docker_registry
+    ADD CONSTRAINT docker_registry_container_id_fkey FOREIGN KEY (container_id) REFERENCES public.container(id) NOT VALID;
+
+
+--
+-- Name: driver driver_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.driver
@@ -1724,8 +1915,7 @@ ALTER TABLE ONLY public.driver
 
 
 --
--- TOC entry 3628 (class 2606 OID 60521)
--- Name: image image_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image image_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image
@@ -1733,8 +1923,7 @@ ALTER TABLE ONLY public.image
 
 
 --
--- TOC entry 3679 (class 2606 OID 61072)
--- Name: image_device_aux_option image_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device_aux_option image_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device_aux_option
@@ -1742,8 +1931,7 @@ ALTER TABLE ONLY public.image_device_aux_option
 
 
 --
--- TOC entry 3680 (class 2606 OID 61067)
--- Name: image_device_aux_option image_device_aux_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device_aux_option image_device_aux_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device_aux_option
@@ -1751,8 +1939,7 @@ ALTER TABLE ONLY public.image_device_aux_option
 
 
 --
--- TOC entry 3653 (class 2606 OID 60777)
--- Name: image_device image_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device image_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device
@@ -1760,8 +1947,7 @@ ALTER TABLE ONLY public.image_device
 
 
 --
--- TOC entry 3675 (class 2606 OID 61027)
--- Name: image_device_env_option image_device_env_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device_env_option image_device_env_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device_env_option
@@ -1769,8 +1955,7 @@ ALTER TABLE ONLY public.image_device_env_option
 
 
 --
--- TOC entry 3676 (class 2606 OID 61032)
--- Name: image_device_env_option image_device_env_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device_env_option image_device_env_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device_env_option
@@ -1778,8 +1963,7 @@ ALTER TABLE ONLY public.image_device_env_option
 
 
 --
--- TOC entry 3654 (class 2606 OID 60782)
--- Name: image_device image_device_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_device image_device_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_device
@@ -1787,8 +1971,7 @@ ALTER TABLE ONLY public.image_device
 
 
 --
--- TOC entry 3687 (class 2606 OID 61154)
--- Name: image_env_option image_env_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_env_option image_env_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_env_option
@@ -1796,8 +1979,7 @@ ALTER TABLE ONLY public.image_env_option
 
 
 --
--- TOC entry 3657 (class 2606 OID 60824)
--- Name: image_env_requirement image_env_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_env_requirement image_env_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_env_requirement
@@ -1805,8 +1987,7 @@ ALTER TABLE ONLY public.image_env_requirement
 
 
 --
--- TOC entry 3629 (class 2606 OID 73739)
--- Name: image image_repository_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image image_repository_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image
@@ -1814,8 +1995,7 @@ ALTER TABLE ONLY public.image
 
 
 --
--- TOC entry 3655 (class 2606 OID 60796)
--- Name: image_resource_requirement image_resource_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_resource_requirement image_resource_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_resource_requirement
@@ -1823,8 +2003,7 @@ ALTER TABLE ONLY public.image_resource_requirement
 
 
 --
--- TOC entry 3685 (class 2606 OID 61126)
--- Name: image_volume image_volume_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_volume image_volume_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_volume
@@ -1832,8 +2011,7 @@ ALTER TABLE ONLY public.image_volume
 
 
 --
--- TOC entry 3656 (class 2606 OID 60810)
--- Name: image_volume_requirement image_volume_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: image_volume_requirement image_volume_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.image_volume_requirement
@@ -1841,8 +2019,7 @@ ALTER TABLE ONLY public.image_volume_requirement
 
 
 --
--- TOC entry 3663 (class 2606 OID 60892)
--- Name: resource_certificate resource_certificate_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_certificate resource_certificate_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_certificate
@@ -1850,8 +2027,7 @@ ALTER TABLE ONLY public.resource_certificate
 
 
 --
--- TOC entry 3666 (class 2606 OID 60925)
--- Name: resource_db resource_db_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_db resource_db_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_db
@@ -1859,8 +2035,7 @@ ALTER TABLE ONLY public.resource_db
 
 
 --
--- TOC entry 3681 (class 2606 OID 61092)
--- Name: resource_device_aux_option resource_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_device_aux_option resource_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_device_aux_option
@@ -1868,8 +2043,7 @@ ALTER TABLE ONLY public.resource_device_aux_option
 
 
 --
--- TOC entry 3682 (class 2606 OID 61087)
--- Name: resource_device_aux_option resource_device_aux_option_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_device_aux_option resource_device_aux_option_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_device_aux_option
@@ -1877,8 +2051,7 @@ ALTER TABLE ONLY public.resource_device_aux_option
 
 
 --
--- TOC entry 3644 (class 2606 OID 60692)
--- Name: resource resource_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource resource_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource
@@ -1886,8 +2059,7 @@ ALTER TABLE ONLY public.resource
 
 
 --
--- TOC entry 3670 (class 2606 OID 60972)
--- Name: resource_docker_image resource_docker_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_docker_image resource_docker_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_docker_image
@@ -1895,8 +2067,7 @@ ALTER TABLE ONLY public.resource_docker_image
 
 
 --
--- TOC entry 3660 (class 2606 OID 60859)
--- Name: resource_domain resource_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_domain resource_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_domain
@@ -1904,8 +2075,7 @@ ALTER TABLE ONLY public.resource_domain
 
 
 --
--- TOC entry 3669 (class 2606 OID 60958)
--- Name: resource_repository resource_repository_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: resource_repository resource_repository_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.resource_repository
@@ -1913,8 +2083,7 @@ ALTER TABLE ONLY public.resource_repository
 
 
 --
--- TOC entry 3626 (class 2606 OID 60481)
--- Name: user user_group_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user user_group_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."user"
@@ -1922,15 +2091,12 @@ ALTER TABLE ONLY public."user"
 
 
 --
--- TOC entry 3841 (class 0 OID 0)
--- Dependencies: 5
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
+-- Name: web_server web_server_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+ALTER TABLE ONLY public.web_server
+    ADD CONSTRAINT web_server_container_id_fkey FOREIGN KEY (container_id) REFERENCES public.container(id) NOT VALID;
 
-
--- Completed on 2024-04-11 14:13:16
 
 --
 -- PostgreSQL database dump complete
