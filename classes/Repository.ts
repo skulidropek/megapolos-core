@@ -36,6 +36,9 @@ class Repository {
 
   async edit(data: Partial<RepositoryTable>):Promise<Repository> {
     await new Entity<RepositoryTable>('repository').update({ id: this.id }, data);
+    const path = await this.getPath();
+    await fse.remove(path);
+    await this.clone();
     return this;
   }
 

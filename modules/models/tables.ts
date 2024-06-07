@@ -42,6 +42,7 @@ export interface NodeTable {
   user: string;
   password: string;
   life_status: string;
+  docker_mirrors: string[];
   create_date: Date;
   update_date: Date;
   remove_date: Date;

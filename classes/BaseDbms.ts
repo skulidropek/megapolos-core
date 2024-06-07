@@ -71,7 +71,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return [];
   }
 
-  async backup(dbId: string, name: string): Promise<DbBackupTable> {
+  async backup(dbId: string, name: string, withoutData: boolean): Promise<DbBackupTable> {
     const data = await this.getData();
     const artifact = new Artifact();
     const db = new Db(dbId);
@@ -89,10 +89,10 @@ class BaseDbms extends BaseRepository<DbmsTable> {
       artifact_id: artifact.id,
       type: data.type,
     });
-    return this.backupProcess(db, backup, artifact);
+    return this.backupProcess(db, backup, artifact, withoutData);
   }
 
-  async backupProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<DbBackupTable> {
+  async backupProcess(db: Db, backup: DbBackup, artifact: Artifact, withoutData: boolean): Promise<DbBackupTable> {
     return new DbBackup().getData();
   }
 

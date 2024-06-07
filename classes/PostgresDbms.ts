@@ -131,12 +131,12 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
         foreignKeys: [],
       };
       const fields = await knex('information_schema.columns')
-        .select('column_name', 'data_type', 'udt_name', 'is_nullable')
+        .select('column_name', 'data_type', knex.raw('udt_name::regtype'), 'is_nullable')
         .where('table_name', table.name);
       fields.forEach((field: any) => {
         table.fields.push({
           name: field.column_name,
-          type: field.data_type === 'USER-DEFINED' ? field.udt_name : field.data_type,
+          type: field.data_type === 'USER-DEFINED' || field.data_type === 'ARRAY' ? field.udt_name : field.data_type,
           notNull: field.is_nullable === 'NO',
           unique: contraints.rows.find((row: any) => 
             row.table_name === table.name && row.column_name === field.column_name && 
@@ -160,14 +160,14 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
     return result;
   }
 
-  async backupProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<DbBackupTable> {
+  async backupProcess(db: Db, backup: DbBackup, artifact: Artifact, withoutData: boolean): Promise<DbBackupTable> {
     const data = await this.getData();
     const dbData = await db.getData();
     if (data.host === 'localhost') {
       data.host = '172.17.0.1';
     }
     const file = await artifact.getPath() + '/backup.sql';
-    await MegapolosNode.currentNode.shellCommand(`docker run -i --rm -e PGPASSWORD=${data.password} postgres pg_dump -c -h ${data.host} -U ${data.user} ${dbData.name} > ${file}`, new User('')).output;
+    await MegapolosNode.currentNode.shellCommand(`docker run -i --rm -e PGPASSWORD=${data.password} postgres pg_dump -c -h ${data.host} -U ${data.user} ${withoutData ? '-s' : ''} ${dbData.name} > ${file}`, new User('')).output;
     return backup.getData();
   }
 

@@ -56,6 +56,7 @@ const nodeModule = createModule({
         runningContainers: [String]
         last_update_date: DateTime
         ip: String
+        docker_mirrors: [String]
       }
 
       input NodeInput {
@@ -63,6 +64,7 @@ const nodeModule = createModule({
         name: String
         host: String
         password: String
+        docker_mirrors: [String]
       }
     `,
   ],
