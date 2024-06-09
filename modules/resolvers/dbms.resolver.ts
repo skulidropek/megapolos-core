@@ -21,6 +21,8 @@ const dbmsModule = createModule({
         getDbms(id: String!): Dbms
         getDbs: [Db]
         getDb(id: String!): Db
+        getDbUsers: [DbUser]
+        getDbUser(id: String!): DbUser
         getDbBackups: [DbBackup]
         getDbBackup(id: String!): DbBackup
         getDbSchemas: [DbSchema]
@@ -95,6 +97,7 @@ const dbmsModule = createModule({
         type Db {
             id: String
             name: String
+            dbms_id: String
             dbms: Dbms
             create_date: DateTime
             update_date: DateTime
@@ -118,6 +121,7 @@ const dbmsModule = createModule({
         type DbUser {
             id: String
             name: String
+            dbms_id: String
             dbms: Dbms
             create_date: DateTime
             update_date: DateTime
@@ -147,6 +151,14 @@ const dbmsModule = createModule({
       getDb: resolver<{ id: string }, DbTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'getDb', data: args });
         return new Db(args.id).getData();
+      }),
+      getDbUsers: resolver<{}, DbUserTable[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getDbUsers', data: args });
+        return new DbUser().getAll();
+      }),
+      getDbUser: resolver<{ id: string }, DbUserTable>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'getDbUser', data: args });
+        return new DbUser(args.id).getData();
       }),
       getDbBackups: resolver<{}, DbBackupTable[]>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'getDbBackups', data: args });
