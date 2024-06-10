@@ -47,7 +47,7 @@ class PostgresDmbs extends BaseDbms {
   }
 
   async addUserToDbChange(userName: string, dbName: string): Promise<boolean> {
-    const knex = await this.getKnex('postgres');
+    const knex = await this.getKnex(dbName);
     await knex.raw(`GRANT ALL PRIVILEGES ON DATABASE ${dbName} TO ${userName}`);
     await knex.raw(`GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${userName}`);
     await knex.raw(`GRANT ALL PRIVILEGES ON SCHEMA public TO ${userName}`);

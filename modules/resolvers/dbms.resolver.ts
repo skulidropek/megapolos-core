@@ -121,6 +121,7 @@ const dbmsModule = createModule({
         type DbUser {
             id: String
             name: String
+            password: String
             dbms_id: String
             dbms: Dbms
             create_date: DateTime
@@ -131,6 +132,7 @@ const dbmsModule = createModule({
         input DbUserInput {
             name: String
             dbms_id: String
+            password: String
         }
     `,
   ],
