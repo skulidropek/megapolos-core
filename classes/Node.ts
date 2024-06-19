@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import dns from 'dns';
 import { v4 as uuidv4 } from 'uuid';
 import EventsObserver from '../modules/events/eventsObserver';
 import User from './User';
@@ -9,6 +10,16 @@ import Container from './Container';
 import docker from '../coreDocker';
 import DockerEvent from '../modules/events/docker.event';
 import { megapolosPath } from '..';
+import { AppInstanceTable, ContainerTable, DomainTable, ImageTable, NodeTable } from '../modules/models/tables';
+import Entity from '../modules/models/Entity';
+import { knex } from '../corePostgres';
+import config from '../config/config.json';
+import fse from 'fs-extra';
+import Docker from 'dockerode';
+import Image from './Image';
+import Dockerode from 'dockerode';
+import ExternalProcess from './ExternalProcess';
+import Log from './Log';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -42,18 +53,178 @@ function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string
   });
 }
 
+async function lookupPromise(domain: string) {
+  return new Promise<string>((resolve, reject) => {
+    dns.lookup(domain, (err, address, family) => {
+      if (err) reject(err);
+      resolve(address);
+    });
+  });
+}
+
 class MegapolosNode {
 
   commands: { [key: string]: BaseProcess } = {};
 
   static currentNode: MegapolosNode;
 
+  id: string;
+
   static createCurrentNode() {
     MegapolosNode.currentNode = new MegapolosNode();
   }
 
+  static async createNode(data: Partial<NodeTable>): Promise<MegapolosNode> {
+    const entity = new Entity<NodeTable>('node');
+    const result = await entity.create(data);
+    return new MegapolosNode(result.id);
+  }
+
+  static async getNodesData(): Promise<NodeTable[]> {
+    const entity = new Entity<NodeTable>('node');
+    return entity.findAll();
+  }
+
+  static async getNodes(): Promise<MegapolosNode[]> {
+    const nodes = await MegapolosNode.getNodesData();
+    return nodes.map((node) => new MegapolosNode(node.id));
+  }
+
+  constructor(id?: string) {
+    if (id) {
+      this.id = id;
+    }
+  }
+
+  edit(data: Partial<NodeTable>) {
+    const entity = new Entity<NodeTable>('node');
+    return entity.update({ id: this.id }, data);
+  }
+
+  delete() {
+    const entity = new Entity<NodeTable>('node');
+    return entity.delete({ id: this.id });
+  }
+
+  getData() {
+    const entity = new Entity<NodeTable>('node');
+    return entity.findOne({ id: this.id });
+  }
+
+  async update(init?: boolean, withRebuild?: boolean) {
+    const data = await this.getData();
+    if (data.life_status === 'updating') {
+      // throw new Error('Node is updating');
+    }
+    const result: any = {
+      containers: [],
+      volumes: [],
+      host: data.host,
+      node: data,
+    };
+    const containers:ContainerTable[] = await knex('container').where({ node_id: this.id });
+
+    const builded = [];
+    for (let i in containers) {
+      const containerResult: any = {};
+      const container = containers[i];
+      const containerObject = new Container(container.id);
+      const image:ImageTable = await knex('image').where({ id: container.image_id }).first();
+      if (withRebuild) {
+        if (!builded.includes(image.id)) {
+          const imageObject = new Image(image.id);
+          await imageObject.build('root');
+          builded.push(image.id);
+        }
+      }
+      const instance:AppInstanceTable = await knex('app_instance').where({ id: container.app_instance_id }).first();
+      let domain:DomainTable;
+      if (container.domain_id) {
+        domain = await knex('domain').where({ id: container.domain_id }).first();
+      }
+      const envs = await containerObject.getEnvs();
+      const volumes = await containerObject.getVolumes();
+      containerResult.auth = '';
+      if (domain && domain.user) {
+        containerResult.auth_user = domain.user;
+        containerResult.auth_password = domain.password;
+      }
+      containerResult.name = instance.name + '_' + container.name;
+      containerResult.description = container.id;
+      containerResult.image = image.repository_id ? `${config.registryHost}:443/${image.image}` : image.image;
+      containerResult.inner_port = image.inner_port;
+      containerResult.outer_port = container.outer_port;
+      containerResult.envs = [];
+      containerResult.domain_name = domain ? domain.name : null;
+      containerResult.auth = domain ? domain.auth : '';
+      containerResult.disabled = container.life_status !== 'running';
+      
+      for (let i in envs) {
+        let env = envs[i];
+        containerResult.envs.push({ name: env.container_env_name, value: env.container_env_value });
+      }
+      containerResult.volumes = [];
+      for (let i in volumes) {
+        let volume = volumes[i];
+        containerResult.volumes.push({ source: (await volume.volume.getData()).outer_path, target: volume.containerVolume.inner_path });
+        result.volumes.push((await volume.volume.getData()).outer_path);
+      }
+      result.containers.push(containerResult);
+      result.init = init;
+    }
+    const log = new Log();
+    await log.create({ name: 'Update node ' + data.name });
+
+    await this.runAnsible(`${megapolosPath}/ansible/deploy_swarm.yml`, result, log);
+  }
+
+  async init() {
+    const data = await this.getData();
+    const log = new Log();
+    await log.create({ name: 'Init node ' + data.name });
+    this.runAnsible(`${megapolosPath}/ansible/init.yml`, {}, log);
+  }
+
+  async prepareForCore() {
+    const data = await this.getData();
+    const log = new Log();
+    await log.create({ name: 'Prepare for core node ' + data.name });
+    this.runAnsible(`${megapolosPath}/ansible/core.yml`, {}, log);
+  }
+
+  async installRegistry() {
+    const data = await this.getData();
+    const log = new Log();
+    await log.create({ name: 'Install registry on node ' + data.name });
+    this.runAnsible(`${megapolosPath}/ansible/registry.yml`, {
+      registry_domain: config.registryHost,
+      registry_user: config.registryUser,
+      registry_password: config.registryPassword,
+    }, 
+    log);
+  }
+
+  async runAnsible(playbook: string, data: any, log?: Log) {
+    const node = await this.getData();
+    data.node = node;
+    const jsonPath = megapolosPath + `/ansible/${uuidv4()}.json`;
+    await fse.writeFile(jsonPath, JSON.stringify(data, null, 2));
+    const command = `MEGAPOLOS_DEBUG=${config.debug ? '1' : '0'} ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${config.registryHost}:443 CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${config.registryPassword}' ANSIBLE_PASSWORD='${node.password}' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${node.user} -e ansible_ssh_password='{{ lookup("env", "ANSIBLE_PASSWORD") }}' -i ${node.host}, ${playbook}`;
+    const entity = new Entity<NodeTable>('node');
+    try {
+      await entity.update({ id: this.id }, { life_status: 'updating' });
+      await MegapolosNode.currentNode.shellCommand(command, new User(data.user), log).output;
+      await entity.update({ id: this.id }, { life_status: 'running', last_update_date: new Date() });
+      await fse.unlink(jsonPath);
+    } catch (e) {
+      await entity.update({ id: this.id }, { life_status: 'running' });
+      await fse.unlink(jsonPath);
+      console.error(e);
+    }
+  }
+
   async getPort() {
-    const usedPorts = (await AppInstanceModel.getUsedPorts()).map((app) => app.outer_port);
+    const usedPorts = (await AppInstanceModel.getUsedPorts(this.id)).map((app) => app.outer_port);
     for (let i = 10000; i < 20000; i++) {
       if (!usedPorts.includes(i)) {
         return i;
@@ -63,7 +234,7 @@ class MegapolosNode {
   }
 
   async checkPort(port: number) {
-    const usedPorts = (await AppInstanceModel.getUsedPorts()).map((app) => app.outer_port);
+    const usedPorts = (await AppInstanceModel.getUsedPorts(this.id)).map((app) => app.outer_port);
     if (usedPorts.includes(port)) {
       throw new Error('No available port');
     }
@@ -107,24 +278,44 @@ class MegapolosNode {
     EventsObserver.listener({ 'type': 'dockerEvents' });
   }
   
-  shellCommand(command: string, user: User): { id: string, output: Promise<{ stdout: string, stderr: string }> } {
+  shellCommand(command: string, user: User, log?: Log): { id: string, output: Promise<{ stdout: string, stderr: string }> } {
     const commandId = uuidv4();
     return { id: commandId, output: (async () => {
-      const process = new Process(command, user);
-      this.commands[commandId] = process;
-      const osUserId = (await (user.getData())).os_user_id;
-      if (!osUserId) {
-        console.log(await (user.getData()));
-        throw new Error('No os user id');
+      let process:BaseProcess; 
+      if (this.id) {
+        process = new ExternalProcess(command, this);
+      } else {
+        process = new Process(command, user);
       }
+      this.commands[commandId] = process;
+      // const osUserId = (await (user.getData())).os_user_id;
+      // if (!osUserId) {
+      //   console.log(await (user.getData()));
+      //   throw new Error('No os user id');
+      // }
       process.onoutput = (data) => {
         EventsObserver.listener({ type: 'shellCommandOutput', data: data });
+        if (log) {
+          log.append(data);
+        }
       };
       process.onerror = (data) => {
         EventsObserver.listener({ type: 'shellCommandError', data: data });
+        if (log) {
+          log.append(data);
+        }
       };
 
-      await process.start();
+      try {
+        await process.start();
+      } catch (e) {
+
+        if (log) {
+          await log.close();
+        }
+        throw e; 
+      }
+      await log.close();
 
       const result = {
         stdout: process.stdout,
@@ -136,6 +327,64 @@ class MegapolosNode {
       // );
       return result;
     })() };
+  }
+
+  async getContainers(): Promise<ContainerTable[]> {
+    return new Entity<ContainerTable>('container').findAll({ node_id: this.id }, 'name');
+  }
+
+  async getDocker() {
+    const data = await this.getData();
+    const docker = new Docker({
+      host: data.host,
+      port: 5102,
+      protocol: 'https',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from('megapolos:' + data.password).toString('base64'),
+      },
+    });
+    return docker;
+  }
+
+  async getDockerContainers(): Promise<string[]> {
+    const docker = await this.getDocker();
+    const containers = await new Promise<string[]>((resolve, reject) => {
+      docker.listServices((err, services) => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log(JSON.stringify(services, null, 2));
+          resolve(services.filter(c => c.Spec.Mode.Replicated.Replicas > 0).
+            map(c => JSON.stringify(c.Spec.Labels.megapolos_id)));
+        }
+      });
+    });
+    return containers;
+  }
+
+  async getDockerContainer(id: string): Promise<Docker.Container> {
+    const docker = await this.getDocker();
+    const containers = await new Promise<Docker.ContainerInfo[]>((resolve, reject) => {
+      docker.listContainers((err, containers) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(containers);
+        }
+      });
+    });
+    return docker.getContainer(containers.find(c => c.Labels.megapolos_id === id).Id);
+  }
+
+  async getDockerContainerLog(id: string): Promise<string> {
+    const container = await this.getDockerContainer(id);
+    const log = (await container.logs({ stdout: true, stderr: true })).toString();
+    return log;
+  }
+
+  async getIp() {
+    const data = await this.getData();
+    return lookupPromise(data.host);
   }
 }
 

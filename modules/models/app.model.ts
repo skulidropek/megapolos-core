@@ -1,6 +1,6 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { knex } from '../../coreRqlite';
+import { knex } from '../../corePostgres';
 import { AppTable, ImageTable } from './tables';
 
 class AppModel {
@@ -13,7 +13,7 @@ class AppModel {
   }
 
   static async getApps():Promise<AppTable[]> {
-    return knex<AppTable>('app').select('app.*');
+    return knex<AppTable>('app').select('app.*').orderBy('name');
   }
 
   static async getImage(imageId: string):Promise<ImageTable> {
@@ -21,7 +21,7 @@ class AppModel {
   }
 
   static async getImagesOfApp(appId: string):Promise<ImageTable[]> {
-    return knex<ImageTable>('image').select('image.*').where('image.app_id', appId);
+    return knex<ImageTable>('image').select('image.*').where('image.app_id', appId).orderBy('image.name');
   }
 
   static async createImage(input: { imageId: string, name: string, appId: string, image: string, commitId: string, innerPort: number }) {

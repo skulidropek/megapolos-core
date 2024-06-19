@@ -48,26 +48,10 @@ const resourceModule = createModule({
         resource: Resource!
       }
 
-      type Repository {
-        id: String!
-        repository: String!
-        resource: Resource!
-      }
-
-      type DockerImage {
-        id: String!
-        image: String!
-        tag: String!
-        docker_id: String!
-        resource: Resource!
-      }
-
       type Query {
         getResourcesOfContainer: [Resource]
         getCertificates: [Certificate]
         getDatabases: [Database]
-        getDockerImages: [DockerImage]
-        getRepositories: [Repository]
         getDomains: [Domain]
       }
 
@@ -104,22 +88,6 @@ const resourceModule = createModule({
         return Promise.all((await DomainResource.getDomains()).map(async resource => {
           return {
             ...await resource.getDomainData(),
-            resource: await resource.getData(),
-          };
-        }));
-      }),
-      getRepositories: resolver<void, (ResourceRepositoryTable & { resource: ResourceTable })[]>(async (parent, args, context, info) => {
-        return Promise.all((await RepositoryResource.getRepositories()).map(async resource => {
-          return {
-            ...await resource.getRepositoryData(),
-            resource: await resource.getData(),
-          };
-        }));
-      }),
-      getDockerImages: resolver<void, (ResourceDockerImageTable & { resource: ResourceTable })[]>(async (parent, args, context, info) => {
-        return Promise.all((await DockerImageResource.getDockerImages()).map(async resource => {
-          return {
-            ...await resource.getDockerImageData(),
             resource: await resource.getData(),
           };
         }));

@@ -1,0 +1,8 @@
+- hosts: all
+  vars: 
+    name: "megapolos"
+    compose_file: /opt/megapolos_swarm_compose.yml
+    data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
+  tasks:
+  - name: init
+    import_tasks: init_include.yml

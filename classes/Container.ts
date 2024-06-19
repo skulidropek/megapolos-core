@@ -19,6 +19,7 @@ import { promisify } from 'util';
 import ResourceModel from '../modules/models/resource.model';
 import BaseResource from '../modules/resources/BaseResource';
 import BaseResourceWithType from '../modules/devices/ResourceDeviceWithType';
+import Entity from '../modules/models/Entity';
 
 const exec = promisify(require('child_process').exec);
 
@@ -30,8 +31,30 @@ export enum ContainerLifeStatus {
 class Container {
   id: string;
 
+  static async getContainersData(): Promise<ContainerTable[]> {
+    return new Entity<ContainerTable>('container').findAll();
+  }
+
+  static async getContainers(): Promise<Container[]> {
+    const data = await this.getContainersData();
+    return data.map((item) => new Container(item.id));
+  }
+
   constructor(id: string) {
     this.id = id;
+  }
+
+  static async create(instanceId: string, data: Partial<ContainerTable>): Promise<Container> {
+    const node = new MegapolosNode(data.node_id);
+    const entity = new Entity<ContainerTable>('container');
+    let outerPort = await node.getPort();
+    if (data.outer_port) {
+      await node.checkPort(data.outer_port);
+      outerPort = data.outer_port;
+    }
+    data.outer_port = outerPort;
+    const result = await entity.create({ app_instance_id: instanceId, ...data });
+    return new Container(result.id);
   }
 
   static createFromImage(instance: Instance, image: Image, input: ContainerInput): Promise<Container> {
@@ -45,12 +68,13 @@ class Container {
 
   async getDockerContainer() {
     const data = await this.getData();
-    return docker.getContainer(data.docker_runtime_id);
+    const node = new MegapolosNode(data.node_id);
+    return node.getDockerContainer(this.id);
   }
 
   async start() {
     try {
-      await (await this.getDockerContainer()).start();
+      // await (await this.getDockerContainer()).start();
     } catch (e) {
       console.trace(e);
       EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
@@ -61,7 +85,7 @@ class Container {
 
   async stop() {
     try {
-      await (await this.getDockerContainer()).stop();
+      // await (await this.getDockerContainer()).stop();
     } catch (e) {
       console.trace(e);
       EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
@@ -70,16 +94,15 @@ class Container {
     await this.updateLifeStatus('stopped');
   }
 
-  async edit(name: string, outer_port: number): Promise<void> {
-    const data = await this.getData();
-    if (outer_port) {
-      if (data.outer_port !== outer_port) {
-        await MegapolosNode.currentNode.checkPort(outer_port);
+  async edit(data: Partial<ContainerTable>): Promise<void> {
+    const entity = await this.getData();
+    if (data.outer_port) {
+      if (data.outer_port !== entity.outer_port) {
+        const node = new MegapolosNode(data.node_id || entity.node_id);
+        await node.checkPort(data.outer_port);
       }
-    } else {
-      outer_port = await MegapolosNode.currentNode.getPort();
     }
-    await AppInstanceModel.editContainer(this.id, { name, outer_port });
+    await new Entity<ContainerTable>('container').update({ id: this.id }, data);
   }
 
   async remove():Promise<void> {
@@ -91,7 +114,7 @@ class Container {
         console.trace(e);
       }
       try {
-        await (await this.getDockerContainer()).remove();
+        // await (await this.getDockerContainer()).remove();
       } catch (e) {
         console.trace(e);
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
@@ -100,7 +123,7 @@ class Container {
     const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
     if (fsSync.existsSync(megapolosVolume)) {
       MegapolosNode.currentNode.validatePath(megapolosVolume);
-      await fs.rmdir(megapolosVolume, { recursive: true });
+      // await fs.rmdir(megapolosVolume, { recursive: true });
     }
 
     const volumes = await VolumeModel.getVolumesOfContainer(this.id);
@@ -160,12 +183,12 @@ class Container {
       const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id + '/' + volumeContainer.id;
       MegapolosNode.currentNode.validatePath(volumePath);
       try {
-        await exec(`umount ${volumePath}`);
+        // await exec(`umount ${volumePath}`);
       } catch (e) {
         console.trace(e);
         EventsObserver.listener({ type: 'volumeError', data: { containerId: this.id, error: e } });
       }
-      await fs.rmdir(volumePath);
+      // await fs.rmdir(volumePath);
     }
     await VolumeModel.removeVolumeFromContainer(containerVolumeId);
   }
@@ -309,9 +332,8 @@ class Container {
   }
 
   async getDockerLog(): Promise<string> {
-    const container = await this.getDockerContainer();
-    const log = await container.logs({ stdout: true, stderr: true });
-    return log.toString();
+    const data = await this.getData();
+    return new MegapolosNode(data.node_id).getDockerContainerLog(data.id);
   }
 
   async update(noRebuild: boolean):Promise<void> {
@@ -324,7 +346,7 @@ class Container {
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
       }
       try {
-        await (await this.getDockerContainer()).remove();
+        // await (await this.getDockerContainer()).remove();
       } catch (e) {
         console.trace(e);
         EventsObserver.listener({ type: 'containerError', data: { containerId: this.id, error: e } });
@@ -332,6 +354,28 @@ class Container {
     }
     const containerCreate = new ContainerCreate();
     await containerCreate.build(this, noRebuild);
+  }
+
+  async listFiles(path: string): Promise<{ files: string[], directories: string[] }> {
+    const output = await this.shellCommand(`ls -p ${path}`).output;
+    const files: string[] = [];
+    const directories: string[] = [];
+    output.stdout.split('\n').forEach((line) => {
+      if (line === '') {
+        return;
+      }
+      if (line.endsWith('/')) {
+        directories.push((path === '/' ? path : path + '/') + line.slice(0, -1));
+      } else {
+        files.push((path === '/' ? path : path + '/') + line);
+      }
+    });
+    return { files, directories };
+  }
+
+  async showFile(path: string): Promise<string> {
+    const output = await this.shellCommand(`cat ${path}`).output;
+    return output.stdout;
   }
 }
 

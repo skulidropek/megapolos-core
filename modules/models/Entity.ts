@@ -1,4 +1,4 @@
-import { knex } from '../../coreRqlite';
+import { knex } from '../../corePostgres';
 
 class Entity<T> {
   table: string;
@@ -7,10 +7,13 @@ class Entity<T> {
     this.table = table;
   }
 
-  async findAll(where?: Partial<T>): Promise<T[]> {
+  async findAll(where: Partial<T> = null, order = null): Promise<T[]> {
     const query = knex(this.table).select('*');
     if (where) {
       query.where(where);
+    }
+    if (order) {
+      query.orderBy(order);
     }
     return query;
   }
@@ -23,12 +26,13 @@ class Entity<T> {
     return query.first();
   }
 
-  async create(data: Partial<T>): Promise<void> {
-    await knex(this.table).insert(data);
+  async create(data: Partial<T>): Promise<T> {
+    return (await knex(this.table).insert(data).returning('*'))[0];
   }
 
-  async update(where: Partial<T>, data: Partial<T>): Promise<void> {
+  async update(where: Partial<T>, data: Partial<T>): Promise<T> {
     await knex(this.table).update(data).where(where);
+    return this.findOne(where);
   }
 
   async delete(where: Partial<T>): Promise<void> {

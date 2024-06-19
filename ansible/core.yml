@@ -1,0 +1,68 @@
+- hosts: all
+  vars: 
+    name: "megapolos"
+    compose_file: /opt/megapolos_swarm_compose.yml
+    data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
+  gather_facts: yes
+  become: yes
+  tasks:
+  - name: init
+    import_tasks: init_include.yml
+  - name: Install ansible
+    ansible.builtin.apt:
+      name: ansible
+      state: present
+  
+  - name: Update apt cache
+    apt:
+      update_cache: yes
+
+  - name: Install Node.js dependencies
+    apt:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - curl
+      - software-properties-common
+      
+  - name: Install the gpg key for nodejs LTS
+    apt_key:
+      url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+      state: present
+      
+  - name: Add NodeSource repository
+    apt_repository:
+      repo: "deb https://deb.nodesource.com/node_18.x {{ ansible_distribution_release }} main"
+      state: present
+      update_cache: yes
+      filename: nodesource
+
+  - name: Install Node.js
+    apt:
+      name: nodejs
+      state: present
+
+  - name: Install build-essential
+    apt:
+      name: build-essential
+      state: present
+
+  - name: Install "pm2" node.js package globally.
+    community.general.npm:
+      name: pm2
+      global: true
+
+  - name: Copy docker nginx conf
+    template:
+      src: nginx.core.template
+      dest: /data/nginx/conf/core.conf
+
+  - name: ensure a nginx is running
+    docker_container:
+      name: nginx
+      state: started
+
+  - name: reload nginx
+    community.docker.docker_container_exec:
+      container: nginx
+      command: nginx -s reload

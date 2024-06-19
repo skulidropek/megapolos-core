@@ -1,0 +1,62 @@
+- hosts: all
+  vars: 
+    name: "megapolos"
+    compose_file: /opt/megapolos_swarm_compose.yml
+    data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
+  tasks:
+  - name: init
+    import_tasks: init_include.yml
+  - name: registry directory data
+    ansible.builtin.file:
+      path: /data/registry/data
+      state: directory
+  - name: registry directory auth
+    ansible.builtin.file:
+      path: /data/registry/auth
+      state: directory
+  - name: Copy nginx conf
+    template:
+      src: nginx.registry.template
+      dest: /data/nginx/conf/registry.conf
+  - name: Copy docker compose
+    template:
+      src: registry.compose.template
+      dest: /data/registry/docker-compose.yml
+  # - name: registry password
+  #   community.general.htpasswd:
+  #     path: /data/registry/auth/htpasswd
+  #     name: "{{ data.registry_user }}"
+  #     password: "{{ data.registry_password }}"
+  - name: registry password
+    shell: |
+      docker run --entrypoint htpasswd httpd:2 -Bbn '{{ data.registry_user }}' '{{ data.registry_password }}' > /data/registry/auth/htpasswd
+  - ansible.builtin.pip:
+      name: 
+        - "docker==6.1.3"
+        - docker-compose
+      state: present
+  - name: docker compose
+    community.docker.docker_compose:
+      project_src: /data/registry
+      restarted: true
+  - ansible.builtin.pip:
+      name: 
+        - urllib3
+      state: absent
+  - name: certificate
+    shell: |
+      certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ data.registry_domain }} -d {{ data.registry_domain }} --register-unsafely-without-email
+    args: 
+      creates: /etc/letsencrypt/live/{{ data.registry_domain }}/fullchain.pem
+  - ansible.builtin.pip:
+      name: 
+        - urllib3
+      state: present
+  - name: ensure a nginx is running
+    docker_container:
+      name: nginx
+      state: started
+  - name: reload nginx
+    community.docker.docker_container_exec:
+      container: nginx
+      command: nginx -s reload

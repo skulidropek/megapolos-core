@@ -1,6 +1,6 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { knex } from '../../coreRqlite';
+import { knex } from '../../corePostgres';
 import { AppInstanceTable, ContainerEnvOptionTable, ContainerTable } from './tables';
 
 class AppInstanceModel {
@@ -21,11 +21,11 @@ class AppInstanceModel {
   }
 
   static async getAppInstances():Promise<AppInstanceTable[]> {
-    return knex<AppInstanceTable>('app_instance').select('app_instance.*');
+    return knex<AppInstanceTable>('app_instance').select('app_instance.*').orderBy('name');
   }
 
   static async getAppInstanceContainers(appInstanceId: string):Promise<ContainerTable[]> {
-    return knex<ContainerTable>('container').select('container.*').where('container.app_instance_id', appInstanceId);
+    return knex<ContainerTable>('container').select('container.*').where('container.app_instance_id', appInstanceId).orderBy('name');
   }
 
   static async getContainer(containerId: string):Promise<ContainerTable> {
@@ -70,8 +70,8 @@ class AppInstanceModel {
     await knex<ContainerTable>('container').delete().where('id', containerId);
   }
 
-  static async getUsedPorts():Promise<ContainerTable[]> {
-    return knex<ContainerTable>('container').select('container.outer_port');
+  static async getUsedPorts(nodeId: string):Promise<ContainerTable[]> {
+    return knex<ContainerTable>('container').select('container.outer_port').where('node_id', nodeId);
   }
 
   static async removeAppInstance(appInstanceId: string) {

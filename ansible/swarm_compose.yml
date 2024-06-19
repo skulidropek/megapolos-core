@@ -1,0 +1,35 @@
+version: "3.7"
+services:
+{% for item in data.containers %}
+{% if True or item.disabled is not defined and item.disabled != True %}
+  {{ item.name }}:
+    image: "{{ item.image }}"
+{% if item.outer_port != None %}
+    ports: 
+      - {{ item.outer_port }}:{{ item.inner_port | default(80) }}
+{% endif %}
+{% if item.envs is defined and item.envs|length>0 %}
+    environment:
+{% for env in item.envs %}
+      - {{ env.name }}={{ env.value }}
+{% endfor %}     
+{% endif %} 
+{% if item.volumes is defined and item.volumes|length>0 %}
+    volumes:
+{% for volume in item.volumes %}
+      - {{ volume.source }}:{{ volume.target }}
+{% endfor %}      
+{% endif %}
+    labels:
+      megapolos_id: "{{ item.description }}"
+    deploy:
+      mode: replicated
+{% if item.disabled is defined and item.disabled == True %}
+      replicas: 0
+{% else %}
+      replicas: 1
+{% endif %}
+      labels:
+        megapolos_id: "{{ item.description }}"
+{% endif %}
+{% endfor %}

@@ -16,12 +16,31 @@ import eventModule from './modules/resolvers/event.resolver';
 import volumeModule from './modules/resolvers/volume.resolver';
 import User from './classes/User';
 import EventsObserver from './modules/events/eventsObserver';
-import resourceModule from './modules/resolvers/resource.resolver';
+// import resourceModule from './modules/resolvers/resource.resolver';
+import repositoryModule from './modules/resolvers/repository.resolver';
+import instanceModule from './modules/resolvers/instance.resolver';
+import containerModule from './modules/resolvers/container.resolver';
+import imageModule from './modules/resolvers/image.resolver';
+import domainModule from './modules/resolvers/domain.resolver';
+import dbmsModule from './modules/resolvers/dbms.resolver';
+import logModule from './modules/resolvers/log.resolver';
+import megapolosModule from './modules/resolvers/megapolos.resolver';
 
 const graphqlServer = async () => {
   try {
     const application = createApplication({
-      modules: [userModule, nodeModule, appModule, deviceModule, eventModule, volumeModule, resourceModule],
+      modules: [
+        userModule, nodeModule, appModule, deviceModule, eventModule, volumeModule, 
+        // resourceModule,
+        repositoryModule,
+        instanceModule,
+        containerModule,
+        imageModule,
+        domainModule,
+        dbmsModule,
+        logModule,
+        megapolosModule,
+      ],
     });
    
     const { schema, createExecution, createSubscription, createApolloExecutor } = application;

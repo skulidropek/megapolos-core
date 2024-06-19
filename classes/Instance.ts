@@ -9,6 +9,8 @@ import ContainerCreate from './ContainerCreate';
 import DeviceModel from '../modules/models/device.model';
 import VolumeModel from '../modules/models/volume.model';
 import docker from '../coreDocker';
+import { AppInstanceTable } from '../modules/models/tables';
+import UserModel from '../modules/models/user.model';
 
 class Instance {
   id: string;
@@ -17,12 +19,14 @@ class Instance {
     this.id = id;
   }
   
-  static async createInstance(input: AppInstanceInput, isDevice = false): Promise<Instance> {
+  static async createInstance(input: Partial<AppInstanceTable>, isDevice = false): Promise<Instance> {
     const appInstanceId = uuidv4();
   
-    const app = new App(input.app_id);
-    const images = await app.getImages();
-    const user = await User.createUser({ name: input.name, groupUserId: isDevice ? 'device' : 'app' }, isDevice);
+    const userGroup = await UserModel.getUserGroupByName('root');
+    const user = await User.createUser({ name: input.name, 
+      // groupUserId: isDevice ? 'device' : 'app' 
+      groupUserId: userGroup.id,
+    }, isDevice);
   
     await AppInstanceModel.createAppInstance({
       id: appInstanceId,
@@ -31,17 +35,10 @@ class Instance {
       life_status: 'stopped',
       app_instance_url: input.name,
       app_id: input.app_id,
-      instance_type_id: 'dev',
-      deploy_strategy_id: '',
-      remove_strategy_id: '',
+      // instance_type_id: 'dev',
+      // deploy_strategy_id: '',
+      // remove_strategy_id: '',
     });
-
-    const instance = new Instance(appInstanceId);
-  
-    for (let i in images) {
-      const image = images[i];
-      await Container.createFromImage(instance, image, input.containers.find((_container) => _container.image_id === image.id));
-    }
 
     EventsObserver.listener({ 'type': 'createAppInstance', data: { appInstanceId } });
   
@@ -114,6 +111,20 @@ class Instance {
 
   async getContainers(): Promise<Container[]> {
     return (await AppInstanceModel.getAppInstanceContainers(this.id)).map((container) => new Container(container.id));
+  }
+
+  async build() {
+    const containers = await this.getContainers();
+    const builded = [];
+    for (const i in containers) {
+      const container = containers[i];
+      const image = await container.getImage();
+      if (builded.includes(image.id)) {
+        continue;
+      }
+      await image.build('root');
+      builded.push(image.id);
+    }
   }
 
 }

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { knex } from '../../coreRqlite';
+import { knex } from '../../corePostgres';
 import { ContainerResourceEnvOptionTable, ContainerResourceTable, ContainerTable, ResourceCertificateTable, ResourceDbTable, ResourceDockerImageTable, ResourceDomainTable, ResourceRepositoryTable, ResourceTable } from './tables';
 import Entity from './Entity';
 

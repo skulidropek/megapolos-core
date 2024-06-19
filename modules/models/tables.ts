@@ -17,9 +17,9 @@ export interface AppInstanceTable {
   instance_type_id: string;
   deploy_strategy_id: string;
   remove_strategy_id: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
 }
 export interface InstanceTypeTable {
   id: string;
@@ -36,13 +36,17 @@ export interface RemoveStrategyTable {
 export interface NodeTable {
   id: string;
   name: string;
-  url: string;
+  host: string;
   cpu: string;
   memory: string;
+  user: string;
+  password: string;
   life_status: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  docker_mirrors: string[];
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
+  last_update_date: Date;
 }
 export interface DriverTable {
   id: string;
@@ -60,9 +64,9 @@ export interface DeviceTable {
   url: string;
   life_status: string;
   backup_volume_id: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
 }
 export interface AppDeviceTable {
   id: string;
@@ -80,26 +84,39 @@ export interface UserTable {
   group_user_id: string;
   rest_api: string;
   user_status: string;
-  create_date: string;
-  update_date: string;
-  disable_date: string;
+  create_date: Date;
+  update_date: Date;
+  disable_date: Date;
   os_user_id: string;
+}
+export interface GroupUserTable {
+  id: string;
+  name: string;
+  rest_api: string;
+  create_date: Date;
+  update_date: Date;
+  disable_date: Date;
 }
 export interface AppTable {
   id: string;
   name: string;
   owner_user_id: string;
   status: string;
-  create_date: string;
-  update_date: string;
+  create_date: Date;
+  update_date: Date;
 }
 export interface GroupUserTable {
   id: string;
   name: string;
   rest_api: string;
-  create_date: string;
-  update_date: string;
-  disable_date: string;
+  create_date: Date;
+  update_date: Date;
+  disable_date: Date;
+}
+export enum ImageStatus {
+  NotExist = 'not_exist',
+  Building = 'building',
+  Built = 'built',
 }
 export interface ImageTable {
   id: string;
@@ -109,9 +126,13 @@ export interface ImageTable {
   inner_port: number;
   has_state: number;
   tags: string;
-  create_date: string;
-  update_date: string;
+  create_date: Date;
+  update_date: Date;
   commit_id: string;
+  repository_id: string;
+  branch: string;
+  status: ImageStatus;
+  last_build_date: Date;
 }
 export interface ContainerDeviceEnvOptionTable {
   id: string;
@@ -134,9 +155,10 @@ export interface ContainerTable {
   outer_port: number;
   app_instance_id: string;
   life_status: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
+  domain_id: string;
 }
 
 export interface ContainerDeviceAuxOptionTable {
@@ -187,9 +209,9 @@ export interface VolumeTable {
   type: 'auto' | 'path' | 'dynamic_auto' | 'dynamic_path';
   outer_path: string;
   node_id: string;
-  create_date: string;
-  update_date: string;
-  remove_date: string;
+  create_date: Date;
+  update_date: Date;
+  remove_date: Date;
 }
 
 export interface ContainerVolumeTable {
@@ -222,9 +244,9 @@ export interface DeviceBackupTable {
   device_name: string,
   container_id: string,
   image_id: string,
-  create_date: string,
-  update_date: string,
-  remove_date: string,
+  create_date: Date,
+  update_date: Date,
+  remove_date: Date,
 }
 
 export interface ImageDeviceTable {
@@ -348,4 +370,118 @@ export interface ResourceDeviceAuxOptionTable {
   device_id: string,
   device_option_name: string,
   resource_option_value: string,
+}
+
+export interface RepositoryTable {
+  id: string,
+  url: string,
+  user: string,
+  password: string,
+  create_date: Date,
+  update_date: Date,
+  remove_date: Date,
+  last_fetch_date: Date,
+}
+
+export interface DomainTable {
+  id: string,
+  name: string,
+  auth: string,
+  user: string,
+  password: string,
+  create_date: Date,
+  update_date: Date,
+  remove_date: Date,
+}
+
+export interface DbmsTable {
+  id: string,
+  name: string,
+  user: string,
+  password: string,
+  host: string,
+  type: string,
+  create_date: Date,
+  update_date: Date,
+}
+
+export interface DbTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+  dbms_id: string,
+}
+
+export interface DbUserTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+  dbms_id: string,
+  password: string,
+}
+
+export interface DbBackupTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+  artifact_id: string,
+  type: string,
+}
+
+export interface DbDbUserTable {
+  db_id: string,
+  db_user_id: string,
+}
+
+export interface ArtifactTable {
+  id: string,
+  name: string,
+  type: string,
+  create_date: Date,
+  update_date: Date,
+}
+
+export interface LogTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+  is_closed: boolean,
+  close_date: Date,
+}
+
+export interface DbSchemaSchemaField {
+  name: string,
+  type: string,
+  notNull: boolean,
+  unique: boolean,
+  primaryKey: boolean,
+}
+
+export interface DbSchemaSchemaForeignKey {
+  name: string,
+  field: string,
+  foreignTable: string,
+  foreignField: string,
+}
+
+export interface DbSchemaSchemaTable {
+  name: string,
+  fields: DbSchemaSchemaField[],
+  foreignKeys: DbSchemaSchemaForeignKey[],
+}
+
+export interface DbSchemaSchema {
+  tables: DbSchemaSchemaTable[]
+}
+
+export interface DbSchemaTable {
+  id: string,
+  schema: DbSchemaSchema,
+  name: string,
+  create_date: Date,
+  update_date: Date,
 }
