@@ -306,12 +306,19 @@ export interface ImageVolumeRequirementTable {
   inner_path: string,
 }
 
+export enum ImageEnvRequirementType {
+  String = 'string',
+  Number = 'number',
+  Boolean = 'boolean',
+}
+
 export interface ImageEnvRequirementTable {
   id: string,
   image_id: string,
   name: string,
   env_name: string,
   env_default_value: string,
+  type: ImageEnvRequirementType
 }
 
 export interface ResourceTable {
@@ -484,4 +491,12 @@ export interface DbSchemaTable {
   name: string,
   create_date: Date,
   update_date: Date,
+}
+
+export interface VolumeBackupTable {
+  id: string,
+  name: string,
+  create_date: Date,
+  update_date: Date,
+  artifact_id: string,
 }

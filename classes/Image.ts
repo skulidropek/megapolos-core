@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import fse from 'fs-extra';
 import AppModel from '../modules/models/app.model';
-import { ContainerTable, ImageStatus, ImageTable } from '../modules/models/tables';
+import { ContainerTable, ImageEnvRequirementTable, ImageStatus, ImageTable } from '../modules/models/tables';
 import App from './App';
 import Entity from '../modules/models/Entity';
 import docker from '../coreDocker';
@@ -11,6 +11,7 @@ import MegapolosNode from './Node';
 import User from './User';
 import config from '../config/config.json';
 import Log from './Log';
+import { knex } from '../corePostgres';
 
 class Image {
   id: string;
@@ -101,6 +102,21 @@ class Image {
       }
     }
     console.log(nodes);
+  }
+
+  async changeEnvs(envs: ImageEnvRequirementTable[]): Promise<boolean> {
+    await knex('image_env_requirement').where({ image_id: this.id }).delete();
+    for (let i in envs) {
+      const env = envs[i];
+      delete env.id;
+      env.image_id = this.id;
+      await knex('image_env_requirement').insert(env);
+    }
+    return true;
+  }
+
+  async getEnvs(): Promise<ImageEnvRequirementTable[]> {
+    return knex('image_env_requirement').where({ image_id: this.id });
   }
 
 }

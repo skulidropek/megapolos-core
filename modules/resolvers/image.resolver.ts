@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
+import { AppTable, DeviceTable, ImageEnvRequirementTable, ImageTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -29,6 +29,7 @@ const imageModule = createModule({
         status: String
         repository: Repository
         branch: String
+        envs: [ImageEnvRequirement]
         last_build_date: DateTime
       }
       input ImageInput {
@@ -37,6 +38,28 @@ const imageModule = createModule({
         inner_port: Int
         repository_id: String
         branch: String
+      }
+        
+      enum ImageEnvRequirementType {
+        string
+        number
+        boolean
+      }
+
+      type ImageEnvRequirement {
+        id: String
+        image_id: String
+        name: String
+        env_name: String
+        env_default_value: String
+        type: ImageEnvRequirementType
+      }
+
+      input ImageEnvRequirementInput {
+        name: String
+        env_name: String
+        env_default_value: String
+        type: ImageEnvRequirementType
       }
 
       type Query {
@@ -49,6 +72,7 @@ const imageModule = createModule({
         buildImage(imageId: String!): Boolean
         buildImages(imageIds: [String]!): Boolean
         editImage(id: String! image: ImageInput!): Boolean
+        changeImageEnvs(imageId: String! envs: [ImageEnvRequirementInput]!): Boolean
         removeImage(id: String!): Boolean
         updateNodesOfImage(imageId: String!): Boolean
       }
@@ -100,10 +124,18 @@ const imageModule = createModule({
         EventsObserver.listener({ type: 'updateNodesOfImage', data: args });
         return true;
       }),
+      changeImageEnvs: resolver<{ imageId: string, envs: ImageEnvRequirementTable[] }, boolean>(async (parent, args, context, info) => {
+        await new Image(args.imageId).changeEnvs(args.envs);
+        EventsObserver.listener({ type: 'changeImageEnvs', data: args });
+        return true;
+      }),
     },
     Image: {
       repository: resolver<ImageTable, RepositoryTable>(async (parent, args, context, info) => {
         return new Repository(parent.repository_id).getData();
+      }),
+      envs: resolver<ImageTable, ImageEnvRequirementTable[]>(async (parent, args, context, info) => {
+        return new Image(parent.id).getEnvs();
       }),
     },
   },
