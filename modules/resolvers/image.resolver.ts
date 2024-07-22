@@ -44,6 +44,7 @@ const imageModule = createModule({
         string
         number
         boolean
+        password
       }
 
       type ImageEnvRequirement {

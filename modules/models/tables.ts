@@ -310,6 +310,7 @@ export enum ImageEnvRequirementType {
   String = 'string',
   Number = 'number',
   Boolean = 'boolean',
+  Password = 'password',
 }
 
 export interface ImageEnvRequirementTable {
