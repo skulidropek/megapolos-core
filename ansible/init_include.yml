@@ -20,9 +20,13 @@
   ansible.builtin.pip:
     name: 
       - jsondiff 
-      - "docker==6.1.3"
+      - docker
       - passlib
       - urllib3
+- name: Install collection community.docker
+  community.general.ansible_galaxy_install:
+    type: collection
+    name: community.docker
 - name: Copy nginx conf file
   template:
     src: nginx.conf.template

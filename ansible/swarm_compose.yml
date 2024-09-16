@@ -4,7 +4,7 @@ services:
 {% if True or item.disabled is not defined and item.disabled != True %}
   {{ item.name }}:
     image: "{{ item.image }}"
-{% if item.outer_port != None %}
+{% if item.outer_port != None and item.inner_port != 0 %}
     ports: 
       - {{ item.outer_port }}:{{ item.inner_port | default(80) }}
 {% endif %}
