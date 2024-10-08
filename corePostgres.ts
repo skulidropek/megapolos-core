@@ -1,5 +1,5 @@
 import Knex from 'knex';
-import config from './config/config.json';
+import config from './config/config';
 
 export const knex = Knex({
   client: 'pg',

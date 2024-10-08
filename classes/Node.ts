@@ -13,7 +13,7 @@ import { megapolosPath } from '..';
 import { AppInstanceTable, ContainerTable, DomainTable, ImageTable, NodeTable } from '../modules/models/tables';
 import Entity from '../modules/models/Entity';
 import { knex } from '../corePostgres';
-import config from '../config/config.json';
+import config from '../config/config';
 import fse from 'fs-extra';
 import Docker from 'dockerode';
 import Image from './Image';

@@ -26,7 +26,7 @@ import rqlite from '../coreRqlite';
     ]);
 
     mkdirSync(__dirname + '/../config');
-    writeFileSync(__dirname + '/../config/config.json', `{
+    writeFileSync(__dirname + '/../config/config', `{
         "secret": "test"
     }`);
 

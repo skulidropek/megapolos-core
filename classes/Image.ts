@@ -9,7 +9,7 @@ import { megapolosPath } from '..';
 import Repository from './Repository';
 import MegapolosNode from './Node';
 import User from './User';
-import config from '../config/config.json';
+import config from '../config/config';
 import Log from './Log';
 import { knex } from '../corePostgres';
 

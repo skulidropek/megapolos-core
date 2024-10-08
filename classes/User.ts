@@ -6,7 +6,7 @@ import { promisify } from 'util';
 
 const exec =   promisify(require('child_process').exec);
 
-import config from '../config/config.json';
+import config from '../config/config';
 import EventsObserver from '../modules/events/eventsObserver';
 
 class User {

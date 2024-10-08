@@ -6,7 +6,7 @@ import { SubscriptionServer } from 'subscriptions-transport-ws';
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { createApplication } from 'graphql-modules';
-import config from './config/config.json';
+import config from './config/config';
 import { Context } from './types';
 import userModule from './modules/resolvers/user.resolver';
 import nodeModule from './modules/resolvers/node.resolver';
