@@ -4,9 +4,16 @@ services:
 {% if True or item.disabled is not defined and item.disabled != True %}
   {{ item.name }}:
     image: "{{ item.image }}"
-{% if item.outer_port != None and item.inner_port != 0 %}
+{% if item.outer_port != None and item.inner_port != 0 and data.dev_mode != True %}
     ports: 
       - {{ item.outer_port }}:{{ item.inner_port | default(80) }}
+{% endif %}
+{% if item.outer_port != None and item.inner_port != 0 and data.dev_mode == True %}
+    ports: 
+      - published: {{ item.outer_port }}
+        target: {{ item.inner_port | default(80) }}
+        protocol: tcp
+        mode: host
 {% endif %}
 {% if item.envs is defined and item.envs|length>0 %}
     environment:

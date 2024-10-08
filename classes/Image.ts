@@ -57,11 +57,18 @@ class Image {
       try {
         const log = new Log();
         await log.create({ name: 'Build image ' + data.name });
+
+        let tags = `-t ${data.image} -t ${config.registryHost}:443/${data.image}`;
+        if (config.devMode) {
+          tags = `-t ${data.image}`;
+        }
     
         const result = await MegapolosNode.currentNode.shellCommand(
-          `cd ${path} && docker build -t ${data.image} -t ${config.registryHost}:443/${data.image} .`, new User(userId), log).output;
-        await MegapolosNode.currentNode.shellCommand(`docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}:443`, new User(userId), log).output;
-        await MegapolosNode.currentNode.shellCommand(`docker push ${config.registryHost}:443/${data.image}`, new User(userId), log).output;
+          `cd ${path} && docker build ${tags} .`, new User(userId), log).output;
+        if (!config.devMode) {
+          await MegapolosNode.currentNode.shellCommand(`docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}:443`, new User(userId), log).output;
+          await MegapolosNode.currentNode.shellCommand(`docker push ${config.registryHost}:443/${data.image}`, new User(userId), log).output;
+        }
         entity.update({ id: this.id }, { status: ImageStatus.Built, last_build_date: new Date() });
         console.log(result);
         if (await fse.exists(path)) {

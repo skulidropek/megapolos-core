@@ -4,5 +4,6 @@
     "registryHost": "",
     "registryUser": "",
     "registryPassword": "",
-    "debug": false
+    "debug": false,
+    "devMode": false
 }

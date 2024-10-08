@@ -152,6 +152,9 @@ class MegapolosNode {
       containerResult.name = instance.name + '_' + container.name;
       containerResult.description = container.id;
       containerResult.image = image.repository_id ? `${config.registryHost}:443/${image.image}` : image.image;
+      if (config.devMode) {
+        containerResult.image = image.image;
+      }
       containerResult.inner_port = image.inner_port;
       containerResult.outer_port = container.outer_port;
       containerResult.envs = [];
@@ -175,10 +178,20 @@ class MegapolosNode {
     const log = new Log();
     await log.create({ name: 'Update node ' + data.name });
 
-    await this.runAnsible(`${megapolosPath}/ansible/deploy_swarm.yml`, result, log);
+    let ansiblePath = `${megapolosPath}/ansible/deploy_swarm.yml`;
+    if (config.devMode) {
+      ansiblePath = `${megapolosPath}/ansible/deploy_swarm_dev_mode.yml`;
+    }
+    if (config.devMode) {
+      result.dev_mode = true;
+    }
+    await this.runAnsible(ansiblePath, result, log);
   }
 
   async init() {
+    if (config.devMode) {
+      return;
+    }
     const data = await this.getData();
     const log = new Log();
     await log.create({ name: 'Init node ' + data.name });
@@ -186,6 +199,9 @@ class MegapolosNode {
   }
 
   async prepareForCore() {
+    if (config.devMode) {
+      return;
+    }
     const data = await this.getData();
     const log = new Log();
     await log.create({ name: 'Prepare for core node ' + data.name });
@@ -193,6 +209,9 @@ class MegapolosNode {
   }
 
   async installRegistry() {
+    if (config.devMode) {
+      return;
+    }
     const data = await this.getData();
     const log = new Log();
     await log.create({ name: 'Install registry on node ' + data.name });
@@ -209,7 +228,10 @@ class MegapolosNode {
     data.node = node;
     const jsonPath = megapolosPath + `/ansible/${uuidv4()}.json`;
     await fse.writeFile(jsonPath, JSON.stringify(data, null, 2));
-    const command = `MEGAPOLOS_DEBUG=${config.debug ? '1' : '0'} ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${config.registryHost}:443 CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${config.registryPassword}' ANSIBLE_PASSWORD='${node.password}' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${node.user} -e ansible_ssh_password='{{ lookup("env", "ANSIBLE_PASSWORD") }}' -i ${node.host}, ${playbook}`;
+    let command = `MEGAPOLOS_DEBUG=${config.debug ? '1' : '0'} ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${config.registryHost}:443 CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${config.registryPassword}' ANSIBLE_PASSWORD='${node.password}' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${node.user} -e ansible_ssh_password='{{ lookup("env", "ANSIBLE_PASSWORD") }}' -i ${node.host}, ${playbook}`;
+    if (config.devMode) {
+      command = `MEGAPOLOS_DEBUG=${config.debug ? '1' : '0'} JSON_PATH=${jsonPath} ansible-playbook ${playbook}`;
+    }
     const entity = new Entity<NodeTable>('node');
     try {
       await entity.update({ id: this.id }, { life_status: 'updating' });
@@ -335,7 +357,10 @@ class MegapolosNode {
 
   async getDocker() {
     const data = await this.getData();
-    const docker = new Docker({
+    if (config.devMode) {
+      return docker;
+    }
+    const nodeDocker = new Docker({
       host: data.host,
       port: 5102,
       protocol: 'https',
@@ -343,7 +368,7 @@ class MegapolosNode {
         'Authorization': 'Basic ' + Buffer.from('megapolos:' + data.password).toString('base64'),
       },
     });
-    return docker;
+    return nodeDocker;
   }
 
   async getDockerContainers(): Promise<string[]> {

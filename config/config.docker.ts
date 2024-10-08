@@ -5,4 +5,5 @@ export default {
   'registryUser': process.env.MEGAPOLOS_REGISTRY_USER,
   'registryPassword': process.env.MEGAPOLOS_REGISTRY_PASSWORD,
   'debug': process.env.MEGAPOLOS_DEBUG,
+  'devMode': process.env.MEGAPOLOS_DEV_MODE,
 };
