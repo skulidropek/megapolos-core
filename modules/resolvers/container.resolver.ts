@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, ContainerTable, DeviceTable, DomainTable, ImageTable, RepositoryTable } from '../models/tables';
+import { AppTable, ContainerTable, DeviceTable, DomainTable, ImageTable, NodeTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -10,6 +10,7 @@ import Container from '../../classes/Container';
 import Image from '../../classes/Image';
 import Repository from '../../classes/Repository';
 import Domain from '../../classes/Domain';
+import MegapolosNode from '../../classes/Node';
 
 const containerModule = createModule({
   id: 'container-module',
@@ -35,6 +36,7 @@ const containerModule = createModule({
         domain_id: String
         domain: Domain
         image: Image
+        node: Node
       }
 
       input ContainerDeviceParameterInput {
@@ -186,6 +188,9 @@ const containerModule = createModule({
       }),
       domain: resolver<{}, DomainTable>(async (parent, args, context, info) => {
         return new Domain(parent.domain_id).getData();
+      }),
+      node: resolver<{}, NodeTable>(async (parent, args, context, info) => {
+        return new MegapolosNode(parent.node_id).getData();
       }),
       envs: resolver<{}, { key: string, value: string }[]>(async (parent, args, context, info) => {
         if (parent.envs) {
