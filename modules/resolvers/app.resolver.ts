@@ -44,35 +44,33 @@ const appModule = createModule({
   resolvers: {
     Query: {
       getApps: resolver<void, (AppTable & { images?: ImageTable[] })[]>(async (parent, args, context, info) => {
-        const apps = await App.getApps();
-        const results:(AppTable & { images?: ImageTable[] })[] = [];
-        for (let i in apps) {
-          const app = apps[i];
-          const result:(AppTable & { images?: ImageTable[] }) = await app.getDataWithImages();
-          results.push(result);
-        }
-        return results;
+        return new App().getAll();
       }),
       getApp: resolver<{ id: string }, (AppTable & { images?: ImageTable[] })>(async (parent, args, context, info) => {
-        const app = new App(args.id);
-        return app.getDataWithImages();
+        return new App(args.id).getData();
       }),
     },
     Mutation: {
       installApp: resolver<{ input: AppInput }, boolean>(async (parent, args, context, info) => {
-        await App.installApp(context.user.id, args.input);
+        await new App().installApp(context.user.id, args.input);
         EventsObserver.listener({ type: 'installApp', data: args });
         return true;
       }),
       uninstallApp: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new App(args.id).uninstall();
+        await new App(args.id).delete();
         EventsObserver.listener({ type: 'uninstallApp', data: args });
         return true;
       }),
       editApp: resolver<{ id: string, name: string }, boolean>(async (parent, args, context, info) => {
-        await new App(args.id).edit(args.name);
+        await new App(args.id).edit({ name: args.name });
         EventsObserver.listener({ type: 'editApp', data: args });
         return true;
+      }),
+    },
+    App: {
+      images: resolver<AppTable & { images?: ImageTable[] }, ImageTable[]>(async (parent, args, context, info) => {
+        const app = new App(parent.id);
+        return app.getImages();
       }),
     },
   },

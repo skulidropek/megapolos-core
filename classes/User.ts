@@ -1,68 +1,50 @@
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { GroupUserTable, UserTable } from '../modules/models/tables';
-import UserModel from '../modules/models/user.model';
 import { promisify } from 'util';
 
 const exec =   promisify(require('child_process').exec);
 
 import config from '../config/config';
 import EventsObserver from '../modules/events/eventsObserver';
+import BaseRepository from './BaseRepository';
+import UserGroup from './UserGroup';
 
-class User {
-  id: string;
-
-  constructor(id: string) {
-    this.id = id;
-  }
-
-  static async createUser(input: { name: string, groupUserId: string }, isDevice = false):Promise<User> {
-    const id = uuidv4();
-    let linuxUserId = '';
-    if (isDevice) {
-      // await exec(`useradd -m -s /bin/bash ${id.replace(/-/g, '')}`);
-      // linuxUserId = (await exec('cat /etc/passwd')).stdout.
-      //   split('\n').
-      //   filter((user) => user.startsWith(id.replace(/-/g, ''))).
-      //   join('\n').
-      //   split(':')[2];
-    }
+class User extends BaseRepository<UserTable> {
   
-    await UserModel.createUser({
-      id,
-      name: input.name,
-      groupUserId: input.groupUserId,
-      osUserId: linuxUserId,
-    });
-    return new User(id);
+  getTable(): string {
+    return 'user';
   }
 
-  static async createRootUser():Promise<User> {
-    let admins = await UserModel.getUsersByRole('root');
+  async create(data: Partial<UserTable>):Promise<UserTable> {
+    let linuxUserId = '';
+    return super.create({
+      ...data,
+      os_user_id: linuxUserId,
+    });
+  }
+
+  async createRootUser():Promise<User> {
+    let admins = await this.getByGroupName('root');
     if (!admins.length) {
-      let rootGroup = await UserModel.getUserGroupByName('root');
+      let rootGroup = (await new UserGroup().getByFields({ name: 'root' }))[0];
       if (!rootGroup) {
-        await UserModel.createUserGroup({ name: 'root' });
+        rootGroup = await new UserGroup().create({ name: 'root' });
       }
-      rootGroup = await UserModel.getUserGroupByName('root');
       console.log(rootGroup);
-      await User.createUser({ name: 'root', groupUserId: rootGroup.id });
-      admins = await UserModel.getUsersByRole('root');
+      await this.create({ name: 'root', os_user_id: rootGroup.id });
+      admins = await this.getByGroupName('root');
     }
     return new User(admins[0].id);
   }
 
-  static async getUsersWithToken():Promise<(UserTable & { token?: string })[]> {
-    const users = await UserModel.getUsers();
+  async getUsersWithToken():Promise<(UserTable & { token?: string })[]> {
+    const users = await this.getAll();
     return Promise.all(users.map((user) => new User(user.id).getDataWithToken()));
   }
 
-  getData():Promise<UserTable> {
-    return UserModel.getUserById(this.id);
-  }
-
   async getDataWithToken():Promise<UserTable & { token?: string }> {
-    const result: UserTable & { token?: string } = await UserModel.getUserById(this.id);
+    const result: UserTable & { token?: string } = await this.getData();
     result.token = jwt.sign({ id: result.id }, config.secret);
     return result;
   }
@@ -73,12 +55,20 @@ class User {
 
   async getGroup():Promise<GroupUserTable> {
     const data = await this.getData();
-    return UserModel.getUserGroupById(data.group_user_id);
+    return new UserGroup(data.group_user_id).getData();
   }
 
-  async remove():Promise<void> {
+  async getByGroupName(groupName: string):Promise<UserTable[]> {
+    const group = await new UserGroup().getByFields({ name: groupName });
+    if (!group.length) {
+      return [];
+    }
+    return this.getByFields({ group_user_id: group[0].id });
+  }
+
+  async delete():Promise<boolean> {
     const data = await this.getData();
-    await UserModel.removeUser(this.id);
+    await super.delete();
   
     if (data.os_user_id) {
       try {
@@ -88,6 +78,8 @@ class User {
         EventsObserver.listener({ type: 'error', data: e });
       }
     }
+
+    return true;
   }
 }
 

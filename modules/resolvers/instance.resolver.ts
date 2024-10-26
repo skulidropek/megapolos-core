@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppInstanceTable, AppTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
+import { AppInstanceTable, AppTable, ContainerTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -55,16 +55,15 @@ const instanceModule = createModule({
   resolvers: {
     Query: {
       getAppInstances: resolver<void, AppInstanceResult[]>(async (parent, args, context, info) => {
-        const results:AppInstanceResult[] = await Promise.all((await Instance.getInstances()).map((instance) => instance.getDataWithContainers()));
-        return results;
+        return new Instance().getAll();
       }),
       getAppInstance: resolver<{ id: string }, AppInstanceResult>(async (parent, args, context, info) => {
-        return new Instance(args.id).getDataWithContainers();
+        return new Instance(args.id).getData();
       }),
     },
     Mutation: {
       createAppInstance: resolver<{ input: AppInstanceTable }, boolean>(async (parent, args, context, info) => {
-        await Instance.createInstance(args.input);
+        await new Instance().create(args.input);
         EventsObserver.listener({ type: 'createAppInstance', data: args });
         return true;
       }),
@@ -85,12 +84,12 @@ const instanceModule = createModule({
         return true;
       }),
       removeAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new Instance(args.id).remove();
+        await new Instance(args.id).delete();
         EventsObserver.listener({ type: 'removeAppInstance', data: args });
         return true;
       }),
       editAppInstance: resolver<{ id: string, name: string }, boolean>(async (parent, args, context, info) => {
-        await new Instance(args.id).edit(args.name);
+        await new Instance(args.id).edit({ name: args.name });
         EventsObserver.listener({ type: 'editAppInstance', data: args });
         return true;
       }),
@@ -98,6 +97,12 @@ const instanceModule = createModule({
         new Instance(args.id).build();
         EventsObserver.listener({ type: 'buildAppInstance', data: args });
         return true;
+      }),
+    },
+    AppInstance: {
+      containers: resolver<AppInstanceResult, ContainerTable[]>(async (parent, args, context, info) => {
+        const instance = new Instance(parent.id);
+        return instance.getContainers();
       }),
     },
   },

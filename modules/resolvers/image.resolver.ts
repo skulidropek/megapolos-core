@@ -83,7 +83,7 @@ const imageModule = createModule({
   resolvers: {
     Query: {
       getImages: resolver<{}, ImageTable[]>(async (parent, args, context, info) => {
-        return Image.getImagesData();
+        return new Image().getAll();
       }),
       getImage: resolver<{ id: string }, ImageTable>(async (parent, args, context, info) => {
         return new Image(args.id).getData();
@@ -101,7 +101,7 @@ const imageModule = createModule({
         return true;
       }),
       removeImage: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new Image(args.id).remove();
+        await new Image(args.id).delete();
         EventsObserver.listener({ type: 'removeImage', data: args });
         return true;
       }),
@@ -134,7 +134,7 @@ const imageModule = createModule({
     },
     Image: {
       repository: resolver<ImageTable, RepositoryTable>(async (parent, args, context, info) => {
-        return new Repository(parent.repository_id).getData();
+        return parent.repository_id ? new Repository(parent.repository_id).getData() : null;
       }),
       envs: resolver<ImageTable, ImageEnvRequirementTable[]>(async (parent, args, context, info) => {
         return new Image(parent.id).getEnvs();

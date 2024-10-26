@@ -11,7 +11,7 @@ import { Context } from './types';
 import userModule from './modules/resolvers/user.resolver';
 import nodeModule from './modules/resolvers/node.resolver';
 import appModule from './modules/resolvers/app.resolver';
-import deviceModule from './modules/resolvers/device.resolver';
+// import deviceModule from './modules/resolvers/device.resolver';
 import eventModule from './modules/resolvers/event.resolver';
 import volumeModule from './modules/resolvers/volume.resolver';
 import User from './classes/User';
@@ -30,7 +30,9 @@ const graphqlServer = async () => {
   try {
     const application = createApplication({
       modules: [
-        userModule, nodeModule, appModule, deviceModule, eventModule, volumeModule, 
+        userModule, nodeModule, appModule, 
+        // deviceModule, 
+        eventModule, volumeModule, 
         // resourceModule,
         repositoryModule,
         instanceModule,

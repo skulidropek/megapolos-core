@@ -1,69 +1,59 @@
 import { v4 as uuidv4 } from 'uuid';
-import AppModel from '../modules/models/app.model';
 import { AppInput, ContainerInput } from '../types';
 import Image from './Image';
 import Instance from './Instance';
 import EventsObserver from '../modules/events/eventsObserver';
-import AppInstanceModel from '../modules/models/appInstance.model';
-import { AppTable, ImageTable } from '../modules/models/tables';
+import { AppInstanceTable, AppTable, ImageTable } from '../modules/models/tables';
 import User from './User';
+import BaseRepository from './BaseRepository';
 
-class App {
-  id: string;
-
-  constructor(id: string) {
-    this.id = id;
+class App extends BaseRepository<AppTable> {
+  getTable(): string {
+    return 'app';
   }
 
-  static async installApp(userId, input: AppInput): Promise<App> {
-    const appId = uuidv4();
-      
-    await AppModel.createApp({
-      id: appId,
-      ownerUserId: userId,
+  async installApp(userId, input: AppInput): Promise<AppTable> {
+    const app = await this.create({
+      owner_user_id: userId,
       name: input.name,
     });
-    const app = new App(appId);
     for (let i in input.images) {
       const image = input.images[i];
-      await app.addImage(image);
+      await new Image().create({
+        app_id: app.id,
+        name: image.name,
+        inner_port: image.inner_port,
+        image: image.image,
+      });
     }
     EventsObserver.listener({ 'type': 'installApp', data: { userId, input } });
-    return new App(appId);
-  }
-
-  static async getApps(): Promise<App[]> {
-    return (await AppModel.getApps()).map((app) => new App(app.id));
-  }
-
-  getData(): Promise<AppTable> {
-    return AppModel.getApp(this.id);
+    return app;
   }
 
   async getDataWithImages(): Promise<AppTable & { images?: ImageTable[] }> {
     const result:(AppTable & { images?: ImageTable[] }) = await this.getData();
-    const images = (await this.getImages()).map(image => image.getData());
+    const images = await this.getImages();
     result.images = await Promise.all(images);
     return result;
   }
   
-  createInstance(name: string, containers: ContainerInput[], isDevice = false): Promise<Instance> {
-    return Instance.createInstance({ app_id: this.id, name }, isDevice);
+  createInstance(name: string, containers: ContainerInput[], isDevice = false): Promise<AppInstanceTable> {
+    return new Instance().create({ app_id: this.id, name }, isDevice);
   }
 
   async removeInstances(): Promise<void> {
-    const instances = await this.getInstances();
+    const instances = (await this.getInstances()).map(instance => new Instance(instance.id));
     for (let i in instances) {
-      await instances[i].remove();
+      await instances[i].delete();
     }
   }
 
-  async getInstances(): Promise<Instance[]> {
-    return (await AppInstanceModel.getInstancesOfApp(this.id)).map((instance) => new Instance(instance.id));
+  async getInstances(): Promise<AppInstanceTable[]> {
+    return new Instance().getByFields({ app_id: this.id });
   }
 
-  async getImages(): Promise<Image[]> {
-    return (await AppModel.getImagesOfApp(this.id)).map((image) => new Image(image.id));
+  async getImages(): Promise<ImageTable[]> {
+    return new Image().getByFields({ app_id: this.id });
   }
 
   async getUser(): Promise<User> {
@@ -71,24 +61,20 @@ class App {
     return new User(data.owner_user_id);
   }
 
-  addImage(image: Partial<ImageTable>): Promise<Image> {
-    return Image.createImage({
+  addImage(image: Partial<ImageTable>): Promise<ImageTable> {
+    return new Image().create({
       ...image,
       app_id: this.id,
     });
   }
 
-  async edit( name: string): Promise<void> {
-    await AppModel.editApp(this.id, { name });
-  }
-
-  async uninstall() {
+  async delete(): Promise<boolean> {
     await this.removeInstances();
-    const images = await this.getImages();
+    const images = (await this.getImages()).map(image => new Image(image.id));
     for (let i in images) {
-      await images[i].remove();
+      await images[i].delete();
     }
-    await AppModel.removeApp(this.id);
+    return super.delete();
   }
 }
 

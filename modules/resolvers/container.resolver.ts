@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, ContainerTable, DeviceTable, DomainTable, ImageTable, NodeTable, RepositoryTable } from '../models/tables';
+import { AppTable, ContainerTable, ContainerVolumeTable, DeviceTable, DomainTable, ImageTable, NodeTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -11,6 +11,7 @@ import Image from '../../classes/Image';
 import Repository from '../../classes/Repository';
 import Domain from '../../classes/Domain';
 import MegapolosNode from '../../classes/Node';
+import Volume from '../../classes/Volume';
 
 const containerModule = createModule({
   id: 'container-module',
@@ -29,7 +30,6 @@ const containerModule = createModule({
         create_date: DateTime
         update_date: DateTime
         remove_date: DateTime
-        devices: [ContainerDevice]
         volumes: [ContainerVolume]
         envs: [ContainerParameter]
         docker_status: String
@@ -37,11 +37,6 @@ const containerModule = createModule({
         domain: Domain
         image: Image
         node: Node
-      }
-
-      input ContainerDeviceParameterInput {
-        key: String
-        value: String
       }
 
       input ContainerParameterInput {
@@ -52,23 +47,6 @@ const containerModule = createModule({
       type ContainerParameter {
         key: String
         value: String
-      }
-
-      input ContainerDeviceInput {
-        id: String
-        aux_parameters: [ContainerDeviceParameterInput]
-        env_parameters: [ContainerDeviceParameterInput]
-      }
-
-      type ContainerDeviceParameter {
-        key: String
-        value: String
-      }
-
-      type ContainerDevice {
-        device: Device
-        aux_parameters: [ContainerDeviceParameter]
-        env_parameters: [ContainerDeviceParameter]
       }
 
       type ContainerVolume {
@@ -97,7 +75,6 @@ const containerModule = createModule({
       
       type Query {
         getContainer(id: String): Container
-        getContainerDevices(id: String): [Device]
         getContainerLog(id: String): String
         getContainers: [Container]
         listContainerFiles(id: String! path: String!): ContainerFiles
@@ -125,14 +102,11 @@ const containerModule = createModule({
       getContainer: resolver<{ id: string }, ContainerResult>(async (parent, args, context, info) => {
         return new Container(args.id).getDataWithDetails();
       }),
-      getContainerDevices: resolver<{ id: string }, DeviceTable[]>(async (parent, args, context, info) => {
-        return Promise.all((await new Container(args.id).getDevices()).map((device) => device.getData()));
-      }),
       getContainerLog: resolver<{ id: string }, string>(async (parent, args, context, info) => {
         return new Container(args.id).getDockerLog();
       }),
       getContainers: resolver<void, ContainerResult[]>(async (parent, args, context, info) => {
-        return Container.getContainersData();
+        return new Container().getAll();
       }),
       listContainerFiles: resolver<{ id: string, path: string }, { files: string[], directories: string[] }>(async (parent, args, context, info) => {
         return new Container(args.id).listFiles(args.path);
@@ -142,11 +116,6 @@ const containerModule = createModule({
       }),
     },
     Mutation: {
-      updateContainer: resolver<{ id: string, noRebuild: boolean }, boolean>(async (parent, args, context, info) => {
-        await new Container(args.id).update(args.noRebuild);
-        EventsObserver.listener({ type: 'updateContainer', data: args });
-        return true;
-      }),
       changeContainerEnvs: resolver<{ id: string, envs: {
         key: string,
         value: string,
@@ -157,7 +126,9 @@ const containerModule = createModule({
         return true;
       }),
       addContainer: resolver<{ appInstanceId: string, data: ContainerTable }, boolean>(async (parent, args, context, info) => {
-        await Container.create(args.appInstanceId, args.data);
+        await new Container().create({
+          app_instance_id: args.appInstanceId,
+          ...args.data });
         EventsObserver.listener({ type: 'addContainer', data: args });
         return true;
       }),
@@ -167,7 +138,7 @@ const containerModule = createModule({
         return true;
       }),
       removeContainer: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new Container(args.id).remove();
+        await new Container(args.id).delete();
         EventsObserver.listener({ type: 'removeContainer', data: args });
         return true;
       }),
@@ -191,6 +162,9 @@ const containerModule = createModule({
       }),
       node: resolver<{}, NodeTable>(async (parent, args, context, info) => {
         return new MegapolosNode(parent.node_id).getData();
+      }),
+      volumes: resolver<{}, ContainerVolumeTable[]>(async (parent, args, context, info) => {
+        return new Volume().getVolumesOfContainer(parent.id);
       }),
       envs: resolver<{}, { key: string, value: string }[]>(async (parent, args, context, info) => {
         if (parent.envs) {

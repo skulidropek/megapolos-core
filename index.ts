@@ -21,7 +21,7 @@ export const megapolosPath = __dirname;
   // await MegapolosNode.currentNode.dockerEvents();
   // await MegapolosNode.currentNode.restoreContainers();
 
-  const user = await User.createRootUser();
+  const user = await new User().createRootUser();
   console.log((await user.getDataWithToken()).token);
 
   graphqlServer();

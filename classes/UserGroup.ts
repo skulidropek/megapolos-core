@@ -1,14 +1,14 @@
 import { megapolosPath } from '..';
-import { DomainTable } from '../modules/models/tables';
+import { GroupUserTable } from '../modules/models/tables';
 import simpleGit from 'simple-git';
 import fse from 'fs-extra';
 import BaseRepository from './BaseRepository';
 
-class Domain extends BaseRepository<DomainTable> {
+class UserGroup extends BaseRepository<GroupUserTable> {
   getTable(): string {
-    return 'domain';
+    return 'group_user';
   }
 
 }
 
-export default Domain;
+export default UserGroup;

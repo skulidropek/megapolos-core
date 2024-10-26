@@ -1,58 +1,39 @@
 import { megapolosPath } from '..';
-import Entity from '../modules/models/Entity';
 import { RepositoryTable } from '../modules/models/tables';
 import simpleGit from 'simple-git';
 import fse from 'fs-extra';
+import BaseRepository from './BaseRepository';
 
-class Repository {
-  id: string;
+class Repository extends BaseRepository<RepositoryTable> {
+  getTable(): string {
+    return 'repository';
+  }
 
-  static async create(data: Partial<Repository>): Promise<Repository> {
-    const repositoryData = await new Entity<RepositoryTable>('repository').create(data);
+  async create(data: Partial<RepositoryTable>): Promise<RepositoryTable> {
+    const repositoryData = await super.create(data);
     const repository = new Repository(repositoryData.id);
     await repository.clone();
-    return repository;
+    return repositoryData;
   }
 
-  static async getAllData():Promise<RepositoryTable[]> {
-    return new Entity<RepositoryTable>('repository').findAll();
-  }
-
-  static async getAll():Promise<Repository[]> {
-    const data = await this.getAllData();
-    return data.map((item) => new Repository(item.id));
-  }
-
-  constructor(id: string) {
-    this.id = id;
-    if (!id) {
-      throw new Error('Repository id is required');
-    }
-  }
-
-  async getData():Promise<RepositoryTable> {
-    return new Entity<RepositoryTable>('repository').findOne({ id: this.id });
-  }
-
-  async edit(data: Partial<RepositoryTable>):Promise<Repository> {
-    await new Entity<RepositoryTable>('repository').update({ id: this.id }, data);
+  async edit(data: Partial<RepositoryTable>):Promise<RepositoryTable> {
+    const result = await super.edit(data);
     const path = await this.getPath();
     await fse.remove(path);
     await this.clone();
-    return this;
+    return result;
   }
 
-  async remove():Promise<void> {
+  async delete():Promise<boolean> {
     const path = await this.getPath();
     await fse.remove(path);
-    await new Entity<RepositoryTable>('repository').delete({ id: this.id });
+    return super.delete();
   }
 
   async fetch():Promise<void> {
     const path = await this.getPath();
     await simpleGit(path).fetch();
-    const entity = new Entity<RepositoryTable>('repository');
-    await entity.update({ id: this.id }, { last_fetch_date: new Date() });
+    await this.edit({ last_fetch_date: new Date() });
   }
 
   async push(branchFrom: string, branchTo: string):Promise<void> {
@@ -74,8 +55,7 @@ class Repository {
       data.url = data.url.replace(/^https:\/\//, 'https://' + data.user + ':' + data.password + '@');
     }
     await simpleGit().clone(data.url, path);
-    const entity = new Entity<RepositoryTable>('repository');
-    await entity.update({ id: this.id }, { last_fetch_date: new Date() });
+    await this.edit({ last_fetch_date: new Date() });
   }
 
   async copyBranchTo(path: string, branch: string):Promise<void> {

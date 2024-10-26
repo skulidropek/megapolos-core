@@ -46,7 +46,7 @@ const userModule = createModule({
   resolvers: {
     Query: {
       getUsers: resolver<void, (UserTable & { token?: String })[]>(async (parent, args, context, info) => {
-        return User.getUsersWithToken();
+        return new User().getUsersWithToken();
       }),
       getMe: resolver<void, UserTable>(async (parent, args, context, info) => {
         const results = await new User(context.user.id).getData();
@@ -55,7 +55,7 @@ const userModule = createModule({
     },
     Mutation: {
       addUser: resolver<{ input: UserInput }, boolean>(async (parent, args, context, info) => {
-        await User.createUser({ name: args.input.name, groupUserId: 'name' });
+        await new User().create({ name: args.input.name, group_user_id: 'name' });
         return true;
       }),
     },

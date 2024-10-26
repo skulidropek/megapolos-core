@@ -5,13 +5,11 @@ import EventsObserver from '../modules/events/eventsObserver';
 import User from './User';
 import Process from './Process';
 import BaseProcess from './BaseProcess';
-import AppInstanceModel from '../modules/models/appInstance.model';
 import Container from './Container';
 import docker from '../coreDocker';
 import DockerEvent from '../modules/events/docker.event';
 import { megapolosPath } from '..';
 import { AppInstanceTable, ContainerTable, DomainTable, ImageTable, LogType, NodeTable } from '../modules/models/tables';
-import Entity from '../modules/models/Entity';
 import { knex } from '../corePostgres';
 import config from '../config/config';
 import fse from 'fs-extra';
@@ -20,6 +18,8 @@ import Image from './Image';
 import Dockerode from 'dockerode';
 import ExternalProcess from './ExternalProcess';
 import Log from './Log';
+import jp from 'jsonpath';
+import BaseRepository from './BaseRepository';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -62,53 +62,18 @@ async function lookupPromise(domain: string) {
   });
 }
 
-class MegapolosNode {
+class MegapolosNode extends BaseRepository<NodeTable> {
+
+  getTable(): string {
+    return 'node';
+  }
 
   commands: { [key: string]: BaseProcess } = {};
 
   static currentNode: MegapolosNode;
 
-  id: string;
-
   static createCurrentNode() {
     MegapolosNode.currentNode = new MegapolosNode();
-  }
-
-  static async createNode(data: Partial<NodeTable>): Promise<MegapolosNode> {
-    const entity = new Entity<NodeTable>('node');
-    const result = await entity.create(data);
-    return new MegapolosNode(result.id);
-  }
-
-  static async getNodesData(): Promise<NodeTable[]> {
-    const entity = new Entity<NodeTable>('node');
-    return entity.findAll();
-  }
-
-  static async getNodes(): Promise<MegapolosNode[]> {
-    const nodes = await MegapolosNode.getNodesData();
-    return nodes.map((node) => new MegapolosNode(node.id));
-  }
-
-  constructor(id?: string) {
-    if (id) {
-      this.id = id;
-    }
-  }
-
-  edit(data: Partial<NodeTable>) {
-    const entity = new Entity<NodeTable>('node');
-    return entity.update({ id: this.id }, data);
-  }
-
-  delete() {
-    const entity = new Entity<NodeTable>('node');
-    return entity.delete({ id: this.id });
-  }
-
-  getData() {
-    const entity = new Entity<NodeTable>('node');
-    return entity.findOne({ id: this.id });
   }
 
   async update(init?: boolean, withRebuild?: boolean) {
@@ -252,21 +217,24 @@ class MegapolosNode {
     if (config.devMode) {
       command = `MEGAPOLOS_DEBUG=${config.debug ? '1' : '0'} JSON_PATH=${jsonPath} ansible-playbook ${playbook}`;
     }
-    const entity = new Entity<NodeTable>('node');
     try {
-      await entity.update({ id: this.id }, { life_status: 'updating' });
+      await this.edit({ life_status: 'updating' });
       await MegapolosNode.currentNode.shellCommand(command, new User(data.user), log).output;
-      await entity.update({ id: this.id }, { life_status: 'running', last_update_date: new Date() });
+      await this.edit({ life_status: 'running', last_update_date: new Date() });
       await fse.unlink(jsonPath);
     } catch (e) {
-      await entity.update({ id: this.id }, { life_status: 'running' });
+      await this.edit({ life_status: 'running' });
       await fse.unlink(jsonPath);
       console.error(e);
     }
   }
 
+  async getUsedPorts() {
+    return (await new Container().getByFields({ node_id: this.id })).map((app) => app.outer_port);
+  }
+
   async getPort() {
-    const usedPorts = (await AppInstanceModel.getUsedPorts(this.id)).map((app) => app.outer_port);
+    const usedPorts = await this.getUsedPorts();
     for (let i = 10000; i < 20000; i++) {
       if (!usedPorts.includes(i)) {
         return i;
@@ -276,7 +244,7 @@ class MegapolosNode {
   }
 
   async checkPort(port: number) {
-    const usedPorts = (await AppInstanceModel.getUsedPorts(this.id)).map((app) => app.outer_port);
+    const usedPorts = await this.getUsedPorts();
     if (usedPorts.includes(port)) {
       throw new Error('No available port');
     }
@@ -294,7 +262,7 @@ class MegapolosNode {
   }
 
   async restoreContainers() {
-    const containers = await AppInstanceModel.getContainers();
+    const containers = await new Container().getAll();
     for (let i in containers) {
       const container = new Container(containers[i].id);
       await container.restore();
@@ -372,7 +340,7 @@ class MegapolosNode {
   }
 
   async getContainers(): Promise<ContainerTable[]> {
-    return new Entity<ContainerTable>('container').findAll({ node_id: this.id }, 'name');
+    return new Container().getByFields({ node_id: this.id });
   }
 
   async getDocker() {

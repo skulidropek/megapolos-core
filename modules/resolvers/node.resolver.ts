@@ -79,7 +79,7 @@ const nodeModule = createModule({
         return MegapolosNode.currentNode.commands[args.id].status;
       }),
       getNodes: resolver<void, NodeTable[]>(async (parent, args, context, info) => {
-        return MegapolosNode.getNodesData();
+        return new MegapolosNode().getAll();
       }),
       getNode: resolver<{ id: string }, NodeTable>(async (parent, args, context, info) => {
         return new MegapolosNode(args.id).getData();
@@ -87,7 +87,7 @@ const nodeModule = createModule({
     },
     Mutation: {
       createNode: resolver<{ node: NodeTable }, NodeTable>(async (parent, args, context, info) => {
-        return (await MegapolosNode.createNode(args.node)).getData();
+        return new MegapolosNode().create(args.node);
       }),
       removeNode: resolver<{ id: string }, Boolean>(async (parent, args, context, info) => {
         const node = new MegapolosNode(args.id);

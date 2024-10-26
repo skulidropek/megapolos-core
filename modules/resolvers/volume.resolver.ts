@@ -4,10 +4,7 @@ import { createModule, gql } from 'graphql-modules';
 import { ContainerVolumeInput, resolver } from '../../types';
 import EventsObserver from '../events/eventsObserver';
 import { ContainerVolumeTable, DeviceBackupTable, VolumeTable } from '../models/tables';
-import DatabaseDevice from '../devices/databaseDevice';
-import BaseDevice from '../devices/baseDevice';
 import Volume from '../../classes/Volume';
-import DeviceBackup from '../../classes/DeviceBackup';
 import Container from '../../classes/Container';
 
 const volumeModule = createModule({
@@ -71,17 +68,12 @@ const volumeModule = createModule({
   resolvers: {
     Query: {
       getVolumes: resolver<void, VolumeTable[]>(async (parent, args, context, info) => {
-        const volumes = Promise.all((await Volume.getVolumes()).map((volume) => volume.getData()));
-        return volumes;
-      }),
-      getDeviceBackups: resolver<{ device_name: string }, DeviceBackupTable[]>(async (parent, args, context, info) => {
-        const backups = Promise.all((await DeviceBackup.getBackups(args.device_name)).map((backup) => backup.getData()));
-        return backups;
+        return new Volume().getAll();
       }),
     },
     Mutation: {
       addVolume: resolver<{ input: Partial<VolumeTable> }, boolean>(async (parent, args, context, info) => {
-        Volume.addVolume(args.input);
+        await new Volume().create(args.input);
         EventsObserver.listener({ type: 'addVolume', data: args });
         return true;
       }),
@@ -93,7 +85,7 @@ const volumeModule = createModule({
         return true;
       }),
       addVolumeToContainer: resolver<{ container_id: string, input: ContainerVolumeInput }, ContainerVolumeTable>(async (parent, args, context, info) => {
-        const containerVolume = await new Volume(args.input.volume).addToContainer(new Container(args.container_id), args.input);
+        const containerVolume = await new Volume(args.input.volume).addToContainer(args.container_id, args.input);
         EventsObserver.listener({ type: 'addVolumeToContainer', data: args });
         return containerVolume;
       }),
@@ -105,37 +97,6 @@ const volumeModule = createModule({
       uploadFileToVolume: resolver<{ volume_id: string, file: { filename: string, data: string } }, boolean>(async (parent, args, context, info) => {
         console.log(args.file.filename, args.file.data.slice(0, 100));
         new Volume(args.volume_id).uploadFile(args.file.filename, args.file.data);
-        return true;
-      }),
-      uploadDeviceBackup: resolver<{ device_id: string, name: string, file: { filename: string, data: string } }, boolean>(async (parent, args, context, info) => {
-        DeviceBackup.upload(args.device_id, args.name, args.file.filename, args.file.data);
-        return true;
-      }),
-      downloadDeviceBackup: resolver<{ backup_id: string }, string>(async (parent, args, context, info) => {
-        return new DeviceBackup(args.backup_id).download();
-      }),
-      removeDeviceBackup: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new DeviceBackup(args.id).remove();
-        return true;
-      }),
-      setDeviceBackupVolume: resolver<{ device_id: string, volume_id: string }, boolean>(async (parent, args, context, info) => {
-        await new BaseDevice(args.device_id).setBackupVolume(new Volume(args.volume_id));
-        EventsObserver.listener({ type: 'setDeviceBackupVolume', data: args });
-        return true;
-      }),
-      removeDeviceBackupVolume: resolver<{ device_id: string }, boolean>(async (parent, args, context, info) => {
-        await new BaseDevice(args.device_id).removeBackupVolume();
-        EventsObserver.listener({ type: 'removeDeviceBackupVolume', data: args });
-        return true;
-      }),
-      backupDevice: resolver<{ device_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
-        const databaseDevice = new DatabaseDevice(args.device_id);
-        await databaseDevice.backup(args.container_id);
-        return true;
-      }),
-      restoreDeviceBackup: resolver<{ device_id: string, backup_id: string, container_id: string }, boolean>(async (parent, args, context, info) => {
-        const databaseDevice = new DatabaseDevice(args.device_id);
-        await databaseDevice.restore(args.backup_id, args.container_id);
         return true;
       }),
     },

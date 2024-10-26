@@ -42,7 +42,7 @@ const domainModule = createModule({
     Query: {
       getDomains: resolver<{}, DomainTable[]>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'getDomains', data: args });
-        return Domain.getAllData();
+        return new Domain().getAll();
       }),
       getDomain: resolver<{ id: string }, DomainTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'getDomain', data: args });
@@ -52,7 +52,7 @@ const domainModule = createModule({
     Mutation: {
       createDomain: resolver<{ domain: Partial<DomainTable> }, DomainTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'createDomain', data: args });
-        return (await Domain.create(args.domain)).getData();
+        return new Domain().create(args.domain);
       }),
       editDomain: resolver<{ id: string, domain: Partial<DomainTable> }, DomainTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'editDomain', data: args });
@@ -63,7 +63,7 @@ const domainModule = createModule({
       removeDomain: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'removeDomain', data: args });
         const domain = new Domain(args.id);
-        await domain.remove();
+        await domain.delete();
         return true;
       }),
     },

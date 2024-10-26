@@ -52,7 +52,7 @@ const repositoryModule = createModule({
     Query: {
       getRepositories: resolver<{}, RepositoryTable[]>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'getRepositories', data: args });
-        return Repository.getAllData();
+        return new Repository().getAll();
       }),
       getRepository: resolver<{ id: string }, RepositoryTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'getRepository', data: args });
@@ -76,7 +76,7 @@ const repositoryModule = createModule({
     Mutation: {
       createRepository: resolver<{ repository: Partial<RepositoryTable> }, RepositoryTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'createRepository', data: args });
-        return (await Repository.create(args.repository)).getData();
+        return new Repository().create(args.repository);
       }),
       fetchRepository: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'fetchRepository', data: args });
@@ -85,11 +85,11 @@ const repositoryModule = createModule({
       }),
       editRepository: resolver<{ id: string, repository: Partial<RepositoryTable> }, RepositoryTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'editRepository', data: args });
-        return (await new Repository(args.id).edit(args.repository)).getData();
+        return new Repository(args.id).edit(args.repository);
       }),
       removeRepository: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'removeRepository', data: args });
-        await new Repository(args.id).remove();
+        await new Repository(args.id).delete();
         return true;
       }),
     },
