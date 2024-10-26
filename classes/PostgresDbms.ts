@@ -1,6 +1,6 @@
 import Knex from 'knex';
 import BaseDbms from './BaseDbms';
-import { ArtifactTable, DbBackupTable, DbSchemaSchema, DbSchemaSchemaTable, DbSchemaTable, DbTable, DbUserTable } from '../modules/models/tables';
+import { ArtifactTable, DbBackupTable, DbSchemaSchema, DbSchemaSchemaTable, DbSchemaTable, DbTable, DbUserTable, LogType } from '../modules/models/tables';
 import Artifact from './Artifact';
 import MegapolosNode from './Node';
 import User from './User';
@@ -170,7 +170,12 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
     const file = await artifact.getPath() + '/backup.sql';
     const backupData = await backup.getData();
     const log = new Log();
-    await log.create({ name: 'Backup postgrsql db ' + data.name + '.' + dbData.name + ' to backup ' + backupData.name });
+    await log.create({ 
+      name: 'Backup postgrsql db ' + data.name + '.' + dbData.name + ' to backup ' + backupData.name,
+      type: LogType.DbBackup,
+      object_id: backupData.id,
+      object_name: backupData.name,
+    });
     await MegapolosNode.currentNode.shellCommand(`docker run -i --rm -e PGPASSWORD=${data.password} postgres pg_dump -c -h ${data.host} -U ${data.user} ${withoutData ? '-s' : ''} --if-exists --no-owner --no-privileges ${dbData.name} > ${file}`, new User(''), log).output;
     return backup.getData();
   }
@@ -184,7 +189,12 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
     const file = await artifact.getPath() + '/backup.sql';
     const backupData = await backup.getData();
     const log = new Log();
-    await log.create({ name: 'Restore postgrsql db ' + data.name + '.' + dbData.name + ' from backup ' + backupData.name });
+    await log.create({ 
+      name: 'Restore postgrsql db ' + data.name + '.' + dbData.name + ' from backup ' + backupData.name,
+      type: LogType.DbBackup,
+      object_id: backupData.id,
+      object_name: backupData.name,
+    });
     await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User('')).output;
     return true;
   }

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import fse from 'fs-extra';
 import AppModel from '../modules/models/app.model';
-import { ContainerTable, ImageEnvRequirementTable, ImageStatus, ImageTable } from '../modules/models/tables';
+import { ContainerTable, ImageEnvRequirementTable, ImageStatus, ImageTable, ImageVariableRequirementTable, LogTable, LogType } from '../modules/models/tables';
 import App from './App';
 import Entity from '../modules/models/Entity';
 import docker from '../coreDocker';
@@ -56,7 +56,12 @@ class Image {
       entity.update({ id: this.id }, { status: ImageStatus.Building });
       try {
         const log = new Log();
-        await log.create({ name: 'Build image ' + data.name });
+        await log.create({ 
+          name: 'Build image ' + data.name,
+          object_id: this.id,
+          object_name: data.name,
+          type: LogType.ImageBuild,
+        });
 
         let tags = `-t ${data.image} -t ${config.registryHost}:443/${data.image}`;
         if (config.devMode) {
@@ -122,8 +127,28 @@ class Image {
     return true;
   }
 
+  async changeVariables(variables: ImageVariableRequirementTable[]): Promise<boolean> {
+    await knex('image_variable_requirement').where({ image_id: this.id }).delete();
+    for (let i in variables) {
+      const variable = variables[i];
+      delete variable.id;
+      variable.image_id = this.id;
+      await knex('image_variable_requirement').insert(variable);
+    }
+    return true;
+  }
+
   async getEnvs(): Promise<ImageEnvRequirementTable[]> {
     return knex('image_env_requirement').where({ image_id: this.id });
+  }
+
+  async getVariables(): Promise<ImageVariableRequirementTable[]> {
+    return knex('image_variable_requirement').where({ image_id: this.id });
+  }
+
+  async getLastBuildLog(): Promise<LogTable> {
+    return (await new Log().getByQuery(_knex => 
+      _knex.where({ object_id: this.id, type: LogType.ImageBuild }).orderBy('create_date', 'desc').limit(1)))[0];
   }
 
 }

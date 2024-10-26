@@ -322,6 +322,22 @@ export interface ImageEnvRequirementTable {
   type: ImageEnvRequirementType
 }
 
+export interface ImageVariableRequirementTable {
+  id: string,
+  image_id: string,
+  title: string,
+  name: string,
+  default_value: string,
+  type: ImageEnvRequirementType,
+}
+
+export interface ContainerVariableTable {
+  id: string,
+  container_id: string,
+  name: string,
+  value: string,
+}
+
 export interface ResourceTable {
   id: string,
   device_id: string,
@@ -452,9 +468,27 @@ export interface ArtifactTable {
   update_date: Date,
 }
 
+export enum LogType {
+  ImageBuild = 'image_build',
+  NodeUpdate = 'node_update',
+  NodeInit = 'node_init',
+  NodeInstallRegistry = 'node_install_registry',
+  TestRun = 'test_run',
+  NodePrepareForCore = 'node_prepare_for_core',
+  DbBackup = 'db_backup',
+  DbRestore = 'db_restore',
+}
+
 export interface LogTable {
   id: string,
   name: string,
+  container_id: string,
+  container_name: string,
+  node_id: string,
+  node_name: string,
+  object_id: string,
+  object_name: string,
+  type: LogType,
   create_date: Date,
   update_date: Date,
   is_closed: boolean,

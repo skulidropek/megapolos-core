@@ -10,7 +10,7 @@ import Container from './Container';
 import docker from '../coreDocker';
 import DockerEvent from '../modules/events/docker.event';
 import { megapolosPath } from '..';
-import { AppInstanceTable, ContainerTable, DomainTable, ImageTable, NodeTable } from '../modules/models/tables';
+import { AppInstanceTable, ContainerTable, DomainTable, ImageTable, LogType, NodeTable } from '../modules/models/tables';
 import Entity from '../modules/models/Entity';
 import { knex } from '../corePostgres';
 import config from '../config/config';
@@ -176,7 +176,12 @@ class MegapolosNode {
       result.init = init;
     }
     const log = new Log();
-    await log.create({ name: 'Update node ' + data.name });
+    await log.create({ 
+      name: 'Update node ' + data.name,
+      node_id: this.id,
+      node_name: data.name,
+      type: LogType.NodeUpdate,
+    });
 
     let ansiblePath = `${megapolosPath}/ansible/deploy_swarm.yml`;
     if (config.devMode) {
@@ -194,7 +199,12 @@ class MegapolosNode {
     }
     const data = await this.getData();
     const log = new Log();
-    await log.create({ name: 'Init node ' + data.name });
+    await log.create({ 
+      name: 'Init node ' + data.name,
+      node_id: this.id,
+      node_name: data.name,
+      type: LogType.NodeInit,
+    });
     this.runAnsible(`${megapolosPath}/ansible/init.yml`, {}, log);
   }
 
@@ -204,7 +214,12 @@ class MegapolosNode {
     }
     const data = await this.getData();
     const log = new Log();
-    await log.create({ name: 'Prepare for core node ' + data.name });
+    await log.create({ 
+      name: 'Prepare for core node ' + data.name,
+      node_id: this.id,
+      node_name: data.name,
+      type: LogType.NodePrepareForCore,
+    });
     this.runAnsible(`${megapolosPath}/ansible/core.yml`, {}, log);
   }
 
@@ -214,7 +229,12 @@ class MegapolosNode {
     }
     const data = await this.getData();
     const log = new Log();
-    await log.create({ name: 'Install registry on node ' + data.name });
+    await log.create({ 
+      name: 'Install registry on node ' + data.name,
+      node_id: this.id,
+      node_name: data.name,
+      type: LogType.NodeInstallRegistry,
+    });
     this.runAnsible(`${megapolosPath}/ansible/registry.yml`, {
       registry_domain: config.registryHost,
       registry_user: config.registryUser,

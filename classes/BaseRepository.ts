@@ -98,11 +98,11 @@ abstract class BaseRepository<T extends IEntity> {
     return result;
   }
 
-  async getByQuery(callback: (knex: Knex.QueryBuilder) => Knex.QueryBuilder): Promise<T[]> {
+  async getByQuery(callback: (knex: Knex.QueryBuilder<any, T>) => Knex.QueryBuilder): Promise<T[]> {
     const result = await this.filterEntities(
       callback(
         knex.select(`${this.getTable()}.*`).from(this.getTable())
-          .orderBy(this.orderBy(), this.orderByDirection()),
+          .orderBy(this.orderBy(), this.orderByDirection()) as Knex.QueryBuilder,
       ),
     );
     return result;

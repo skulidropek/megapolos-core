@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, DeviceTable, ImageEnvRequirementTable, ImageTable, RepositoryTable } from '../models/tables';
+import { AppTable, DeviceTable, ImageEnvRequirementTable, ImageTable, LogTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -31,6 +31,7 @@ const imageModule = createModule({
         branch: String
         envs: [ImageEnvRequirement]
         last_build_date: DateTime
+        last_build_log: Log
       }
       input ImageInput {
         name: String
@@ -137,6 +138,9 @@ const imageModule = createModule({
       }),
       envs: resolver<ImageTable, ImageEnvRequirementTable[]>(async (parent, args, context, info) => {
         return new Image(parent.id).getEnvs();
+      }),
+      last_build_log: resolver<ImageTable, LogTable>(async (parent, args, context, info) => {
+        return new Image(parent.id).getLastBuildLog();
       }),
     },
   },

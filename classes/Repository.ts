@@ -55,6 +55,10 @@ class Repository {
     await entity.update({ id: this.id }, { last_fetch_date: new Date() });
   }
 
+  async push(branchFrom: string, branchTo: string):Promise<void> {
+    await simpleGit(await this.getPath()).push('origin', branchFrom + ':' + branchTo);
+  }
+
   async getPath():Promise<string> {
     const data = await this.getData();
     return megapolosPath + '/repositories/' + data.id;
