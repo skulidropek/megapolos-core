@@ -5,7 +5,7 @@ import EventsObserver from '../modules/events/eventsObserver';
 import User from './User';
 import Process from './Process';
 import BaseProcess from './BaseProcess';
-import Container from './Container';
+import Container, { ContainerRuntimeVariables } from './Container';
 import docker from '../coreDocker';
 import DockerEvent from '../modules/events/docker.event';
 import { megapolosPath } from '..';
@@ -20,6 +20,7 @@ import ExternalProcess from './ExternalProcess';
 import Log from './Log';
 import jp from 'jsonpath';
 import BaseRepository from './BaseRepository';
+import Instance, { InstanceRuntimeVariables } from './Instance';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -108,6 +109,8 @@ class MegapolosNode extends BaseRepository<NodeTable> {
         domain = await knex('domain').where({ id: container.domain_id }).first();
       }
       const envs = await containerObject.getEnvs();
+      const runtimeVariables:ContainerRuntimeVariables = await containerObject.getRuntimeVariables();
+
       const volumes = await containerObject.getVolumes();
       containerResult.auth = '';
       if (domain && domain.user) {
@@ -129,8 +132,18 @@ class MegapolosNode extends BaseRepository<NodeTable> {
       
       for (let i in envs) {
         let env = envs[i];
+        env.container_env_value = env.container_env_value.replace(/\{[a-zA-Z0-9_.]+\}/, 
+          (match) => {
+            const path = match.substring(1, match.length - 1);
+            const value = jp.value(runtimeVariables, path);
+            if (value) {
+              return value;
+            }
+            return '';
+          });
         containerResult.envs.push({ name: env.container_env_name, value: env.container_env_value });
       }
+      console.log(envs);
       containerResult.volumes = [];
       for (let i in volumes) {
         let volume = volumes[i];

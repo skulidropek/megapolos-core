@@ -17,10 +17,13 @@ class Repository extends BaseRepository<RepositoryTable> {
   }
 
   async edit(data: Partial<RepositoryTable>):Promise<RepositoryTable> {
+    const previousData = await this.getData();
     const result = await super.edit(data);
-    const path = await this.getPath();
-    await fse.remove(path);
-    await this.clone();
+    if (data.url && data.url !== previousData.url) {
+      const path = await this.getPath();
+      await fse.remove(path);
+      await this.clone();
+    }
     return result;
   }
 

@@ -31,27 +31,33 @@ class PostgresDmbs extends BaseDbms {
 
   async createDbChange(db: Partial<DbTable>): Promise<boolean> {
     const knex = await this.getKnex('postgres');
-    const exists = await knex.raw(`SELECT 1 FROM pg_database WHERE datname = '${db.name}'`);
+    const exists = await knex.raw('SELECT 1 FROM pg_database WHERE datname = ?', [db.name]);
     if (!exists.rows.length) {
-      await knex.raw(`CREATE DATABASE ${db.name}`);
+      await knex.raw('CREATE DATABASE ?', [db.name]);
     }
     return true;
   }
 
   async createUserChange(user: Partial<DbUserTable>): Promise<boolean> {
-    const exists = await (await this.getKnex('postgres')).raw(`SELECT 1 FROM pg_roles WHERE rolname = '${user.name}'`);
+    const exists = await (await this.getKnex('postgres')).raw(
+      'SELECT 1 FROM pg_roles WHERE rolname = ', [user.name]);
     if (!exists.rows.length) {
-      await (await this.getKnex('postgres')).raw(`CREATE USER ${user.name} LOGIN PASSWORD '${user.password}'`);
+      await (await this.getKnex('postgres')).raw('CREATE USER ? LOGIN PASSWORD ?', [user.name, user.password]);
+    } else {
+      await (await this.getKnex('postgres')).raw('ALTER USER ? WITH PASSWORD ?', [user.name, user.password]);
     }
     return true;
   }
 
   async addUserToDbChange(userName: string, dbName: string): Promise<boolean> {
     const knex = await this.getKnex(dbName);
-    await knex.raw(`GRANT ALL PRIVILEGES ON DATABASE ${dbName} TO ${userName}`);
-    await knex.raw(`GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${userName}`);
-    await knex.raw(`GRANT ALL PRIVILEGES ON SCHEMA public TO ${userName}`);
-    await knex.raw(`ALTER DEFAULT PRIVILEGES FOR USER ${userName} IN SCHEMA public GRANT INSERT, UPDATE, DELETE, SELECT ON TABLES TO ${userName}`);
+    await knex.raw('GRANT ALL PRIVILEGES ON DATABASE ? TO ?', [dbName, userName]);
+    await knex.raw('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ?', [userName]);
+    await knex.raw('GRANT ALL PRIVILEGES ON SCHEMA public TO ?', [userName]);
+    await knex.raw(`ALTER DEFAULT PRIVILEGES 
+      FOR USER ? 
+      IN SCHEMA public 
+      GRANT INSERT, UPDATE, DELETE, SELECT ON TABLES TO ?`, [userName, userName]);
     return true;
   }
 

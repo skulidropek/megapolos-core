@@ -23,6 +23,7 @@ const appModule = createModule({
         create_date: DateTime
         update_date: DateTime
         images: [Image]
+        repositories: [Repository]
       }
       input AppInput {
         name: String!
@@ -71,6 +72,10 @@ const appModule = createModule({
       images: resolver<AppTable & { images?: ImageTable[] }, ImageTable[]>(async (parent, args, context, info) => {
         const app = new App(parent.id);
         return app.getImages();
+      }),
+      repositories: resolver<AppTable & { images?: ImageTable[] }, RepositoryTable[]>(async (parent, args, context, info) => {
+        const app = new App(parent.id);
+        return app.getRepositories();
       }),
     },
   },

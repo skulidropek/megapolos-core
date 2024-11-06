@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, ContainerTable, ContainerVolumeTable, DeviceTable, DomainTable, ImageTable, NodeTable, RepositoryTable } from '../models/tables';
+import { AppTable, ContainerDbTable, ContainerTable, ContainerVariableTable, ContainerVolumeTable, DbTable, DeviceTable, DomainTable, ImageTable, NodeTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
@@ -12,6 +12,9 @@ import Repository from '../../classes/Repository';
 import Domain from '../../classes/Domain';
 import MegapolosNode from '../../classes/Node';
 import Volume from '../../classes/Volume';
+import Db from '../../classes/Db';
+import DbUser from '../../classes/DbUser';
+import ContainerDb from '../../classes/ContainerDb';
 
 const containerModule = createModule({
   id: 'container-module',
@@ -32,11 +35,14 @@ const containerModule = createModule({
         remove_date: DateTime
         volumes: [ContainerVolume]
         envs: [ContainerParameter]
+        variables: [ContainerVariable]
         docker_status: String
         domain_id: String
         domain: Domain
         image: Image
         node: Node
+        dbs: [ContainerDb]
+        runtimeVariables: String
       }
 
       input ContainerParameterInput {
@@ -49,6 +55,23 @@ const containerModule = createModule({
         value: String
       }
 
+      enum ContainerVariableType {
+        string
+        password
+      }
+
+      input ContainerVariableInput {
+        name: String
+        type: ContainerVariableType
+        value: String
+      }
+
+      type ContainerVariable {
+        name: String
+        type: ContainerVariableType
+        value: String
+      }
+
       type ContainerVolume {
         id: String
         name: String
@@ -56,6 +79,21 @@ const containerModule = createModule({
         volume_id: String
         inner_path: String
       }
+
+      type ContainerDb {
+        id: ID
+        db: Db
+        dbUser: DbUser
+        name: String
+      }
+
+      input ContainerDbInput {
+        container_id: String
+        db_id: String
+        db_user_id: String
+        name: String
+      }
+
 
       input ContainerVolumeInput {
         name: String
@@ -85,10 +123,13 @@ const containerModule = createModule({
         addContainer(appInstanceId: String! data: ContainerInput!): Boolean
         updateContainer(id: String! noRebuild: Boolean): Boolean
         changeContainerEnvs(id: String!, envs: [ContainerParameterInput]): Boolean
+        changeContainerVariables(id: String!, variables: [ContainerVariableInput]): Boolean
         editContainer(id: String! data: ContainerInput!): Boolean
         removeContainer(id: String!): Boolean
         startContainer(id: String!): Boolean
         stopContainer(id: String!): Boolean
+        addDbToContainer(input: ContainerDbInput!): ContainerDb
+        removeDbFromContainer(id: String!): Boolean
       }
 
       type ContainerFiles {
@@ -120,9 +161,13 @@ const containerModule = createModule({
         key: string,
         value: string,
       }[] }, boolean>(async (parent, args, context, info) => {
-        console.log(args);
         await new Container(args.id).changeEnvs(args.envs);
         EventsObserver.listener({ type: 'changeContainerEnvs', data: args });
+        return true;
+      }),
+      changeContainerVariables: resolver<{ id: string, variables: ContainerVariableTable[] }, boolean>(async (parent, args, context, info) => {
+        await new Container(args.id).changeVariables(args.variables);
+        EventsObserver.listener({ type: 'changeContainerVariables', data: args });
         return true;
       }),
       addContainer: resolver<{ appInstanceId: string, data: ContainerTable }, boolean>(async (parent, args, context, info) => {
@@ -152,13 +197,20 @@ const containerModule = createModule({
         EventsObserver.listener({ type: 'stopContainer', data: args });
         return true;
       }),
+      addDbToContainer: resolver<{ input: ContainerDbTable }, ContainerDbTable>(async (parent, args, context, info) => {
+        return new ContainerDb().create(args.input);
+      }),
+      removeDbFromContainer: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+        await new ContainerDb(args.id).delete();
+        return true;
+      }),
     },
     Container: {
       image: resolver<{}, ImageTable>(async (parent, args, context, info) => {
         return new Image(parent.image_id).getData();
       }),
       domain: resolver<{}, DomainTable>(async (parent, args, context, info) => {
-        return new Domain(parent.domain_id).getData();
+        return parent.domain_id ? new Domain(parent.domain_id).getData() : null;
       }),
       node: resolver<{}, NodeTable>(async (parent, args, context, info) => {
         return new MegapolosNode(parent.node_id).getData();
@@ -176,6 +228,23 @@ const containerModule = createModule({
             value: env.container_env_value,
           }
         ));
+      }),
+      variables: resolver<{}, ContainerVariableTable[]>(async (parent, args, context, info) => {
+        return new Container(parent.id).getVariables();
+      }),
+      runtimeVariables: resolver<{}, string>(async (parent, args, context, info) => {
+        return JSON.stringify(await new Container(parent.id).getRuntimeVariables(), null, 2);
+      }),
+      dbs: resolver<{}, ContainerDbTable[]>(async (parent, args, context, info) => {
+        return new Container(parent.id).getDbs();
+      }),
+    },
+    ContainerDb: {
+      db: resolver<{}, DbTable>(async (parent, args, context, info) => {
+        return new Db(parent.db_id).getData();
+      }),
+      dbUser: resolver<{}, DbTable>(async (parent, args, context, info) => {
+        return new DbUser(parent.db_user_id).getData();
       }),
     },
   },

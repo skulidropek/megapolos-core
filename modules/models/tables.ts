@@ -1,5 +1,11 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
+export interface IEntity {
+  id: string;
+  create_date: Date;
+  update_date: Date;
+}
+
 export interface DriverMysqlDatabaseTable {
   id: string;
   user_id: string;
@@ -7,7 +13,7 @@ export interface DriverMysqlDatabaseTable {
   login: string;
   password: string;
 }
-export interface AppInstanceTable {
+export interface AppInstanceTable extends IEntity {
   id: string;
   name: string;
   user_id: string;
@@ -33,7 +39,7 @@ export interface RemoveStrategyTable {
   id: string;
   name: string;
 }
-export interface NodeTable {
+export interface NodeTable extends IEntity {
   id: string;
   name: string;
   host: string;
@@ -78,7 +84,7 @@ export interface AppInstanceDeviceTable {
   app_instance_id: string;
   device_id: string;
 }
-export interface UserTable {
+export interface UserTable extends IEntity {
   id: string;
   name: string;
   group_user_id: string;
@@ -335,6 +341,7 @@ export interface ContainerVariableTable {
   id: string,
   container_id: string,
   name: string,
+  type: ImageEnvRequirementType,
   value: string,
 }
 
@@ -396,15 +403,24 @@ export interface ResourceDeviceAuxOptionTable {
   resource_option_value: string,
 }
 
+export enum RepositoryType {
+  Microservice = 'microservice',
+  Test = 'test',
+}
+
 export interface RepositoryTable {
   id: string,
   url: string,
   user: string,
+  name: string,
   password: string,
   create_date: Date,
   update_date: Date,
   remove_date: Date,
   last_fetch_date: Date,
+  app_id: string,
+  microservice_name: string,
+  type: RepositoryType,
 }
 
 export interface DomainTable {
@@ -534,4 +550,11 @@ export interface VolumeBackupTable {
   create_date: Date,
   update_date: Date,
   artifact_id: string,
+}
+
+export interface ContainerDbTable extends IEntity {
+  container_id: string,
+  db_id: string,
+  db_user_id: string,
+  name: string,
 }

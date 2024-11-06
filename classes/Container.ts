@@ -1,23 +1,42 @@
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import fsSync from 'fs';import docker from '../coreDocker';
-import { ContainerDeviceEnvOptionTable, ContainerEnvOptionTable, ContainerResourceEnvOptionTable, ContainerTable, ContainerVolumeTable } from '../modules/models/tables';
+import { ContainerDbTable, ContainerDeviceEnvOptionTable, ContainerEnvOptionTable, ContainerResourceEnvOptionTable, ContainerTable, ContainerVariableTable, ContainerVolumeTable, DomainTable } from '../modules/models/tables';
 import EventsObserver from '../modules/events/eventsObserver';
 import ContainerProcess from './ContainerProcess';
 import MegapolosNode from './Node';
 import Image from './Image';
-import Instance from './Instance';
+import Instance, { InstanceRuntimeVariables } from './Instance';
 import { ContainerInput, ContainerResult } from '../types';
 import Volume from './Volume';
 import { promisify } from 'util';
 import BaseRepository from './BaseRepository';
 import { knex } from '../corePostgres';
+import ContainerDb from './ContainerDb';
+import Domain from './Domain';
+import Db from './Db';
+import DbUser from './DbUser';
 
 const exec = promisify(require('child_process').exec);
 
 export enum ContainerLifeStatus {
   Stopped = 'stopped',
   Running = 'running',
+}
+
+export interface ContainerRuntimeVariables {
+  variables: { [key: string]: string },
+  dbs: { [key: string]: {
+    db: string,
+    host: string,
+    user: string,
+    password: string,
+  } },
+  domain?: string,
+  volumes: { [key: string]: {
+    innerPath: string,
+  } },
+  instance?: InstanceRuntimeVariables,
 }
 
 class Container extends BaseRepository<ContainerTable> {
@@ -193,6 +212,16 @@ class Container extends BaseRepository<ContainerTable> {
     }
   }
 
+  async changeVariables(input: Partial<ContainerVariableTable>[]) {
+    await knex<ContainerVariableTable>('container_variable').delete().where('container_id', this.id);
+    for (let i in input) {
+      await knex<ContainerVariableTable>('container_variable').insert({
+        container_id: this.id,
+        ...input[i],
+      });
+    }
+  }
+
   shellCommand(command: string): { id: string, output: Promise<{ stdout: string, stderr: string }> } {
     const commandId = uuidv4();
     return { id: commandId, output: (async () => {
@@ -237,12 +266,20 @@ class Container extends BaseRepository<ContainerTable> {
     return this.getContainerEnvOptions();
   }
 
+  async getVariables():Promise<ContainerVariableTable[]> {
+    return knex<ContainerVariableTable>('container_variable').select('*').where('container_id', this.id);
+  }
+
   async getVolumes(): Promise<{ containerVolume: ContainerVolumeTable, volume: Volume }[]> {
     const containerVolumes = await new Volume().getVolumesOfContainer(this.id);
     return containerVolumes.map((containerVolume) => ({
       containerVolume,
       volume: new Volume(containerVolume.volume_id),
     }));
+  }
+
+  async getDbs(): Promise<ContainerDbTable[]> {
+    return new ContainerDb().getByFields({ container_id: this.id });
   }
 
   async getDockerLog(): Promise<string> {
@@ -281,13 +318,80 @@ class Container extends BaseRepository<ContainerTable> {
   async addContainerEnvOption(input: Partial<ContainerEnvOptionTable>) {
     await knex<ContainerEnvOptionTable>('container_env_option').insert({
       container_id: this.id,
-      ...input
+      ...input,
     });
   }
 
   async removeContainerEnvOptions() {
     await knex<ContainerEnvOptionTable>('container_env_option').delete().where('container_id', this.id);
   }
+
+  async getDomain(): Promise<DomainTable | null> {
+    const data = await this.getData();
+    if (!data.domain_id) {
+      return null;
+    }
+    return new Domain(data.domain_id).getData();
+  }
+
+  async getRuntimeVariables(withoutInstance: boolean = false): Promise<ContainerRuntimeVariables> {
+    const domain = await this.getDomain();
+    const volumes = await this.getVolumes();
+    const variables = await this.getVariables();
+    const dbs = await this.getDbs();
+
+    const result: ContainerRuntimeVariables = {
+      variables: {},
+      dbs: {},
+      volumes: {},
+      domain: domain ? domain.name : null,
+    };
+
+    volumes.forEach((volume) => {
+      result.volumes[volume.containerVolume.name] = {
+        innerPath: volume.containerVolume.inner_path,
+      };
+    });
+
+    variables.forEach((variable) => {
+      result.variables[variable.name] = variable.value;
+    });
+
+    for (let i in dbs) {
+      const dbContainer = dbs[i];
+      const db = new Db(dbContainer.db_id);
+      const dbData = await db.getData();
+      const dbmsData = await db.getDbms();
+      const dbUser = new DbUser(dbContainer.db_user_id);
+      const dbUserData = await dbUser.getData();
+      result.dbs[dbContainer.name] = {
+        db: dbData.name,
+        host: dbmsData.host,
+        user: dbUserData.name,
+        password: dbUserData.password,
+      };
+    }
+
+    if (!withoutInstance) {
+      result.instance = await (await this.getInstance()).getRuntimeVariables();
+    }
+
+    return result;
+  }
+
+  addDb(dbId: string, dbUserId: string, name: string): Promise<ContainerDbTable> {
+    return new ContainerDb().create({
+      container_id: this.id,
+      db_id: dbId,
+      db_user_id: dbUserId,
+      name,
+    });
+  }
+
+  removeDb(id: string): Promise<boolean> {
+    return new ContainerDb(id).delete();
+  }
+    
 }
 
 export default Container;

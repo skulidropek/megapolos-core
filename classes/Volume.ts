@@ -81,7 +81,6 @@ class Volume extends BaseRepository<VolumeTable> {
   async getVolumesOfContainer(containerId: string): Promise<ContainerVolumeTable[]> {
     return knex<ContainerVolumeTable>('container_volume').select('*').where({
       container_id: containerId,
-      volume_id: this.id,
     });
   }
 

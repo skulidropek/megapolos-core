@@ -1,11 +1,6 @@
 import { Knex } from 'knex';
 import { knex } from '../corePostgres';
-
-interface IEntity {
-  id: string
-  create_date: Date
-  update_date: Date
-}
+import { IEntity } from '../modules/models/tables';
 
 abstract class BaseRepository<T extends IEntity> {
 

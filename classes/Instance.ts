@@ -1,12 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
 import EventsObserver from '../modules/events/eventsObserver';
 import { AppInstanceInput, AppInstanceResult } from '../types';
-import Container from './Container';
+import Container, { ContainerRuntimeVariables } from './Container';
 import App from './App';
 import User from './User';
 import { AppInstanceTable, ContainerTable } from '../modules/models/tables';
 import BaseRepository from './BaseRepository';
 import UserGroup from './UserGroup';
+
+export interface InstanceRuntimeVariables {
+  containers: {
+    [key: string]: ContainerRuntimeVariables
+  }
+}
 
 class Instance extends BaseRepository<AppInstanceTable> {
   getTable(): string {
@@ -111,6 +117,17 @@ class Instance extends BaseRepository<AppInstanceTable> {
       await image.build('root');
       builded.push(image.id);
     }
+  }
+
+  async getRuntimeVariables(): Promise<InstanceRuntimeVariables> {
+    const containers = await this.getContainers();
+    const result:InstanceRuntimeVariables = { containers: {} };
+    for (const i in containers) {
+      const container = containers[i];
+      const containerObject = new Container(container.id);
+      result.containers[container.name] = await containerObject.getRuntimeVariables(true);
+    }
+    return result;
   }
 
 }

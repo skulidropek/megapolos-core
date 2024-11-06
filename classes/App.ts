@@ -3,9 +3,10 @@ import { AppInput, ContainerInput } from '../types';
 import Image from './Image';
 import Instance from './Instance';
 import EventsObserver from '../modules/events/eventsObserver';
-import { AppInstanceTable, AppTable, ImageTable } from '../modules/models/tables';
+import { AppInstanceTable, AppTable, ImageTable, RepositoryTable } from '../modules/models/tables';
 import User from './User';
 import BaseRepository from './BaseRepository';
+import Repository from './Repository';
 
 class App extends BaseRepository<AppTable> {
   getTable(): string {
@@ -54,6 +55,10 @@ class App extends BaseRepository<AppTable> {
 
   async getImages(): Promise<ImageTable[]> {
     return new Image().getByFields({ app_id: this.id });
+  }
+
+  async getRepositories(): Promise<RepositoryTable[]> {
+    return new Repository().getByFields({ app_id: this.id });
   }
 
   async getUser(): Promise<User> {

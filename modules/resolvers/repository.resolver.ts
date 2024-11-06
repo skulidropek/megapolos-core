@@ -35,6 +35,7 @@ const repositoryModule = createModule({
             remove_date: DateTime
             branches: [String]
             last_fetch_date: DateTime
+            app_id: String
         }
         type RepositoryFiles {
           files: [String]
@@ -45,6 +46,7 @@ const repositoryModule = createModule({
             url: String
             user: String
             password: String
+            app_id: String
         }
     `,
   ],
