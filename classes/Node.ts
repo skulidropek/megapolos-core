@@ -166,6 +166,8 @@ class MegapolosNode {
         let env = envs[i];
         containerResult.envs.push({ name: env.container_env_name, value: env.container_env_value });
       }
+      containerResult.envs.push({ name: 'MEGAPOLOS_LAST_BUILD_DATE',
+        value: image.last_build_date ? new Date(image.last_build_date).toISOString() : '' });
       containerResult.volumes = [];
       for (let i in volumes) {
         let volume = volumes[i];
