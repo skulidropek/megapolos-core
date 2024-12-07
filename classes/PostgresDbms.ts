@@ -51,7 +51,10 @@ class PostgresDmbs extends BaseDbms {
     await knex.raw(`GRANT ALL PRIVILEGES ON DATABASE ${dbName} TO ${userName}`);
     await knex.raw(`GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${userName}`);
     await knex.raw(`GRANT ALL PRIVILEGES ON SCHEMA public TO ${userName}`);
-    await knex.raw(`ALTER DEFAULT PRIVILEGES FOR USER ${userName} IN SCHEMA public GRANT INSERT, UPDATE, DELETE, SELECT ON TABLES TO ${userName}`);
+    await knex.raw(`ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT ALL PRIVILEGES ON TABLES TO ${userName}`);
+    await knex.raw(`ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT ALL PRIVILEGES ON SEQUENCES TO ${userName}`);
     return true;
   }
 
