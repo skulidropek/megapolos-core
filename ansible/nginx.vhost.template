@@ -10,6 +10,8 @@ server {
 
     # include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
 
+    client_max_body_size 200m
+
     location / {
         proxy_pass http://{{ data.host }}:{{ item.outer_port }};
         proxy_set_header Host $host;
