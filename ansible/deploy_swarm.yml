@@ -39,6 +39,9 @@
         with_registry_auth: yes
         compose:
         - "{{ compose_file }}"
+  - name: clear docker images
+    shell: |
+      docker image prune -a -f
   - ansible.builtin.pip:
       name: 
         - urllib3
