@@ -42,7 +42,14 @@ const dbmsModule = createModule({
         saveDbSchema(dbId: String! name: String): DbSchema
         backupDb(dbId: String! name: String withoutData: Boolean): DbBackup
         restoreDb(dbId: String! backupId: String!): Boolean
+        cloneDb(fromDbId: String! toDbId: String!): Boolean
+        massDbQuery(dbmsId: String! dbNames: [String]! query: String!): [massDbQueryResult]
         uploadBackupText(type: String! backupText: String!): DbBackup
+      }
+      type massDbQueryResult {
+        dbName: String
+        result: String
+        error: String
       }
       type DbSchemaSchemaField {
         name: String
@@ -239,6 +246,16 @@ const dbmsModule = createModule({
         const db = await new Db(args.dbId).getData();
         const dbms = await Dbms.getById(db.dbms_id);
         return dbms.restore(db.id, args.backupId);
+      }),
+      cloneDb: resolver<{ fromDbId: string, toDbId: string }, boolean>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'cloneDb', data: args });
+        const fromDb = await new Db(args.fromDbId).getData();
+        const toDb = await new Db(args.toDbId).getData();
+        return (await Dbms.getById(fromDb.dbms_id)).cloneDb(fromDb.id, toDb.id);
+      }),
+      massDbQuery: resolver<{ dbmsId: string, dbNames: string[], query: string }, { dbName: string, result: string, error: string }[]>(async (parent, args, context, info) => {
+        EventsObserver.listener({ type: 'massDbQuery', data: args });
+        return (await Dbms.getById(args.dbmsId)).massDbQuery(args.dbNames, args.query);
       }),
       uploadBackupText: resolver<{ type: string, backupText: string }, DbBackupTable>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'uploadBackupText', data: args });

@@ -188,8 +188,28 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
     const backupData = await backup.getData();
     const log = new Log();
     await log.create({ name: 'Restore postgrsql db ' + data.name + '.' + dbData.name + ' from backup ' + backupData.name });
-    await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User('')).output;
+    await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User(''), log).output;
     return true;
+  }
+
+  async massDbQueryChange(dbNames: string[], query: string): Promise<{ dbName: string; result: string; error: string; }[]> {
+    const results: { dbName: string; result: string; error: string; }[] = [];
+    for (let i in dbNames) {
+      const result: { dbName: string; result: string; error: string; } = {
+        dbName: dbNames[i],
+        result: '',
+        error: '',
+      };
+      const dbName = dbNames[i];
+      const knex = await this.getKnex(dbName);
+      try {
+        result.result = JSON.stringify((await knex.raw(query)));
+      } catch (e) {
+        result.error = e.message;
+      }
+      results.push(result);
+    }
+    return results;
   }
 
   async downloadBackupTextProcess(backup: DbBackup, artifact: Artifact): Promise<string> {

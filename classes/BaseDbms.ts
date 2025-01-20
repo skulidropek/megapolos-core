@@ -100,8 +100,47 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     const db = new Db(dbId);
     const backup = new DbBackup(backupId);
     const artifact = await backup.getArtifact();
-    return this.restoreProcess(db, backup, artifact);
+    const result = await this.restoreProcess(db, backup, artifact);
+    await this.restoreDbPrivileges(dbId);
+    return result;
   }
+
+  async cloneDb(fromDbId: string, toDbId: string): Promise<boolean> {
+    const fromDb = await new Db(fromDbId).getData();
+    const toDb = await new Db(toDbId).getData();
+    const backupFrom = await this.backup(fromDbId, `Clone ${fromDb.name} to ${toDb.name}, backup ${fromDb.name}`, false);
+    const backupTo = await this.backup(toDbId, `Clone ${fromDb.name} to ${toDb.name}, backup ${toDb.name}`, false);
+    await this.restore(toDbId, backupFrom.id);
+    return true;
+  }
+
+  async restoreDbPrivileges(dbId: string): Promise<boolean> {
+    const db = await new Db(dbId);
+    const dbData = await db.getData();
+    const users = await db.getUsers();
+    for (let i in users) {
+      const user = users[i];
+      await this.addUserToDbChange(user.name, dbData.name);
+    }
+    return true;
+  }
+
+  async massDbQuery(dbNames: string[], query: string): Promise<{
+    dbName: string,
+    result: string,
+    error: string,
+  }[]> {
+    return this.massDbQueryChange(dbNames, query);
+  }
+
+  async massDbQueryChange(dbNames: string[], query: string): Promise<{
+    dbName: string,
+    result: string,
+    error: string,
+  }[]> {
+    return [];
+  }
+
 
   async restoreProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<boolean> {
     return true;
