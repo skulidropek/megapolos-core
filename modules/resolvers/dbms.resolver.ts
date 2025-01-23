@@ -42,7 +42,7 @@ const dbmsModule = createModule({
         saveDbSchema(dbId: String! name: String): DbSchema
         backupDb(dbId: String! name: String withoutData: Boolean): DbBackup
         restoreDb(dbId: String! backupId: String!): Boolean
-        cloneDb(fromDbId: String! toDbId: String!): Boolean
+        cloneDb(fromDbId: String! toDbId: String! fromDbUserId: String): Boolean
         massDbQuery(dbmsId: String! dbNames: [String]! query: String!): [massDbQueryResult]
         uploadBackupText(type: String! backupText: String!): DbBackup
       }
@@ -247,11 +247,11 @@ const dbmsModule = createModule({
         const dbms = await Dbms.getById(db.dbms_id);
         return dbms.restore(db.id, args.backupId);
       }),
-      cloneDb: resolver<{ fromDbId: string, toDbId: string }, boolean>(async (parent, args, context, info) => {
+      cloneDb: resolver<{ fromDbId: string, toDbId: string, fromDbUserId: string }, boolean>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'cloneDb', data: args });
         const fromDb = await new Db(args.fromDbId).getData();
         const toDb = await new Db(args.toDbId).getData();
-        return (await Dbms.getById(fromDb.dbms_id)).cloneDb(fromDb.id, toDb.id);
+        return (await Dbms.getById(fromDb.dbms_id)).cloneDb(fromDb.id, toDb.id, args.fromDbUserId);
       }),
       massDbQuery: resolver<{ dbmsId: string, dbNames: string[], query: string }, { dbName: string, result: string, error: string }[]>(async (parent, args, context, info) => {
         EventsObserver.listener({ type: 'massDbQuery', data: args });

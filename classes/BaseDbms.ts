@@ -105,12 +105,15 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return result;
   }
 
-  async cloneDb(fromDbId: string, toDbId: string): Promise<boolean> {
+  async cloneDb(fromDbId: string, toDbId: string, fromDbUserId?: string): Promise<boolean> {
     const fromDb = await new Db(fromDbId).getData();
     const toDb = await new Db(toDbId).getData();
     const backupFrom = await this.backup(fromDbId, `Clone ${fromDb.name} to ${toDb.name}, backup ${fromDb.name}`, false);
     const backupTo = await this.backup(toDbId, `Clone ${fromDb.name} to ${toDb.name}, backup ${toDb.name}`, false);
     await this.restore(toDbId, backupFrom.id);
+    if (fromDbUserId) {
+      await this.setOwner(toDbId, fromDbUserId);
+    }
     return true;
   }
 
@@ -122,6 +125,18 @@ class BaseDbms extends BaseRepository<DbmsTable> {
       const user = users[i];
       await this.addUserToDbChange(user.name, dbData.name);
     }
+    return true;
+  }
+
+  async setOwner(dbId: string, userId: string): Promise<boolean> {
+    const db = new Db(dbId);
+    const user = new DbUser(userId);
+    const dbData = await db.getData();
+    const userData = await user.getData();
+    return this.setOwnerChange(dbData.name, userData.name);
+  }
+
+  async setOwnerChange(dbName: string, userName: string): Promise<boolean> {
     return true;
   }
 

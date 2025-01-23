@@ -339,7 +339,9 @@ class MegapolosNode {
         }
         throw e; 
       }
-      await log.close();
+      if (log) {
+        await log.close();
+      }
 
       const result = {
         stdout: process.stdout,
