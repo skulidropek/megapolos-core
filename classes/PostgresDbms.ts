@@ -11,6 +11,9 @@ import Log from './Log';
 
 class PostgresDmbs extends BaseDbms {
   async getKnex(db: string) {
+    if (!db) {
+      throw new Error('Database name is empty');
+    }
     const data = await this.getData();
     return Knex({
       client: 'pg',
@@ -35,6 +38,13 @@ class PostgresDmbs extends BaseDbms {
     if (!exists.rows.length) {
       await knex.raw(`CREATE DATABASE ${db.name}`);
     }
+    return true;
+  }
+
+  async truncateDbChange(dbName: string): Promise<boolean> {
+    const knex = await this.getKnex(dbName);
+    await knex.raw(`DROP SCHEMA public CASCADE`);
+    await knex.raw(`CREATE SCHEMA public`);
     return true;
   }
 

@@ -47,6 +47,10 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return true;
   }
 
+  async truncateDbChange(dbName: string): Promise<boolean> {
+    return true;
+  }
+
   async createUserChange(user: Partial<DbUserTable>): Promise<boolean> {
     return true;
   }
@@ -100,6 +104,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     const db = new Db(dbId);
     const backup = new DbBackup(backupId);
     const artifact = await backup.getArtifact();
+    await this.truncateDbChange((await db.getData()).name);
     const result = await this.restoreProcess(db, backup, artifact);
     await this.restoreDbPrivileges(dbId);
     return result;
