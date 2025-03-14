@@ -52,6 +52,7 @@ class Image extends BaseRepository<ImageTable> {
         if (!config.devMode) {
           await MegapolosNode.currentNode.shellCommand(`docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}:443`, new User(userId), log).output;
           await MegapolosNode.currentNode.shellCommand(`docker push ${config.registryHost}:443/${data.image}`, new User(userId), log).output;
+          await MegapolosNode.currentNode.shellCommand(`docker image prune -f`, new User(userId), log).output;
         }
         await this.edit({ status: ImageStatus.Built, last_build_date: new Date() });
         console.log(result);

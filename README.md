@@ -12,7 +12,8 @@ https://t.me/megapolos
 
 **Порядок установки megapolos-core:**
 - Соберите базу данных из newpostgresql.sql в папке install.
-- Создайте config.json по примеру config.sample.json в папке config, в secret впишите токен ключ для генерации токенов и connectionString для соединения с базой данных.
+- Создайте config.json по примеру config.sample.json в папке config, в secret впишите токен ключ для генерации токенов и connectionString для соединения с базой данных
+- Если вы хотите чтобы Мегаполос работал на локалхостер, в конфигурации devMode: true
 - Установите все зависимости командой *npm i*.
 - Запускайте только от лица root.
 

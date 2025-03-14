@@ -144,6 +144,8 @@ class MegapolosNode extends BaseRepository<NodeTable> {
         containerResult.envs.push({ name: env.container_env_name, value: env.container_env_value });
       }
       console.log(envs);
+      containerResult.envs.push({ name: 'MEGAPOLOS_LAST_BUILD_DATE',
+        value: image.last_build_date ? new Date(image.last_build_date).toISOString() : '' });
       containerResult.volumes = [];
       for (let i in volumes) {
         let volume = volumes[i];
@@ -338,7 +340,9 @@ class MegapolosNode extends BaseRepository<NodeTable> {
         }
         throw e; 
       }
-      await log.close();
+      if (log) {
+        await log.close();
+      }
 
       const result = {
         stdout: process.stdout,

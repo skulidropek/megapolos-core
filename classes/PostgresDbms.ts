@@ -11,6 +11,9 @@ import Log from './Log';
 
 class PostgresDmbs extends BaseDbms {
   async getKnex(db: string) {
+    if (!db) {
+      throw new Error('Database name is empty');
+    }
     const data = await this.getData();
     return Knex({
       client: 'pg',
@@ -38,6 +41,13 @@ class PostgresDmbs extends BaseDbms {
     return true;
   }
 
+  async truncateDbChange(dbName: string): Promise<boolean> {
+    const knex = await this.getKnex(dbName);
+    await knex.raw(`DROP SCHEMA public CASCADE`);
+    await knex.raw(`CREATE SCHEMA public`);
+    return true;
+  }
+
   async createUserChange(user: Partial<DbUserTable>): Promise<boolean> {
     const exists = await (await this.getKnex('postgres')).raw(
       'SELECT 1 FROM pg_roles WHERE rolname = ', [user.name]);
@@ -54,10 +64,10 @@ class PostgresDmbs extends BaseDbms {
     await knex.raw('GRANT ALL PRIVILEGES ON DATABASE ? TO ?', [dbName, userName]);
     await knex.raw('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ?', [userName]);
     await knex.raw('GRANT ALL PRIVILEGES ON SCHEMA public TO ?', [userName]);
-    await knex.raw(`ALTER DEFAULT PRIVILEGES 
-      FOR USER ? 
-      IN SCHEMA public 
-      GRANT INSERT, UPDATE, DELETE, SELECT ON TABLES TO ?`, [userName, userName]);
+    await knex.raw(`ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT ALL PRIVILEGES ON TABLES TO ?`, [userName]);
+    await knex.raw(`ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT ALL PRIVILEGES ON SEQUENCES TO ?`, [userName]);
     return true;
   }
 
@@ -201,8 +211,52 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
       object_id: backupData.id,
       object_name: backupData.name,
     });
-    await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User('')).output;
+    await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User(''), log).output;
     return true;
+  }
+
+  async setOwnerChange(dbName: string, userName: string): Promise<boolean> {
+    const db = await this.getKnex(dbName);
+    await db.raw(`
+      DO $$DECLARE r record;
+DECLARE
+    v_schema varchar := 'public';
+    v_new_owner varchar := '${userName}';
+BEGIN
+    FOR r IN 
+        select 'ALTER TABLE "' || table_schema || '"."' || table_name || '" OWNER TO ' || v_new_owner || ';' as a from information_schema.tables where table_schema = v_schema
+        union all
+        select 'ALTER TABLE "' || sequence_schema || '"."' || sequence_name || '" OWNER TO ' || v_new_owner || ';' as a from information_schema.sequences where sequence_schema = v_schema
+        union all
+        select 'ALTER TABLE "' || table_schema || '"."' || table_name || '" OWNER TO ' || v_new_owner || ';' as a from information_schema.views where table_schema = v_schema
+        union all
+        select 'ALTER FUNCTION "'||nsp.nspname||'"."'||p.proname||'"('||pg_get_function_identity_arguments(p.oid)||') OWNER TO ' || v_new_owner || ';' as a from pg_proc p join pg_namespace nsp ON p.pronamespace = nsp.oid where nsp.nspname = v_schema
+    LOOP
+        EXECUTE r.a;
+    END LOOP;
+END$$;
+      `);
+    return true;
+  }
+
+  async massDbQueryChange(dbNames: string[], query: string): Promise<{ dbName: string; result: string; error: string; }[]> {
+    const results: { dbName: string; result: string; error: string; }[] = [];
+    for (let i in dbNames) {
+      const result: { dbName: string; result: string; error: string; } = {
+        dbName: dbNames[i],
+        result: '',
+        error: '',
+      };
+      const dbName = dbNames[i];
+      const knex = await this.getKnex(dbName);
+      try {
+        result.result = JSON.stringify((await knex.raw(query)));
+      } catch (e) {
+        result.error = e.message;
+      }
+      results.push(result);
+    }
+    return results;
   }
 
   async downloadBackupTextProcess(backup: DbBackup, artifact: Artifact): Promise<string> {
