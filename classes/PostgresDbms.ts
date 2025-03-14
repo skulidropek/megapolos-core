@@ -50,7 +50,7 @@ class PostgresDmbs extends BaseDbms {
 
   async createUserChange(user: Partial<DbUserTable>): Promise<boolean> {
     const exists = await (await this.getKnex('postgres')).raw(
-      'SELECT 1 FROM pg_roles WHERE rolname = ', [user.name]);
+      'SELECT 1 FROM pg_roles WHERE rolname = ?', [user.name]);
     if (!exists.rows.length) {
       await (await this.getKnex('postgres')).raw('CREATE USER ? LOGIN PASSWORD ?', [user.name, user.password]);
     } else {
