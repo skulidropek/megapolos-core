@@ -32,7 +32,7 @@ class User extends BaseRepository<UserTable> {
         rootGroup = await new UserGroup().create({ name: 'root' });
       }
       console.log(rootGroup);
-      await this.create({ name: 'root', os_user_id: rootGroup.id });
+      await this.create({ name: 'root', group_user_id: rootGroup.id, os_user_id: '' });
       admins = await this.getByGroupName('root');
     }
     return new User(admins[0].id);
