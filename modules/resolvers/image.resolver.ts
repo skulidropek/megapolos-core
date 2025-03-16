@@ -1,14 +1,27 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppTable, DeviceTable, ImageEnvRequirementTable, ImageTable, LogTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../events/eventsObserver';
 import App from '../../classes/App';
-import Instance from '../../classes/Instance';
 import Container from '../../classes/Container';
 import Image from '../../classes/Image';
+import Instance from '../../classes/Instance';
 import Repository from '../../classes/Repository';
+import {
+  AppInput,
+  AppInstanceInput,
+  AppInstanceResult,
+  ContainerResult,
+  resolver,
+} from '../../types';
+import EventsObserver from '../events/eventsObserver';
+import {
+  AppTable,
+  DeviceTable,
+  ImageEnvRequirementTable,
+  ImageTable,
+  LogTable,
+  RepositoryTable,
+} from '../models/tables';
 
 const imageModule = createModule({
   id: 'image-module',
@@ -82,66 +95,93 @@ const imageModule = createModule({
   ],
   resolvers: {
     Query: {
-      getImages: resolver<{}, ImageTable[]>(async (parent, args, context, info) => {
-        return new Image().getAll();
-      }),
-      getImage: resolver<{ id: string }, ImageTable>(async (parent, args, context, info) => {
-        return new Image(args.id).getData();
-      }),
+      getImages: resolver<{}, ImageTable[]>(
+        async (parent, args, context, info) => {
+          return new Image(undefined, context.user.id).getAll();
+        },
+      ),
+      getImage: resolver<{ id: string }, ImageTable>(
+        async (parent, args, context, info) => {
+          return new Image(args.id, context.user.id).getData();
+        },
+      ),
     },
     Mutation: {
-      editImage: resolver<{ id: string, image: ImageTable }, boolean>(async (parent, args, context, info) => {
-        await new Image(args.id).edit(args.image);
-        EventsObserver.listener({ type: 'editImage', data: args });
-        return true;
-      }),
-      addImage: resolver<{ appId: string, image: ImageTable }, boolean>(async (parent, args, context, info) => {
-        await new App(args.appId).addImage(args.image);
-        EventsObserver.listener({ type: 'addImage', data: args });
-        return true;
-      }),
-      removeImage: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new Image(args.id).delete();
-        EventsObserver.listener({ type: 'removeImage', data: args });
-        return true;
-      }),
-      buildImage: resolver<{ imageId: string }, boolean>(async (parent, args, context, info) => {
-        new Image(args.imageId).build(context.user.id);
-        EventsObserver.listener({ type: 'buildImage', data: args });
-        return true;
-      }),
-      buildImages: resolver<{ imageIds: string[] }, boolean>(async (parent, args, context, info) => {
-        (async () => {
-          for (let i in args.imageIds) {
-            const imageId = args.imageIds[i];
-            await new Image(imageId).build(context.user.id);
-          }
-        })();
-        EventsObserver.listener({ type: 'buildImages', data: args });
-        return true;
-      }),
-      updateNodesOfImage: resolver<{ imageId: string }, boolean>(async (parent, args, context, info) => {
-        const image = new Image(args.imageId);
-        image.updateNodes();
-        EventsObserver.listener({ type: 'updateNodesOfImage', data: args });
-        return true;
-      }),
-      changeImageEnvs: resolver<{ imageId: string, envs: ImageEnvRequirementTable[] }, boolean>(async (parent, args, context, info) => {
-        await new Image(args.imageId).changeEnvs(args.envs);
+      editImage: resolver<{ id: string; image: ImageTable }, boolean>(
+        async (parent, args, context, info) => {
+          await new Image(args.id, context.user.id).edit(args.image);
+          EventsObserver.listener({ type: 'editImage', data: args });
+          return true;
+        },
+      ),
+      addImage: resolver<{ appId: string; image: ImageTable }, boolean>(
+        async (parent, args, context, info) => {
+          await new App(args.appId, context.user.id).addImage(args.image);
+          EventsObserver.listener({ type: 'addImage', data: args });
+          return true;
+        },
+      ),
+      removeImage: resolver<{ id: string }, boolean>(
+        async (parent, args, context, info) => {
+          await new Image(args.id, context.user.id).delete();
+          EventsObserver.listener({ type: 'removeImage', data: args });
+          return true;
+        },
+      ),
+      buildImage: resolver<{ imageId: string }, boolean>(
+        async (parent, args, context, info) => {
+          await new Image(args.imageId, context.user.id).build();
+          EventsObserver.listener({ type: 'buildImage', data: args });
+          return true;
+        },
+      ),
+      buildImages: resolver<{ imageIds: string[] }, boolean>(
+        async (parent, args, context, info) => {
+          (async () => {
+            for (let i in args.imageIds) {
+              const imageId = args.imageIds[i];
+              await new Image(imageId, context.user.id).build();
+            }
+          })();
+          EventsObserver.listener({ type: 'buildImages', data: args });
+          return true;
+        },
+      ),
+      updateNodesOfImage: resolver<{ imageId: string }, boolean>(
+        async (parent, args, context, info) => {
+          const image = new Image(args.imageId, context.user.id);
+          image.updateNodes();
+          EventsObserver.listener({ type: 'updateNodesOfImage', data: args });
+          return true;
+        },
+      ),
+      changeImageEnvs: resolver<
+        { imageId: string; envs: ImageEnvRequirementTable[] },
+        boolean
+      >(async (parent, args, context, info) => {
+        await new Image(args.imageId, context.user.id).changeEnvs(args.envs);
         EventsObserver.listener({ type: 'changeImageEnvs', data: args });
         return true;
       }),
     },
     Image: {
-      repository: resolver<ImageTable, RepositoryTable>(async (parent, args, context, info) => {
-        return parent.repository_id ? new Repository(parent.repository_id).getData() : null;
-      }),
-      envs: resolver<ImageTable, ImageEnvRequirementTable[]>(async (parent, args, context, info) => {
-        return new Image(parent.id).getEnvs();
-      }),
-      last_build_log: resolver<ImageTable, LogTable>(async (parent, args, context, info) => {
-        return new Image(parent.id).getLastBuildLog();
-      }),
+      repository: resolver<ImageTable, RepositoryTable>(
+        async (parent, args, context, info) => {
+          return parent.repository_id
+            ? new Repository(parent.repository_id, context.user.id).getData()
+            : null;
+        },
+      ),
+      envs: resolver<ImageTable, ImageEnvRequirementTable[]>(
+        async (parent, args, context, info) => {
+          return new Image(parent.id, context.user.id).getEnvs();
+        },
+      ),
+      last_build_log: resolver<ImageTable, LogTable>(
+        async (parent, args, context, info) => {
+          return new Image(parent.id, context.user.id).getLastBuildLog();
+        },
+      ),
     },
   },
 });

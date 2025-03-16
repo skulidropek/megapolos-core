@@ -1,0 +1,64 @@
+import User from '../../../classes/User';
+import {
+  GroupUserPrivilegeTable,
+  IEntity,
+} from '../../../modules/models/tables';
+import { UserAction } from './resources_list';
+
+export class RightsChecker {
+  constructor() {}
+
+  static async check(userId: string, action: UserAction): Promise<boolean> {
+    if (!userId) {
+      return true;
+    }
+
+    const privileges = await RightsChecker._getPrivileges(userId);
+    return RightsChecker._privilegesIsMatch(privileges, action);
+  }
+
+  static async filter<T extends IEntity>(
+    userId: string,
+    action: UserAction,
+    entities: T[],
+  ): Promise<T[]> {
+    if (!userId) {
+      return entities;
+    }
+
+    const privileges = await RightsChecker._getPrivileges(userId);
+    let entitiesFiltered = entities.filter((entity) =>
+      RightsChecker._privilegesIsMatch(privileges, {
+        resourceType: action.resourceType,
+        resourceId: entity.id,
+        action: action.action,
+      })
+    );
+    return entitiesFiltered;
+  }
+
+  static _getPrivileges(userId: string) {
+    return new User(userId).getPrivileges();
+  }
+
+  static _privilegeIsMatch(
+    privilege: GroupUserPrivilegeTable,
+    action: UserAction,
+  ): boolean {
+    return (privilege.object_name == '*'
+      || privilege.object_name == action.resourceType)
+      && (privilege.object_id == '*'
+        || privilege.object_id == action.resourceId)
+      && (privilege.action == '*' || privilege.action == action.action);
+  }
+
+  static _privilegesIsMatch(
+    privileges: GroupUserPrivilegeTable[],
+    action: UserAction,
+  ): boolean {
+    let value = privileges.some((p) =>
+      RightsChecker._privilegeIsMatch(p, action)
+    );
+    return value;
+  }
+}

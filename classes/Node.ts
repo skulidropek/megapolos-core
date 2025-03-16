@@ -99,7 +99,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
       if (withRebuild) {
         if (!builded.includes(image.id)) {
           const imageObject = new Image(image.id);
-          await imageObject.build('root');
+          await imageObject.build();
           builded.push(image.id);
         }
       }
