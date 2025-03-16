@@ -20,7 +20,7 @@ class Instance extends BaseRepository<AppInstanceTable> {
   }
   
   async create(input: Partial<AppInstanceTable>, isDevice = false): Promise<AppInstanceTable> {
-    const userGroup = await (new UserGroup().getByFields({ name: 'root' }))[0];
+    const userGroup = (await new UserGroup().getByFields({ name: 'root' }))[0];
     const user = await new User().create({ name: input.name, 
       // groupUserId: isDevice ? 'device' : 'app' 
       group_user_id: userGroup.id,
