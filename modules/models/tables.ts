@@ -112,6 +112,11 @@ export interface GroupUserPrivilegeTable {
   create_date: Date;
   update_date: Date;
 }
+export interface GroupUserWithPrivilegeTable {
+  id: string;
+  name: string;
+  privileges: GroupUserPrivilegeTable[];
+}
 export interface AppTable {
   id: string;
   name: string;

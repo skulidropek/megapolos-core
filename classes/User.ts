@@ -16,14 +16,17 @@ import UserGroup from './UserGroup';
 import UserGroupPrivilege from './UserGroupPrivilege';
 
 class User extends BaseRepository<UserTable> {
-  static rootUserId: string | undefined = undefined;
+  static rootRoleId?: string;
 
   getTable(): string {
     return 'user';
   }
 
-  static isRootUser(userId: string): boolean {
-    return userId == User.rootUserId;
+  async amIRootUser(): Promise<boolean> {
+    const roles = await knex('group_user').select('group_user.*')
+      .innerJoin('user_group_link', 'group_user.id', 'user_group_link.group_user_id')
+      .where('user_group_link.user_id', this.ctx.user.id);
+    return roles.some((role) => role.id == User.rootRoleId);
   }
 
   async create(data: Partial<UserTable>): Promise<UserTable> {
@@ -71,13 +74,23 @@ class User extends BaseRepository<UserTable> {
     }
   }
 
-  async createRootUser(): Promise<User> {
-    let admins = await this.getByGroupName('root');
+  async createRootGroup(): Promise<GroupUserTable> {
+    const rootGroup = await new UserGroup(this.ctx).getByFields({ name: 'root' });
+    if (rootGroup.length) {
+      User.rootRoleId = rootGroup[0].id;
+      return rootGroup[0];
+    }
+    const group = await new UserGroup(this.ctx).create({ name: 'root' });
+    User.rootRoleId = group.id;
+    return group;
+  }
 
-    if (!admins.length) {
-      // Create root group
-      let rootGroup = (await new UserGroup(this.ctx).getByFields({ name: 'root' }))[0];
-      await this.create({
+  async createRootUser(): Promise<User> {
+    const rootGroup = await this.createRootGroup();
+    let rootUser = (await this.getByGroupName('root'))[0];
+
+    if (!rootUser) {
+      rootUser = await this.create({
         name: 'root',
         group_user_id: rootGroup.id,
         os_user_id: '',
@@ -86,7 +99,7 @@ class User extends BaseRepository<UserTable> {
 
     // Create root privileges
     let privileges = await new UserGroupPrivilege(this.ctx).getByFields({
-      group_user_id: admins[0].group_user_id,
+      group_user_id: rootGroup.id,
     });
     if (
       !privileges.length
@@ -95,15 +108,15 @@ class User extends BaseRepository<UserTable> {
       )
     ) {
       await new UserGroupPrivilege(this.ctx).create({
-        group_user_id: admins[0].group_user_id,
+        group_user_id: rootGroup.id,
         object_name: '*',
         object_id: '*',
         action: '*',
       });
     }
 
-    User.rootUserId = admins[0].id;
-    return new User(this.ctx, admins[0].id);
+    User.rootRoleId = rootGroup.id;
+    return new User(this.ctx, rootUser.id);
   }
 
   async getUsersWithToken(): Promise<(UserTable & { token?: string })[]> {

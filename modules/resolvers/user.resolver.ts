@@ -19,6 +19,12 @@ interface PrivilegeInput {
   action: string;
 }
 
+interface GroupUserWithPrivilege {
+  id: string;
+  name: string;
+  privileges: GroupUserPrivilegeTable[];
+}
+
 const userModule = createModule({
   id: 'user-module',
   dirname: __dirname,
@@ -27,6 +33,12 @@ const userModule = createModule({
       type GroupUser {
         id: String
         name: String
+      }
+      
+      type GroupUserWithPrivilege {
+        id: String
+        name: String
+        privileges: [GroupUserPrivilege]
       }
 
       type GroupUserPrivilege {
@@ -67,12 +79,14 @@ const userModule = createModule({
         getMe: User
         getAllUserGroups: [GroupUser]
         getGroupUserPrivilege(group_user_id: String!): [GroupUserPrivilege]
+        getAllUserGroupsWithPrivileges: [GroupUserWithPrivilege]
         getPrivilegeActions(resource_type: String!): [String]
       }
 
       type Mutation {
         addUser(input: UserInput!): Boolean
         grantPrivilege(input: PrivilegeInput!): Boolean
+        revokePrivilege(id: String!): Boolean
       }
     `,
   ],
@@ -100,6 +114,17 @@ const userModule = createModule({
           group_user_id: args.group_user_id,
         });
       }),
+      getAllUserGroupsWithPrivileges: resolver<void, GroupUserWithPrivilege[]>(
+        async (parent, args, context) => {
+          const groups = await new UserGroup(context).getAll();
+          const privileges = await new UserGroupPrivilege(context).getAll();
+          return groups.map((group) => ({
+            id: group.id,
+            name: group.name,
+            privileges: privileges.filter((p) => p.group_user_id === group.id),
+          }));
+        },
+      ),
       getPrivilegeActions: resolver<{ resource_type: string }, string[]>(
         async (parent, args) => {
           const resource = resources[args.resource_type];
@@ -113,10 +138,7 @@ const userModule = createModule({
     Mutation: {
       addUser: resolver<{ input: UserInput }, boolean>(
         async (parent, args, context) => {
-          await new User(context).create({
-            name: args.input.name,
-            group_user_id: 'name',
-          });
+          await new User(context).create({name: args.input.name});
           return true;
         },
       ),
@@ -129,6 +151,11 @@ const userModule = createModule({
             args.input.action,
           );
           return true;
+        },
+      ),
+      revokePrivilege: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          return new UserGroupPrivilege(context).revoke(args.id);
         },
       ),
     },

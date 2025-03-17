@@ -10,7 +10,7 @@ class UserGroupPrivilege extends BaseRepository<GroupUserPrivilegeTable> {
   }
 
   async pushOwner(resourceType: string, resourceId: string) {
-    if (!this.ctx?.user?.id || User.isRootUser(this.ctx.user.id)) {
+    if (!this.ctx?.user?.id || await new User(this.ctx).amIRootUser()) {
       return;
     }
 
@@ -31,6 +31,10 @@ class UserGroupPrivilege extends BaseRepository<GroupUserPrivilegeTable> {
     action: string,
     checkAccess: boolean = true,
   ) {
+    if (roleId == User.rootRoleId) {
+      return;
+    }
+
     if (checkAccess) {
       if (
         !(await RightsChecker.check(this.ctx?.user?.id, {
@@ -71,6 +75,38 @@ class UserGroupPrivilege extends BaseRepository<GroupUserPrivilegeTable> {
       object_id: resourceId,
       action: action,
     });
+  }
+
+  async revoke(id: string): Promise<boolean> {
+    const privilege = (await this.getByFields({ id }))[0];
+    if (!privilege) {
+      return false;
+    }
+
+    if (privilege.group_user_id == User.rootRoleId
+      || privilege.group_user_id == this.ctx.user.group_user_id) {
+      this._throwAccessDenied();
+    }
+
+    const deletePrivilege = () => knex(this.getTable()).where({ id }).delete();
+
+    if (privilege.action == '*') {
+      if (!await new User(this.ctx).amIRootUser()) {
+        this._throwAccessDenied();
+      } else {
+        await deletePrivilege();
+      }
+    } else {
+      if (!await RightsChecker.check(this.ctx.user.id, {
+        resourceType: privilege.object_name,
+        resourceId: privilege.object_id,
+        action: '*',
+      })) {
+        this._throwAccessDenied();
+      } else {
+        await deletePrivilege();
+      }
+    }
   }
 }
 
