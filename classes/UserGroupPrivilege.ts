@@ -1,5 +1,5 @@
+import { knex } from '../corePostgres';
 import { GroupUserPrivilegeTable } from '../modules/models/tables';
-import { defaultRights } from '../src/features/rights/resources_list';
 import { RightsChecker } from '../src/features/rights/rights_checker';
 import BaseRepository from './BaseRepository';
 import User from './User';
@@ -10,11 +10,11 @@ class UserGroupPrivilege extends BaseRepository<GroupUserPrivilegeTable> {
   }
 
   async pushOwner(resourceType: string, resourceId: string) {
-    if (!this.userId || User.isRootUser(this.userId)) {
+    if (!this.ctx?.user?.id || User.isRootUser(this.ctx.user.id)) {
       return;
     }
 
-    const user = await new User(this.userId).getData();
+    const user = await new User(this.ctx, this.ctx.user.id).getData();
     await this.pushForResource(
       user.group_user_id,
       resourceType,
@@ -33,15 +33,38 @@ class UserGroupPrivilege extends BaseRepository<GroupUserPrivilegeTable> {
   ) {
     if (checkAccess) {
       if (
-        !(await RightsChecker.check(this.userId, {
+        !(await RightsChecker.check(this.ctx?.user?.id, {
           resourceType,
           resourceId,
-          action: defaultRights.admin,
+          action: '*',
         }))
       ) {
         this._throwAccessDenied();
       }
     }
+
+    const privileges = await this.getByFields({
+      group_user_id: roleId,
+      object_name: resourceType,
+      object_id: resourceId,
+    });
+
+    if (RightsChecker.privilegesIsMatch(privileges, {
+      resourceType,
+      resourceId,
+      action,
+    })) {
+      return;
+    }
+
+    if (action == '*') {
+      await knex(this.getTable()).where({
+        group_user_id: roleId,
+        object_name: resourceType,
+        object_id: resourceId,
+      }).delete();
+    }
+
     await this.create({
       group_user_id: roleId,
       object_name: resourceType,

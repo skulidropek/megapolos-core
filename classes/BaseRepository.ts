@@ -3,10 +3,12 @@ import { knex } from '../corePostgres';
 import { IEntity } from '../modules/models/tables';
 import { defaultRights, resources } from '../src/features/rights/resources_list';
 import { RightsChecker } from '../src/features/rights/rights_checker';
+import { Context } from '../types';
 
 abstract class BaseRepository<T extends IEntity> {
   id?: string;
-  userId?: string;
+
+  ctx?: Context;
 
   _data?: Promise<T>;
 
@@ -20,8 +22,8 @@ abstract class BaseRepository<T extends IEntity> {
   }
 
   constructor(
+    ctx?: Context,
     id: string | T | undefined = undefined,
-    userId: string | undefined = undefined,
   ) {
     if (id && typeof id === 'string') {
       this.id = id;
@@ -29,14 +31,18 @@ abstract class BaseRepository<T extends IEntity> {
       this.id = id.id;
       this._data = Promise.resolve(id);
     }
-    this.userId = userId;
+    this.ctx = ctx;
   }
 
   abstract getTable(): string;
 
   // ACCESS CHECKERS
   async haveActionAccess(action: string) {
-    return RightsChecker.check(this.userId, {
+    if (!resources[this.getTable()]) {
+      return true;
+    }
+
+    return RightsChecker.check(this.ctx?.user?.id, {
       resourceType: this.getTable(),
       resourceId: this.id,
       action,
@@ -49,22 +55,12 @@ abstract class BaseRepository<T extends IEntity> {
     }
   }
 
-  async haveEntityAccess(entity: Partial<T>) {
-    return RightsChecker.check(this.userId, {
-      resourceType: this.getTable(),
-      resourceId: entity.id,
-      action: defaultRights.read,
-    });
-  }
-
-  async checkEntityAccess(entity: Partial<T>) {
-    if (!await this.haveEntityAccess(entity)) {
-      this._throwAccessDenied();
-    }
-  }
-
   async filterEntitiesByAccess(entities: T[]): Promise<T[]> {
-    return RightsChecker.filter(this.userId, {
+    if (!resources[this.getTable()]) {
+      return entities;
+    }
+
+    return RightsChecker.filter(this.ctx?.user?.id, {
       resourceType: this.getTable(),
       resourceId: '*',
       action: defaultRights.read,
@@ -76,9 +72,9 @@ abstract class BaseRepository<T extends IEntity> {
     return !!entity;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async checkEntitiesOfOrganization(
     ids: string[],
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     organizationId: string,
   ): Promise<T[]> {
     const entities = await this.getByIds(ids);
@@ -107,7 +103,7 @@ abstract class BaseRepository<T extends IEntity> {
       knex.select(`${this.getTable()}.*`).from(this.getTable())
         .orderBy(this._orderBy(), this._orderByDirection()),
     );
-    return await this.filterEntitiesByAccess(result);
+    return this.filterEntitiesByAccess(result);
   }
 
   async getByIds(ids: string[]): Promise<T[]> {
@@ -116,7 +112,7 @@ abstract class BaseRepository<T extends IEntity> {
         .from(this.getTable()).whereIn(`${this.getTable()}.id`, ids)
         .orderBy(this._orderBy(), this._orderByDirection()),
     );
-    return await this.filterEntitiesByAccess(result);
+    return this.filterEntitiesByAccess(result);
   }
 
   async getByFields(fields: Partial<T>): Promise<T[]> {
@@ -125,7 +121,7 @@ abstract class BaseRepository<T extends IEntity> {
         .from(this.getTable()).where(fields)
         .orderBy(this._orderBy(), this._orderByDirection()),
     );
-    return await this.filterEntitiesByAccess(result);
+    return this.filterEntitiesByAccess(result);
   }
 
   async getByQuery(
@@ -140,7 +136,7 @@ abstract class BaseRepository<T extends IEntity> {
           ) as Knex.QueryBuilder,
       ),
     );
-    return await this.filterEntitiesByAccess(result);
+    return this.filterEntitiesByAccess(result);
   }
 
   async create(entity: Partial<T>): Promise<T> {
@@ -151,7 +147,7 @@ abstract class BaseRepository<T extends IEntity> {
     this.id = created.id;
     if (!!resources[this.getTable()]) {
       const { default: UserGroupPrivilege } = await import('./UserGroupPrivilege');
-      await new UserGroupPrivilege(undefined, this.userId).pushOwner(
+      await new UserGroupPrivilege(this.ctx).pushOwner(
         this.getTable(),
         this.id,
       );
@@ -180,7 +176,7 @@ abstract class BaseRepository<T extends IEntity> {
   protected _throwAccessDenied() {
     throw new Error(
       'Access denied (table: ' + this.getTable() + ', uuid: ' + this.id
-        + ', userId: ' + this.userId + ')',
+        + ', userId: ' + this.ctx?.user?.id + ')',
     );
   }
 

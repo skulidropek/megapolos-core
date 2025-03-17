@@ -147,29 +147,28 @@ const containerModule = createModule({
   resolvers: {
     Query: {
       getContainer: resolver<{ id: string }, ContainerResult>(
-        async (parent, args, context, info) => {
-          return new Container(args.id, context.user.id).getDataWithDetails();
+        async (parent, args, context) => {
+          return new Container(context, args.id).getDataWithDetails();
         },
       ),
       getContainerLog: resolver<{ id: string }, string>(
-        async (parent, args, context, info) => {
-          return new Container(args.id, context.user.id).getDockerLog();
+        async (parent, args, context) => {
+          return new Container(context, args.id).getDockerLog();
         },
       ),
       getContainers: resolver<void, ContainerResult[]>(
-        async (parent, args, context, info) => {
-          return new Container(undefined, context.user.id).getAll();
+        async (parent, args, context) => {
+          return new Container(context).getAll();
         },
       ),
-      listContainerFiles: resolver<
-        { id: string; path: string },
-        { files: string[]; directories: string[] }
-      >(async (parent, args, context, info) => {
-        return new Container(args.id, context.user.id).listFiles(args.path);
-      }),
+      listContainerFiles: resolver<{ id: string; path: string }, { files: string[]; directories: string[] }>(
+        async (parent, args, context) => {
+          return new Container(context, args.id).listFiles(args.path);
+        },
+      ),
       showContainerFile: resolver<{ id: string; path: string }, string>(
-        async (parent, args, context, info) => {
-          return new Container(args.id, context.user.id).showFile(args.path);
+        async (parent, args, context) => {
+          return new Container(context, args.id).showFile(args.path);
         },
       ),
     },
@@ -180,16 +179,16 @@ const containerModule = createModule({
           key: string;
           value: string;
         }[];
-      }, boolean>(async (parent, args, context, info) => {
-        await new Container(args.id, context.user.id).changeEnvs(args.envs);
+      }, boolean>(async (parent, args, context) => {
+        await new Container(context, args.id).changeEnvs(args.envs);
         EventsObserver.listener({ type: 'changeContainerEnvs', data: args });
         return true;
       }),
       changeContainerVariables: resolver<
-        { id: string; variables: ContainerVariableTable[] },
-        boolean
-      >(async (parent, args, context, info) => {
-        await new Container(args.id, context.user.id).changeVariables(
+      { id: string; variables: ContainerVariableTable[] },
+      boolean
+      >(async (parent, args, context) => {
+        await new Container(context, args.id).changeVariables(
           args.variables,
         );
         EventsObserver.listener({
@@ -199,10 +198,10 @@ const containerModule = createModule({
         return true;
       }),
       addContainer: resolver<
-        { appInstanceId: string; data: ContainerTable },
-        boolean
-      >(async (parent, args, context, info) => {
-        await new Container(undefined, context.user.id).create({
+      { appInstanceId: string; data: ContainerTable },
+      boolean
+      >(async (parent, args, context) => {
+        await new Container(context).create({
           app_instance_id: args.appInstanceId,
           ...args.data,
         });
@@ -210,70 +209,70 @@ const containerModule = createModule({
         return true;
       }),
       editContainer: resolver<{ id: string; data: ContainerTable }, boolean>(
-        async (parent, args, context, info) => {
-          await new Container(args.id, context.user.id).edit(args.data);
+        async (parent, args, context) => {
+          await new Container(context, args.id).edit(args.data);
           EventsObserver.listener({ type: 'editContainer', data: args });
           return true;
         },
       ),
       removeContainer: resolver<{ id: string }, boolean>(
-        async (parent, args, context, info) => {
-          await new Container(args.id, context.user.id).delete();
+        async (parent, args, context) => {
+          await new Container(context, args.id).delete();
           EventsObserver.listener({ type: 'removeContainer', data: args });
           return true;
         },
       ),
       startContainer: resolver<{ id: string }, boolean>(
-        async (parent, args, context, info) => {
-          await new Container(args.id, context.user.id).start();
+        async (parent, args, context) => {
+          await new Container(context, args.id).start();
           EventsObserver.listener({ type: 'startContainer', data: args });
           return true;
         },
       ),
       stopContainer: resolver<{ id: string }, boolean>(
-        async (parent, args, context, info) => {
-          await new Container(args.id, context.user.id).stop();
+        async (parent, args, context) => {
+          await new Container(context, args.id).stop();
           EventsObserver.listener({ type: 'stopContainer', data: args });
           return true;
         },
       ),
       addDbToContainer: resolver<{ input: ContainerDbTable }, ContainerDbTable>(
-        async (parent, args, context, info) => {
-          return new ContainerDb(undefined, context.user.id).create(args.input);
+        async (parent, args, context) => {
+          return new ContainerDb(context).create(args.input);
         },
       ),
       removeDbFromContainer: resolver<{ id: string }, boolean>(
-        async (parent, args, context, info) => {
-          await new ContainerDb(args.id, context.user.id).delete();
+        async (parent, args, context) => {
+          await new ContainerDb(context, args.id).delete();
           return true;
         },
       ),
     },
     Container: {
-      image: resolver<{}, ImageTable>(async (parent, args, context, info) => {
-        return new Image(parent.image_id, context.user.id).getData();
+      image: resolver<{}, ImageTable>(async (parent, args, context) => {
+        return new Image(context, parent.image_id).getData();
       }),
-      domain: resolver<{}, DomainTable>(async (parent, args, context, info) => {
+      domain: resolver<{}, DomainTable>(async (parent, args, context) => {
         return parent.domain_id
-          ? new Domain(parent.domain_id, context.user.id).getData()
+          ? new Domain(context, parent.domain_id).getData()
           : null;
       }),
-      node: resolver<{}, NodeTable>(async (parent, args, context, info) => {
-        return new MegapolosNode(parent.node_id, context.user.id).getData();
+      node: resolver<{}, NodeTable>(async (parent, args, context) => {
+        return new MegapolosNode(context, parent.node_id).getData();
       }),
       volumes: resolver<{}, ContainerVolumeTable[]>(
-        async (parent, args, context, info) => {
-          return new Volume(undefined, context.user.id).getVolumesOfContainer(
+        async (parent, args, context) => {
+          return new Volume(context).getVolumesOfContainer(
             parent.id,
           );
         },
       ),
       envs: resolver<{}, { key: string; value: string }[]>(
-        async (parent, args, context, info) => {
+        async (parent, args, context) => {
           if (parent.envs) {
             return parent.envs;
           }
-          return (await new Container(parent.id).getEnvs()).map((env) => (
+          return (await new Container(context, parent.id).getEnvs()).map((env) => (
             {
               key: env.container_env_name,
               value: env.container_env_value,
@@ -282,14 +281,14 @@ const containerModule = createModule({
         },
       ),
       variables: resolver<{}, ContainerVariableTable[]>(
-        async (parent, args, context, info) => {
-          return new Container(parent.id, context.user.id).getVariables();
+        async (parent, args, context) => {
+          return new Container(context, parent.id).getVariables();
         },
       ),
       runtimeVariables: resolver<{}, string>(
-        async (parent, args, context, info) => {
+        async (parent, args, context) => {
           return JSON.stringify(
-            await new Container(parent.id, context.user.id)
+            await new Container(context, parent.id)
               .getRuntimeVariables(),
             null,
             2,
@@ -297,17 +296,17 @@ const containerModule = createModule({
         },
       ),
       dbs: resolver<{}, ContainerDbTable[]>(
-        async (parent, args, context, info) => {
-          return new Container(parent.id, context.user.id).getDbs();
+        async (parent, args, context) => {
+          return new Container(context, parent.id).getDbs();
         },
       ),
     },
     ContainerDb: {
-      db: resolver<{}, DbTable>(async (parent, args, context, info) => {
-        return new Db(parent.db_id, context.user.id).getData();
+      db: resolver<{}, DbTable>(async (parent, args, context) => {
+        return new Db(context, parent.db_id).getData();
       }),
-      dbUser: resolver<{}, DbTable>(async (parent, args, context, info) => {
-        return new DbUser(parent.db_user_id, context.user.id).getData();
+      dbUser: resolver<{}, DbTable>(async (parent, args, context) => {
+        return new DbUser(context, parent.db_user_id).getData();
       }),
     },
   },

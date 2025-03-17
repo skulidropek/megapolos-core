@@ -2,7 +2,6 @@ import { knex } from '../corePostgres';
 import { DbTable, DbUserTable, DbmsTable } from '../modules/models/tables';
 import BaseDbms from './BaseDbms';
 import BaseRepository from './BaseRepository';
-import Dbms from './Dbms';
 
 class DbUser extends BaseRepository<DbUserTable> {
   getTable(): string {
@@ -17,7 +16,7 @@ class DbUser extends BaseRepository<DbUserTable> {
 
   async getDbms(): Promise<DbmsTable> {
     const data = await this.getData();
-    return new BaseDbms(data.dbms_id).getData();
+    return new BaseDbms(this.ctx, data.dbms_id).getData();
   }
 }
 

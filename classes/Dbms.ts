@@ -9,21 +9,21 @@ class Dbms {
   static async getById(id: string):Promise<BaseDbms> {
     const dbms: DbmsTable = await knex.select().from('dbms').where('id', id).first();
     if (dbms?.type === 'postgres') {
-      return new PostgresDmbs(dbms);
+      return new PostgresDmbs(undefined, dbms.id);
     }
     throw new Error('Dbms type not found');
   }
 
   static async getByType(type: string):Promise<BaseDbms> {
     if (type === 'postgres') {
-      return new PostgresDmbs();
+      return new PostgresDmbs(undefined);
     }
     throw new Error('Dbms type not found');
   }
 
   static async compareDbs(db1id: string, db2id: string): Promise<string[]> {
-    const db1 = await new Db(db1id).getData();
-    const db2 = await new Db(db2id).getData();
+    const db1 = await new Db(undefined, db1id).getData();
+    const db2 = await new Db(undefined, db2id).getData();
     const dbms1 = await this.getById(db1.dbms_id);
     const dbms2 = await this.getById(db2.dbms_id);
     const schema1 = await dbms1.getSchema(db1.name);
@@ -32,16 +32,16 @@ class Dbms {
   }
 
   static async compareSchemas(schema1id: string, schema2id: string): Promise<string[]> {
-    const schema1 = await new DbSchema(schema1id).getData();
-    const schema2 = await new DbSchema(schema2id).getData();
+    const schema1 = await new DbSchema(undefined, schema1id).getData();
+    const schema2 = await new DbSchema(undefined, schema2id).getData();
     return this.compareSchemaSchemas(schema1.schema, schema2.schema);
   }
 
   static async compareDbSchema(dbid: string, schemaid: string): Promise<string[]> {
-    const db = await new Db(dbid).getData();
+    const db = await new Db(undefined, dbid).getData();
     const dbms = await this.getById(db.dbms_id);
     const schema1 = await dbms.getSchema(db.name);
-    const schema2 = await new DbSchema(schemaid).getData();
+    const schema2 = await new DbSchema(undefined, schemaid).getData();
     return this.compareSchemaSchemas(schema1, schema2.schema);
   }
 

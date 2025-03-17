@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
-import { v4 as uuidv4 } from 'uuid';
 import {
   GroupUserPrivilegeTable,
   GroupUserTable,
@@ -40,9 +39,9 @@ class User extends BaseRepository<UserTable> {
 
     if (!admins.length) {
       // Create root group
-      let rootGroup = (await new UserGroup().getByFields({ name: 'root' }))[0];
+      let rootGroup = (await new UserGroup(this.ctx).getByFields({ name: 'root' }))[0];
       if (!rootGroup) {
-        rootGroup = await new UserGroup().create({ name: 'root' });
+        rootGroup = await new UserGroup(this.ctx).create({ name: 'root' });
       }
       await this.create({
         name: 'root',
@@ -55,16 +54,16 @@ class User extends BaseRepository<UserTable> {
     }
 
     // Create root privileges
-    let privileges = await new UserGroupPrivilege().getByFields({
+    let privileges = await new UserGroupPrivilege(this.ctx).getByFields({
       group_user_id: admins[0].group_user_id,
     });
     if (
       !privileges.length
       || !privileges.find((p) =>
-        p.object_name == '*' && p.object_id == '*' && p.action == '*'
+        p.object_name == '*' && p.object_id == '*' && p.action == '*',
       )
     ) {
-      await new UserGroupPrivilege().create({
+      await new UserGroupPrivilege(this.ctx).create({
         group_user_id: admins[0].group_user_id,
         object_name: '*',
         object_id: '*',
@@ -73,13 +72,13 @@ class User extends BaseRepository<UserTable> {
     }
 
     User.rootUserId = admins[0].id;
-    return new User(admins[0].id);
+    return new User(this.ctx, admins[0].id);
   }
 
   async getUsersWithToken(): Promise<(UserTable & { token?: string })[]> {
     const users = await this.getAll();
     return Promise.all(
-      users.map((user) => new User(user.id).getDataWithToken()),
+      users.map((user) => new User(this.ctx, user.id).getDataWithToken()),
     );
   }
 
@@ -95,11 +94,11 @@ class User extends BaseRepository<UserTable> {
 
   async getGroup(): Promise<GroupUserTable> {
     const data = await this.getData();
-    return new UserGroup(data.group_user_id).getData();
+    return new UserGroup(this.ctx, data.group_user_id).getData();
   }
 
   async getPrivileges(): Promise<GroupUserPrivilegeTable[]> {
-    return await knex
+    return knex
       .select('group_user_privilege.*')
       .from('group_user_privilege')
       .join(
@@ -116,7 +115,7 @@ class User extends BaseRepository<UserTable> {
   }
 
   async getByGroupName(groupName: string): Promise<UserTable[]> {
-    const group = await new UserGroup().getByFields({ name: groupName });
+    const group = await new UserGroup(this.ctx).getByFields({ name: groupName });
     if (!group.length) {
       return [];
     }

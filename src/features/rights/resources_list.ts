@@ -9,7 +9,6 @@ const defaultRights = {
   remove: 'remove',
   edit: 'edit',
   read: 'read',
-  admin: 'admin',
 };
 
 const resources = {

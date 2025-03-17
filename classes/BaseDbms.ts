@@ -1,13 +1,12 @@
 import moment from 'moment';
 import { knex } from '../corePostgres';
-import { ArtifactTable, DbBackupTable, DbSchemaSchema, DbSchemaTable, DbTable, DbUserTable, DbmsTable } from '../modules/models/tables';
+import { DbBackupTable, DbSchemaSchema, DbSchemaTable, DbTable, DbUserTable, DbmsTable } from '../modules/models/tables';
 import Artifact from './Artifact';
 import BaseRepository from './BaseRepository';
 import Db from './Db';
 import DbBackup from './DbBackup';
 import DbSchema from './DbSchema';
 import DbUser from './DbUser';
-import PostgresDmbs from './PostgresDbms';
 
 class BaseDbms extends BaseRepository<DbmsTable> {
   getTable(): string {
@@ -15,7 +14,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async createDb(db: Partial<DbTable>, withoutChange: boolean = false): Promise<DbTable> {
-    const result = await new Db().create({ ...db, dbms_id: this.id });
+    const result = await new Db(this.ctx).create({ ...db, dbms_id: this.id });
     if (!withoutChange) {
       await this.createDbChange(db);
     }
@@ -23,7 +22,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async createUser(user: Partial<DbUserTable>, withoutChange: boolean = false): Promise<DbUserTable> {
-    const result = await new DbUser().create({ ...user, dbms_id: this.id });
+    const result = await new DbUser(this.ctx).create({ ...user, dbms_id: this.id });
     if (!withoutChange) {
       await this.createUserChange(user);
     }
@@ -36,8 +35,8 @@ class BaseDbms extends BaseRepository<DbmsTable> {
       db_user_id: userId,
     }).into('db_db_user');
     if (!withoutChange) {
-      const user = await new DbUser(userId).getData();
-      const db = await new Db(dbId).getData();
+      const user = await new DbUser(this.ctx, userId).getData();
+      const db = await new Db(this.ctx, dbId).getData();
       await this.addUserToDbChange(user.name, db.name);
     }
     return true;
@@ -60,11 +59,11 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async getDbs(): Promise<DbTable[]> {
-    return new Db().getByFields({ dbms_id: this.id });
+    return new Db(this.ctx).getByFields({ dbms_id: this.id });
   }
 
   async getUsers(): Promise<DbUserTable[]> {
-    return new DbUser().getByFields({ dbms_id: this.id });
+    return new DbUser(this.ctx).getByFields({ dbms_id: this.id });
   }
 
   async getInternalDbs(): Promise<string[]> {
@@ -77,8 +76,8 @@ class BaseDbms extends BaseRepository<DbmsTable> {
 
   async backup(dbId: string, name: string, withoutData: boolean): Promise<DbBackupTable> {
     const data = await this.getData();
-    const artifact = new Artifact();
-    const db = new Db(dbId);
+    const artifact = new Artifact(this.ctx);
+    const db = new Db(this.ctx, dbId);
     const dbData = await db.getData();
     if (!name) {
       name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
@@ -87,7 +86,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
       name: 'Db backup ' + name,
       type: 'backup',
     });
-    const backup = new DbBackup();
+    const backup = new DbBackup(this.ctx);
     await backup.create({
       name: name,
       artifact_id: artifact.id,
@@ -97,12 +96,12 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async backupProcess(db: Db, backup: DbBackup, artifact: Artifact, withoutData: boolean): Promise<DbBackupTable> {
-    return new DbBackup().getData();
+    return new DbBackup(this.ctx).getData();
   }
 
   async restore(dbId: string, backupId: string): Promise<boolean> {
-    const db = new Db(dbId);
-    const backup = new DbBackup(backupId);
+    const db = new Db(this.ctx, dbId);
+    const backup = new DbBackup(this.ctx, backupId);
     const artifact = await backup.getArtifact();
     await this.truncateDbChange((await db.getData()).name);
     const result = await this.restoreProcess(db, backup, artifact);
@@ -111,8 +110,8 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async cloneDb(fromDbId: string, toDbId: string, fromDbUserId?: string): Promise<boolean> {
-    const fromDb = await new Db(fromDbId).getData();
-    const toDb = await new Db(toDbId).getData();
+    const fromDb = await new Db(this.ctx, fromDbId).getData();
+    const toDb = await new Db(this.ctx, toDbId).getData();
     const backupFrom = await this.backup(fromDbId, `Clone ${fromDb.name} to ${toDb.name}, backup ${fromDb.name}`, false);
     const backupTo = await this.backup(toDbId, `Clone ${fromDb.name} to ${toDb.name}, backup ${toDb.name}`, false);
     await this.restore(toDbId, backupFrom.id);
@@ -123,7 +122,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async restoreDbPrivileges(dbId: string): Promise<boolean> {
-    const db = await new Db(dbId);
+    const db = await new Db(this.ctx, dbId);
     const dbData = await db.getData();
     const users = await db.getUsers();
     for (let i in users) {
@@ -134,8 +133,8 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async setOwner(dbId: string, userId: string): Promise<boolean> {
-    const db = new Db(dbId);
-    const user = new DbUser(userId);
+    const db = new Db(this.ctx, dbId);
+    const user = new DbUser(this.ctx, userId);
     const dbData = await db.getData();
     const userData = await user.getData();
     return this.setOwnerChange(dbData.name, userData.name);
@@ -167,7 +166,7 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async downloadBackupText(backupId: string): Promise<string> {
-    const backup = new DbBackup(backupId);
+    const backup = new DbBackup(this.ctx, backupId);
     const artifact = await backup.getArtifact();
     return this.downloadBackupTextProcess(backup, artifact);
   }
@@ -177,12 +176,12 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   async uploadBackupText(text: string, type: string): Promise<DbBackupTable> {
-    const artifact = new Artifact();
+    const artifact = new Artifact(this.ctx);
     await artifact.create({
       name: 'backup',
       type: 'backup',
     });
-    const backup = new DbBackup();
+    const backup = new DbBackup(this.ctx);
     await backup.create({
       name: 'backup',
       artifact_id: artifact.id,
@@ -203,13 +202,13 @@ class BaseDbms extends BaseRepository<DbmsTable> {
 
   async saveSchema(dbId: string, name: string): Promise<DbSchemaTable> {
     const data = await this.getData();
-    const db = await new Db(dbId).getData();
+    const db = await new Db(this.ctx, dbId).getData();
     const dbData = await this.getData();
     if (!name) {
       name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
     }
     const schema = await this.getSchema(db.name);
-    return new DbSchema().create({
+    return new DbSchema(this.ctx).create({
       schema,
       name,
     });

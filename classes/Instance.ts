@@ -23,8 +23,8 @@ class Instance extends BaseRepository<AppInstanceTable> {
     isDevice = false,
   ): Promise<AppInstanceTable> {
     await this.checkActionAccess(resources.app_instance.actions.create);
-    const userGroup = (await new UserGroup().getByFields({ name: 'root' }))[0];
-    const user = await new User().create({
+    const userGroup = (await new UserGroup(this.ctx).getByFields({ name: 'root' }))[0];
+    const user = await new User(this.ctx).create({
       name: input.name,
       // groupUserId: isDevice ? 'device' : 'app'
       group_user_id: userGroup.id,
@@ -52,7 +52,7 @@ class Instance extends BaseRepository<AppInstanceTable> {
   async getUser(): Promise<User> {
     await this.checkActionAccess(resources.app_instance.actions.read);
     const data = await this.getData();
-    return new User(data.user_id);
+    return new User(this.ctx, data.user_id);
   }
 
   async getDataWithContainers(): Promise<AppInstanceResult> {
@@ -60,7 +60,7 @@ class Instance extends BaseRepository<AppInstanceTable> {
     const appInstance: AppInstanceResult = await this.getData();
     appInstance.containers = await Promise.all(
       (await this.getContainers()).map((container) =>
-        new Container(container.id, this.userId).getDataWithDetails()
+        new Container(this.ctx, container.id).getDataWithDetails(),
       ),
     );
     return appInstance;
@@ -69,7 +69,7 @@ class Instance extends BaseRepository<AppInstanceTable> {
   async start() {
     await this.checkActionAccess(resources.app_instance.actions.manage);
     const containers = (await this.getContainers()).map(container =>
-      new Container(container.id, this.userId)
+      new Container(this.ctx, container.id),
     );
     for (const i in containers) {
       const container = containers[i];
@@ -87,7 +87,7 @@ class Instance extends BaseRepository<AppInstanceTable> {
   async stop() {
     await this.checkActionAccess(resources.app_instance.actions.manage);
     const containers = (await this.getContainers()).map(container =>
-      new Container(container.id, this.userId)
+      new Container(this.ctx, container.id),
     );
     for (const i in containers) {
       const container = containers[i];
@@ -112,7 +112,7 @@ class Instance extends BaseRepository<AppInstanceTable> {
     const data = await this.getData();
 
     const containers = (await this.getContainers()).map(container =>
-      new Container(container.id, this.userId)
+      new Container(this.ctx, container.id),
     );
     containers.forEach(container => {
       container.delete();
@@ -120,7 +120,7 @@ class Instance extends BaseRepository<AppInstanceTable> {
 
     await super.delete();
 
-    await new User(data.user_id).delete();
+    await new User(this.ctx, data.user_id).delete();
 
     EventsObserver.listener({
       type: 'removeAppInstance',
@@ -132,13 +132,13 @@ class Instance extends BaseRepository<AppInstanceTable> {
 
   async getContainers(): Promise<ContainerTable[]> {
     await this.checkActionAccess(resources.app_instance.actions.read);
-    return new Container(undefined, this.userId).getByFields({ app_instance_id: this.id });
+    return new Container(this.ctx).getByFields({ app_instance_id: this.id });
   }
 
   async build() {
     await this.checkActionAccess(resources.app_instance.actions.build);
     const containers = (await this.getContainers()).map(container =>
-      new Container(container.id, this.userId)
+      new Container(this.ctx, container.id),
     );
     const builded = [];
     for (const i in containers) {
@@ -158,7 +158,7 @@ class Instance extends BaseRepository<AppInstanceTable> {
     const result: InstanceRuntimeVariables = { containers: {} };
     for (const i in containers) {
       const container = containers[i];
-      const containerObject = new Container(container.id);
+      const containerObject = new Container(this.ctx, container.id);
       result.containers[container.name] = await containerObject
         .getRuntimeVariables(true);
     }

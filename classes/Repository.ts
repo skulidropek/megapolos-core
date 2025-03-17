@@ -13,7 +13,7 @@ class Repository extends BaseRepository<RepositoryTable> {
   async create(data: Partial<RepositoryTable>): Promise<RepositoryTable> {
     await this.checkActionAccess(resources.repository.actions.create);
     const repositoryData = await super.create(data);
-    const repository = new Repository(repositoryData.id);
+    const repository = new Repository(this.ctx, repositoryData.id);
     await repository._clone();
     return repositoryData;
   }

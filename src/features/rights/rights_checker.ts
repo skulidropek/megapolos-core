@@ -6,15 +6,13 @@ import {
 import { UserAction } from './resources_list';
 
 export class RightsChecker {
-  constructor() {}
-
   static async check(userId: string, action: UserAction): Promise<boolean> {
     if (!userId) {
       return true;
     }
 
     const privileges = await RightsChecker._getPrivileges(userId);
-    return RightsChecker._privilegesIsMatch(privileges, action);
+    return RightsChecker.privilegesIsMatch(privileges, action);
   }
 
   static async filter<T extends IEntity>(
@@ -28,17 +26,17 @@ export class RightsChecker {
 
     const privileges = await RightsChecker._getPrivileges(userId);
     let entitiesFiltered = entities.filter((entity) =>
-      RightsChecker._privilegesIsMatch(privileges, {
+      RightsChecker.privilegesIsMatch(privileges, {
         resourceType: action.resourceType,
         resourceId: entity.id,
         action: action.action,
-      })
+      }),
     );
     return entitiesFiltered;
   }
 
   static _getPrivileges(userId: string) {
-    return new User(userId).getPrivileges();
+    return new User(undefined, userId).getPrivileges();
   }
 
   static _privilegeIsMatch(
@@ -52,12 +50,12 @@ export class RightsChecker {
       && (privilege.action == '*' || privilege.action == action.action);
   }
 
-  static _privilegesIsMatch(
+  static privilegesIsMatch(
     privileges: GroupUserPrivilegeTable[],
     action: UserAction,
   ): boolean {
     let value = privileges.some((p) =>
-      RightsChecker._privilegeIsMatch(p, action)
+      RightsChecker._privilegeIsMatch(p, action),
     );
     return value;
   }

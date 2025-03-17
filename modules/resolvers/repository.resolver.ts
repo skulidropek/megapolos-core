@@ -53,73 +53,69 @@ const repositoryModule = createModule({
   resolvers: {
     Query: {
       getRepositories: resolver<{}, RepositoryTable[]>(
-        async (parent, args, context, info) => {
+        async (parent, args, context) => {
           EventsObserver.listener({ type: 'getRepositories', data: args });
-          return new Repository(undefined, context.user.id).getAll();
+          return new Repository(context).getAll();
         },
       ),
       getRepository: resolver<{ id: string }, RepositoryTable>(
-        async (parent, args, context, info) => {
+        async (parent, args, context) => {
           EventsObserver.listener({ type: 'getRepository', data: args });
-          return new Repository(args.id, context.user.id).getData();
+          return new Repository(context, args.id).getData();
         },
       ),
       getBranches: resolver<{ id: string }, string[]>(
-        async (parent, args, context, info) => {
+        async (parent, args, context) => {
           EventsObserver.listener({ type: 'getBranches', data: args });
-          return new Repository(args.id, context.user.id).getBranches();
+          return new Repository(context, args.id).getBranches();
         },
       ),
-      listRepositoryFiles: resolver<
-        { id: string; branch: string; path: string },
-        { files: string[]; directories: string[] }
-      >(async (parent, args, context, info) => {
-        EventsObserver.listener({ type: 'listRepositoryFiles', data: args });
-        return new Repository(args.id, context.user.id).listFiles(args.branch, args.path);
-      }),
-      showRepositoryFile: resolver<
-        { id: string; branch: string; path: string },
-        string
-      >(async (parent, args, context, info) => {
-        EventsObserver.listener({ type: 'showRepositoryFile', data: args });
-        return new Repository(args.id, context.user.id).showFile(args.branch, args.path);
-      }),
+      listRepositoryFiles: resolver< { id: string; branch: string; path: string }, { files: string[]; directories: string[] } >(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'listRepositoryFiles', data: args });
+          return new Repository(context, args.id).listFiles(args.branch, args.path);
+        },
+      ),
+      showRepositoryFile: resolver< { id: string; branch: string; path: string }, string >(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'showRepositoryFile', data: args });
+          return new Repository(context, args.id).showFile(args.branch, args.path);
+        },
+      ),
     },
     Mutation: {
-      createRepository: resolver<
-        { repository: Partial<RepositoryTable> },
-        RepositoryTable
-      >(async (parent, args, context, info) => {
-        EventsObserver.listener({ type: 'createRepository', data: args });
-        return new Repository(undefined, context.user.id).create(args.repository);
-      }),
+      createRepository: resolver< { repository: Partial<RepositoryTable> }, RepositoryTable >(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'createRepository', data: args });
+          return new Repository(context).create(args.repository);
+        },
+      ),
       fetchRepository: resolver<{ id: string }, boolean>(
-        async (parent, args, context, info) => {
+        async (parent, args, context) => {
           EventsObserver.listener({ type: 'fetchRepository', data: args });
-          await new Repository(args.id, context.user.id).fetch();
+          await new Repository(context, args.id).fetch();
           return true;
         },
       ),
-      editRepository: resolver<
-        { id: string; repository: Partial<RepositoryTable> },
-        RepositoryTable
-      >(async (parent, args, context, info) => {
-        EventsObserver.listener({ type: 'editRepository', data: args });
-        return new Repository(args.id, context.user.id).edit(args.repository);
-      }),
+      editRepository: resolver< { id: string; repository: Partial<RepositoryTable> }, RepositoryTable >(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'editRepository', data: args });
+          return new Repository(context, args.id).edit(args.repository);
+        },
+      ),
       removeRepository: resolver<{ id: string }, boolean>(
-        async (parent, args, context, info) => {
+        async (parent, args, context) => {
           EventsObserver.listener({ type: 'removeRepository', data: args });
-          await new Repository(args.id, context.user.id).delete();
+          await new Repository(context, args.id).delete();
           return true;
         },
       ),
     },
     Repository: {
       branches: resolver<RepositoryTable, string[]>(
-        async (parent, args, context, info) => {
+        async (parent, args, context) => {
           EventsObserver.listener({ type: 'getBranches', data: args });
-          return new Repository(parent.id, context.user.id).getBranches();
+          return new Repository(context, parent.id).getBranches();
         },
       ),
     },

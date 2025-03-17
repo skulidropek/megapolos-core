@@ -22,7 +22,7 @@ const megapolosModule = createModule({
   ],
   resolvers: {
     Query: {
-      globalSearch: resolver<{ query: string }, SearchResult[]>(async (parent, args, context, info) => {
+      globalSearch: resolver<{ query: string }, SearchResult[]>(async (parent, args) => {
         EventsObserver.listener({ type: 'globalSearch', data: args });
         return new Megapolos().globalSearch(args.query);
       }),

@@ -35,14 +35,14 @@ class Image extends BaseRepository<ImageTable> {
     if (!await fse.exists(path)) {
       await fse.mkdir(path);
     }
-    const repository = new Repository(data.repository_id, this.userId);
+    const repository = new Repository(this.ctx, data.repository_id);
     await repository.fetch();
     await repository.copyBranchTo(path, data.branch);
     console.log(data);
     if (data.repository_id) {
       await this.edit({ status: ImageStatus.Building });
       try {
-        const log = new Log(undefined, this.userId);
+        const log = new Log(this.ctx);
         await log.create({
           name: 'Build image ' + data.name,
           object_id: this.id,
@@ -58,23 +58,23 @@ class Image extends BaseRepository<ImageTable> {
 
         const result = await MegapolosNode.currentNode.shellCommand(
           `cd ${path} && docker build ${tags} .`,
-          new User(this.userId),
+          new User(this.ctx),
           log,
         ).output;
         if (!config.devMode) {
           await MegapolosNode.currentNode.shellCommand(
             `docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}:443`,
-            new User(this.userId),
+            new User(this.ctx, this.ctx.user.id),
             log,
           ).output;
           await MegapolosNode.currentNode.shellCommand(
             `docker push ${config.registryHost}:443/${data.image}`,
-            new User(this.userId),
+            new User(this.ctx, this.ctx.user.id),
             log,
           ).output;
           await MegapolosNode.currentNode.shellCommand(
             `docker image prune -f`,
-            new User(this.userId),
+            new User(this.ctx, this.ctx.user.id),
             log,
           ).output;
         }
@@ -98,18 +98,18 @@ class Image extends BaseRepository<ImageTable> {
 
   async getApp(): Promise<App> {
     const data = await this.getData();
-    return new App(data.app_id, this.userId);
+    return new App(this.ctx, data.app_id);
   }
 
   async updateNodes(): Promise<void> {
     await this.checkActionAccess(resources.image.actions.update_nodes);
-    const containers = await new Container(undefined, this.userId).getByFields({ image_id: this.id });
+    const containers = await new Container(this.ctx).getByFields({ image_id: this.id });
     const nodes: string[] = [];
     for (let i in containers) {
       const container = containers[i];
       if (container.node_id && !nodes.includes(container.node_id)) {
         nodes.push(container.node_id);
-        await new MegapolosNode(container.node_id).update();
+        await new MegapolosNode(this.ctx, container.node_id).update();
       }
     }
     console.log(nodes);
@@ -154,11 +154,11 @@ class Image extends BaseRepository<ImageTable> {
 
   async getLastBuildLog(): Promise<LogTable> {
     await this.checkActionAccess(resources.image.actions.read);
-    return (await new Log().getByQuery(_knex =>
+    return (await new Log(this.ctx).getByQuery(_knex =>
       _knex.where({ object_id: this.id, type: LogType.ImageBuild }).orderBy(
         'create_date',
         'desc',
-      ).limit(1)
+      ).limit(1),
     ))[0];
   }
 }
