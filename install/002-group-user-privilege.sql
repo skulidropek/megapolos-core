@@ -9,3 +9,17 @@ CREATE TABLE public.group_user_privilege (
 
 ALTER TABLE ONLY public.group_user_privilege
     ADD CONSTRAINT group_user_privilege_group_user_id_fkey FOREIGN KEY (group_user_id) REFERENCES public.group_user(id);
+
+
+create table public.user_group_link (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    group_user_id uuid NOT NULL
+);
+
+
+ALTER TABLE ONLY public.user_group_link
+    ADD CONSTRAINT user_group_link_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id);
+
+ALTER TABLE ONLY public.user_group_link 
+    ADD CONSTRAINT user_group_link_group_user_id_fkey FOREIGN KEY (group_user_id) REFERENCES public.group_user(id);

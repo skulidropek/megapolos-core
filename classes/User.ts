@@ -28,10 +28,47 @@ class User extends BaseRepository<UserTable> {
 
   async create(data: Partial<UserTable>): Promise<UserTable> {
     let linuxUserId = '';
-    return super.create({
+
+    // Создаём группу пользователя, если она не указана
+    if (!data.group_user_id) {
+      const group = await new UserGroup(this.ctx).create({ name: data.name! });
+      data.group_user_id = group.id;
+    }
+
+    // Создаём пользователя
+    const user = await super.create({
       ...data,
       os_user_id: linuxUserId,
     });
+
+    // Создаём ссылку на группу пользователя
+    await knex('user_group_link').insert({
+      user_id: user.id,
+      group_user_id: data.group_user_id,
+    });
+
+    return user;
+  }
+
+  async checkGroupUserLinks() {
+    const users = await this.getAll();
+    const links = await knex('user_group_link');
+
+    const toInsert = [];
+    for (const user of users) {
+      console.log(user.id, user.group_user_id);
+      if (!links.find((l) => l.user_id == user.id)) {
+        console.log('insert', user.id, user.group_user_id);
+        toInsert.push({
+          user_id: user.id,
+          group_user_id: user.group_user_id,
+        });
+      }
+    }
+
+    if (toInsert.length) {
+      await knex('user_group_link').insert(toInsert);
+    }
   }
 
   async createRootUser(): Promise<User> {
@@ -40,17 +77,11 @@ class User extends BaseRepository<UserTable> {
     if (!admins.length) {
       // Create root group
       let rootGroup = (await new UserGroup(this.ctx).getByFields({ name: 'root' }))[0];
-      if (!rootGroup) {
-        rootGroup = await new UserGroup(this.ctx).create({ name: 'root' });
-      }
       await this.create({
         name: 'root',
         group_user_id: rootGroup.id,
         os_user_id: '',
       });
-
-
-      admins = await this.getByGroupName('root');
     }
 
     // Create root privileges
@@ -107,9 +138,14 @@ class User extends BaseRepository<UserTable> {
         'group_user_privilege.group_user_id',
       )
       .join(
-        'user',
-        'user.group_user_id',
+        'user_group_link',
+        'user_group_link.group_user_id',
         'group_user.id',
+      )
+      .join(
+        'user',
+        'user.id',
+        'user_group_link.user_id',
       )
       .where('user.id', this.id);
   }

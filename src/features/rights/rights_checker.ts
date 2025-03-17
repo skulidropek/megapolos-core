@@ -39,7 +39,7 @@ export class RightsChecker {
     return new User(undefined, userId).getPrivileges();
   }
 
-  static _privilegeIsMatch(
+  static privilegeIsMatch(
     privilege: GroupUserPrivilegeTable,
     action: UserAction,
   ): boolean {
@@ -55,7 +55,7 @@ export class RightsChecker {
     action: UserAction,
   ): boolean {
     let value = privileges.some((p) =>
-      RightsChecker._privilegeIsMatch(p, action),
+      RightsChecker.privilegeIsMatch(p, action),
     );
     return value;
   }

@@ -19,6 +19,7 @@ export const megapolosPath = __dirname;
   // await MegapolosNode.currentNode.dockerEvents();
   // await MegapolosNode.currentNode.restoreContainers();
 
+  await new User(undefined).checkGroupUserLinks();
   await new User(undefined).createRootUser();
   const users = await new User(undefined).getUsersWithToken();
   console.log(users.map((u) => ({ name: u.name, token: u.token })));
