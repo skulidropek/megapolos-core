@@ -40,29 +40,29 @@ const domainModule = createModule({
   ],
   resolvers: {
     Query: {
-      getDomains: resolver<{}, DomainTable[]>(async (parent, args, context, info) => {
+      getDomains: resolver<{}, DomainTable[]>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'getDomains', data: args });
-        return new Domain().getAll();
+        return new Domain(context).getAll();
       }),
-      getDomain: resolver<{ id: string }, DomainTable>(async (parent, args, context, info) => {
+      getDomain: resolver<{ id: string }, DomainTable>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'getDomain', data: args });
-        return new Domain(args.id).getData();
+        return new Domain(context, args.id).getData();
       }),
     },
     Mutation: {
-      createDomain: resolver<{ domain: Partial<DomainTable> }, DomainTable>(async (parent, args, context, info) => {
+      createDomain: resolver<{ domain: Partial<DomainTable> }, DomainTable>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'createDomain', data: args });
-        return new Domain().create(args.domain);
+        return new Domain(context).create(args.domain);
       }),
-      editDomain: resolver<{ id: string, domain: Partial<DomainTable> }, DomainTable>(async (parent, args, context, info) => {
+      editDomain: resolver<{ id: string, domain: Partial<DomainTable> }, DomainTable>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'editDomain', data: args });
-        const domain = new Domain(args.id);
+        const domain = new Domain(context, args.id);
         await domain.edit(args.domain);
         return domain.getData();
       }),
-      removeDomain: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+      removeDomain: resolver<{ id: string }, boolean>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'removeDomain', data: args });
-        const domain = new Domain(args.id);
+        const domain = new Domain(context, args.id);
         await domain.delete();
         return true;
       }),

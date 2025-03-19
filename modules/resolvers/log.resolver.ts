@@ -39,40 +39,44 @@ const logModule = createModule({
   ],
   resolvers: {
     Query: {
-      getLogs: resolver<{}, LogTable[]>(async (parent, args, context, info) => {
+      getLogs: resolver<{}, LogTable[]>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'getLogs', data: args });
-        return new Log().getAll();
+        return new Log(context).getAll();
       }),
-      getLog: resolver<{ id: string }, LogTable>(async (parent, args, context, info) => {
-        EventsObserver.listener({ type: 'getLog', data: args });
-        return new Log(args.id).getData();
-      }),
+      getLog: resolver<{ id: string }, LogTable>(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'getLog', data: args });
+          return new Log(context, args.id).getData();
+        },
+      ),
     },
     Mutation: {
-      createLog: resolver<{ log: Partial<LogTable> }, LogTable>(async (parent, args, context, info) => {
-        EventsObserver.listener({ type: 'createLog', data: args });
-        return new Log().create(args.log);
-      }),
-      editLog: resolver<{ id: string, log: Partial<LogTable> }, LogTable>(async (parent, args, context, info) => {
+      createLog: resolver<{ log: Partial<LogTable> }, LogTable>(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'createLog', data: args });
+          return new Log(context).create(args.log);
+        },
+      ),
+      editLog: resolver<{ id: string, log: Partial<LogTable> }, LogTable>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'editLog', data: args });
-        const log = new Log(args.id);
+        const log = new Log(context, args.id);
         await log.edit(args.log);
         return log.getData();
       }),
-      removeLog: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+      removeLog: resolver<{ id: string }, boolean>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'removeLog', data: args });
-        const log = new Log(args.id);
+        const log = new Log(context, args.id);
         await log.delete();
         return true;
       }),
-      closeLog: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
+      closeLog: resolver<{ id: string }, boolean>(async (parent, args, context) => {
         EventsObserver.listener({ type: 'closeLog', data: args });
-        return new Log(args.id).close();
+        return new Log(context, args.id).close();
       }),
     },
     Log: {
-      text: resolver<LogTable, string>(async (parent, args, context, info) => {
-        return new Log(parent.id).getText();
+      text: resolver<LogTable, string>(async (parent, args, context) => {
+        return new Log(context, parent.id).getText();
       }),
     },
   },

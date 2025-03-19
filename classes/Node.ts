@@ -15,12 +15,10 @@ import config from '../config/config';
 import fse from 'fs-extra';
 import Docker from 'dockerode';
 import Image from './Image';
-import Dockerode from 'dockerode';
 import ExternalProcess from './ExternalProcess';
 import Log from './Log';
 import jp from 'jsonpath';
 import BaseRepository from './BaseRepository';
-import Instance, { InstanceRuntimeVariables } from './Instance';
 
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
   return new Promise((resolve, reject) => {
@@ -74,7 +72,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
   static currentNode: MegapolosNode;
 
   static createCurrentNode() {
-    MegapolosNode.currentNode = new MegapolosNode();
+    MegapolosNode.currentNode = new MegapolosNode(undefined);
   }
 
   async update(init?: boolean, withRebuild?: boolean) {
@@ -94,12 +92,12 @@ class MegapolosNode extends BaseRepository<NodeTable> {
     for (let i in containers) {
       const containerResult: any = {};
       const container = containers[i];
-      const containerObject = new Container(container.id);
+      const containerObject = new Container(this.ctx, container.id);
       const image:ImageTable = await knex('image').where({ id: container.image_id }).first();
       if (withRebuild) {
         if (!builded.includes(image.id)) {
-          const imageObject = new Image(image.id);
-          await imageObject.build('root');
+          const imageObject = new Image(this.ctx, image.id);
+          await imageObject.build();
           builded.push(image.id);
         }
       }
@@ -155,7 +153,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
       result.containers.push(containerResult);
       result.init = init;
     }
-    const log = new Log();
+    const log = new Log(this.ctx);
     await log.create({ 
       name: 'Update node ' + data.name,
       node_id: this.id,
@@ -178,7 +176,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
       return;
     }
     const data = await this.getData();
-    const log = new Log();
+    const log = new Log(this.ctx);
     await log.create({ 
       name: 'Init node ' + data.name,
       node_id: this.id,
@@ -193,7 +191,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
       return;
     }
     const data = await this.getData();
-    const log = new Log();
+    const log = new Log(this.ctx);
     await log.create({ 
       name: 'Prepare for core node ' + data.name,
       node_id: this.id,
@@ -208,7 +206,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
       return;
     }
     const data = await this.getData();
-    const log = new Log();
+    const log = new Log(this.ctx);
     await log.create({ 
       name: 'Install registry on node ' + data.name,
       node_id: this.id,
@@ -234,7 +232,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
     }
     try {
       await this.edit({ life_status: 'updating' });
-      await MegapolosNode.currentNode.shellCommand(command, new User(data.user), log).output;
+      await MegapolosNode.currentNode.shellCommand(command, new User(this.ctx, data.user), log).output;
       await this.edit({ life_status: 'running', last_update_date: new Date() });
       await fse.unlink(jsonPath);
     } catch (e) {
@@ -245,7 +243,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
   }
 
   async getUsedPorts() {
-    return (await new Container().getByFields({ node_id: this.id })).map((app) => app.outer_port);
+    return (await new Container(this.ctx).getByFields({ node_id: this.id })).map((app) => app.outer_port);
   }
 
   async getPort() {
@@ -277,9 +275,9 @@ class MegapolosNode extends BaseRepository<NodeTable> {
   }
 
   async restoreContainers() {
-    const containers = await new Container().getAll();
+    const containers = await new Container(this.ctx).getAll();
     for (let i in containers) {
-      const container = new Container(containers[i].id);
+      const container = new Container(this.ctx, containers[i].id);
       await container.restore();
     }
 
@@ -357,7 +355,7 @@ class MegapolosNode extends BaseRepository<NodeTable> {
   }
 
   async getContainers(): Promise<ContainerTable[]> {
-    return new Container().getByFields({ node_id: this.id });
+    return new Container(this.ctx).getByFields({ node_id: this.id });
   }
 
   async getDocker() {

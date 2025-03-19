@@ -1,4 +1,4 @@
-import { DbBackupTable, DbmsTable } from '../modules/models/tables';
+import { DbBackupTable } from '../modules/models/tables';
 import Artifact from './Artifact';
 import BaseRepository from './BaseRepository';
 
@@ -9,7 +9,7 @@ class DbBackup extends BaseRepository<DbBackupTable> {
 
   async getArtifact(): Promise<Artifact> {
     const data = await this.getData();
-    return new Artifact(data.artifact_id);
+    return new Artifact(this.ctx, data.artifact_id);
   }
 }
 

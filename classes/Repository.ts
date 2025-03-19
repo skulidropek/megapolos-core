@@ -1,7 +1,8 @@
+import fse from 'fs-extra';
+import simpleGit from 'simple-git';
 import { megapolosPath } from '..';
 import { RepositoryTable } from '../modules/models/tables';
-import simpleGit from 'simple-git';
-import fse from 'fs-extra';
+import { resources } from '../src/features/rights/resources_list';
 import BaseRepository from './BaseRepository';
 
 class Repository extends BaseRepository<RepositoryTable> {
@@ -10,59 +11,51 @@ class Repository extends BaseRepository<RepositoryTable> {
   }
 
   async create(data: Partial<RepositoryTable>): Promise<RepositoryTable> {
+    await this.checkActionAccess(resources.repository.actions.create);
     const repositoryData = await super.create(data);
-    const repository = new Repository(repositoryData.id);
-    await repository.clone();
+    const repository = new Repository(this.ctx, repositoryData.id);
+    await repository._clone();
     return repositoryData;
   }
 
-  async edit(data: Partial<RepositoryTable>):Promise<RepositoryTable> {
+  async edit(data: Partial<RepositoryTable>): Promise<RepositoryTable> {
+    await this.checkActionAccess(resources.repository.actions.edit);
     const previousData = await this.getData();
     const result = await super.edit(data);
     if (data.url && data.url !== previousData.url) {
-      const path = await this.getPath();
+      const path = await this._getPath();
       await fse.remove(path);
-      await this.clone();
+      await this._clone();
     }
     return result;
   }
 
-  async delete():Promise<boolean> {
-    const path = await this.getPath();
+  async delete(): Promise<boolean> {
+    await this.checkActionAccess(resources.repository.actions.remove);
+    const path = await this._getPath();
     await fse.remove(path);
     return super.delete();
   }
 
-  async fetch():Promise<void> {
-    const path = await this.getPath();
+  async fetch(): Promise<void> {
+    await this.checkActionAccess(resources.repository.actions.fetch);
+    const path = await this._getPath();
     await simpleGit(path).fetch();
     await this.edit({ last_fetch_date: new Date() });
   }
 
-  async push(branchFrom: string, branchTo: string):Promise<void> {
-    await simpleGit(await this.getPath()).push('origin', branchFrom + ':' + branchTo);
+  async push(branchFrom: string, branchTo: string): Promise<void> {
+    await this.checkActionAccess(resources.repository.actions.push);
+    await simpleGit(await this._getPath()).push(
+      'origin',
+      branchFrom + ':' + branchTo,
+    );
   }
 
-  async getPath():Promise<string> {
-    const data = await this.getData();
-    return megapolosPath + '/repositories/' + data.id;
-  }
 
-  async clone():Promise<void> {
-    const data = await this.getData();
-    const path = await this.getPath();
-    if (!await fse.exists(path)) {
-      await fse.mkdir(path);
-    }
-    if (data.user) {
-      data.url = data.url.replace(/^https:\/\//, 'https://' + data.user + ':' + data.password + '@');
-    }
-    await simpleGit().clone(data.url, path);
-    await this.edit({ last_fetch_date: new Date() });
-  }
-
-  async copyBranchTo(path: string, branch: string):Promise<void> {
-    const repositoryPath = await this.getPath();
+  async copyBranchTo(path: string, branch: string): Promise<void> {
+    await this.checkActionAccess(resources.repository.actions.read);
+    const repositoryPath = await this._getPath();
     if (!await fse.exists(path)) {
       await fse.mkdir(path);
     }
@@ -70,21 +63,32 @@ class Repository extends BaseRepository<RepositoryTable> {
     await simpleGit(path).checkout(branch);
   }
 
-  async getBranches():Promise<string[]> {
-    const path = await this.getPath();
-    return [...(await simpleGit(path).branch()).all, ...(await simpleGit(path).tags()).all];
+  async getBranches(): Promise<string[]> {
+    await this.checkActionAccess(resources.repository.actions.read);
+    const path = await this._getPath();
+    return [
+      ...(await simpleGit(path).branch()).all,
+      ...(await simpleGit(path).tags()).all,
+    ];
   }
 
-  async listFiles(branch: string, path: string):Promise<{ files: string[], directories: string[] }> {
+  async listFiles(
+    branch: string,
+    path: string,
+  ): Promise<{ files: string[]; directories: string[] }> {
+    await this.checkActionAccess(resources.repository.actions.read);
     if (path === '') {
       path = '.';
     } else {
       path += '/.';
     }
-    const repositoryPath = await this.getPath();
-    const files:string[] = [];
-    const directories:string[] = [];
-    const lines = (await simpleGit(repositoryPath).raw(['ls-tree', branch, path])).split('\n');
+    const repositoryPath = await this._getPath();
+    const files: string[] = [];
+    const directories: string[] = [];
+    const lines =
+      (await simpleGit(repositoryPath).raw(['ls-tree', branch, path])).split(
+        '\n',
+      );
     for (const line of lines) {
       const parts = line.split(/\s+/);
       if (parts.length > 1) {
@@ -100,11 +104,32 @@ class Repository extends BaseRepository<RepositoryTable> {
     return { files, directories };
   }
 
-  async showFile(branch: string, path: string):Promise<string> {
-    const repositoryPath = await this.getPath();
+  async showFile(branch: string, path: string): Promise<string> {
+    await this.checkActionAccess(resources.repository.actions.read);
+    const repositoryPath = await this._getPath();
     return simpleGit(repositoryPath).show([branch + ':' + path]);
   }
 
+  async _clone(): Promise<void> {
+    const data = await this.getData();
+    const path = await this._getPath();
+    if (!await fse.exists(path)) {
+      await fse.mkdir(path);
+    }
+    if (data.user) {
+      data.url = data.url.replace(
+        /^https:\/\//,
+        'https://' + data.user + ':' + data.password + '@',
+      );
+    }
+    await simpleGit().clone(data.url, path);
+    await this.edit({ last_fetch_date: new Date() });
+  }
+
+  async _getPath(): Promise<string> {
+    const data = await this.getData();
+    return megapolosPath + '/repositories/' + data.id;
+  }
 }
 
 export default Repository;

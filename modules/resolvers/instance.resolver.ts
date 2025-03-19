@@ -1,14 +1,16 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { AppInput, AppInstanceInput, AppInstanceResult, ContainerResult, resolver } from '../../types';
-import { AppInstanceTable, AppTable, ContainerTable, DeviceTable, ImageTable, RepositoryTable } from '../models/tables';
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../events/eventsObserver';
-import App from '../../classes/App';
 import Instance from '../../classes/Instance';
-import Container from '../../classes/Container';
-import Image from '../../classes/Image';
-import Repository from '../../classes/Repository';
+import {
+  AppInstanceResult,
+  resolver,
+} from '../../types';
+import EventsObserver from '../events/eventsObserver';
+import {
+  AppInstanceTable,
+  ContainerTable,
+} from '../models/tables';
 
 const instanceModule = createModule({
   id: 'instance-module',
@@ -54,56 +56,76 @@ const instanceModule = createModule({
   ],
   resolvers: {
     Query: {
-      getAppInstances: resolver<void, AppInstanceResult[]>(async (parent, args, context, info) => {
-        return new Instance().getAll();
-      }),
-      getAppInstance: resolver<{ id: string }, AppInstanceResult>(async (parent, args, context, info) => {
-        return new Instance(args.id).getData();
-      }),
+      getAppInstances: resolver<void, AppInstanceResult[]>(
+        async (parent, args, context) => {
+          return new Instance(context).getAll();
+        },
+      ),
+      getAppInstance: resolver<{ id: string }, AppInstanceResult>(
+        async (parent, args, context) => {
+          return new Instance(context, args.id).getData();
+        },
+      ),
     },
     Mutation: {
-      createAppInstance: resolver<{ input: AppInstanceTable }, boolean>(async (parent, args, context, info) => {
-        await new Instance().create(args.input);
-        EventsObserver.listener({ type: 'createAppInstance', data: args });
-        return true;
-      }),
-      startAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new Instance(args.id).start();
-        EventsObserver.listener({ type: 'startAppInstance', data: args });
-        return true;
-      }),
-      stopAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new Instance(args.id).stop();
-        EventsObserver.listener({ type: 'stopAppInstance', data: args });
-        return true;
-      }),
-      restartAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new Instance(args.id).stop();
-        await new Instance(args.id).start();
-        EventsObserver.listener({ type: 'startAppInstance', data: args });
-        return true;
-      }),
-      removeAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        await new Instance(args.id).delete();
-        EventsObserver.listener({ type: 'removeAppInstance', data: args });
-        return true;
-      }),
-      editAppInstance: resolver<{ id: string, name: string }, boolean>(async (parent, args, context, info) => {
-        await new Instance(args.id).edit({ name: args.name });
-        EventsObserver.listener({ type: 'editAppInstance', data: args });
-        return true;
-      }),
-      buildAppInstance: resolver<{ id: string }, boolean>(async (parent, args, context, info) => {
-        new Instance(args.id).build();
-        EventsObserver.listener({ type: 'buildAppInstance', data: args });
-        return true;
-      }),
+      createAppInstance: resolver<{ input: AppInstanceTable }, boolean>(
+        async (parent, args, context) => {
+          await new Instance(context).create(args.input);
+          EventsObserver.listener({ type: 'createAppInstance', data: args });
+          return true;
+        },
+      ),
+      startAppInstance: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          await new Instance(context, args.id).start();
+          EventsObserver.listener({ type: 'startAppInstance', data: args });
+          return true;
+        },
+      ),
+      stopAppInstance: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          await new Instance(context, args.id).stop();
+          EventsObserver.listener({ type: 'stopAppInstance', data: args });
+          return true;
+        },
+      ),
+      restartAppInstance: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          await new Instance(context, args.id).stop();
+          await new Instance(context, args.id).start();
+          EventsObserver.listener({ type: 'startAppInstance', data: args });
+          return true;
+        },
+      ),
+      removeAppInstance: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          await new Instance(context, args.id).delete();
+          EventsObserver.listener({ type: 'removeAppInstance', data: args });
+          return true;
+        },
+      ),
+      editAppInstance: resolver<{ id: string; name: string }, boolean>(
+        async (parent, args, context) => {
+          await new Instance(context, args.id).edit({ name: args.name });
+          EventsObserver.listener({ type: 'editAppInstance', data: args });
+          return true;
+        },
+      ),
+      buildAppInstance: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          await new Instance(context, args.id).build();
+          EventsObserver.listener({ type: 'buildAppInstance', data: args });
+          return true;
+        },
+      ),
     },
     AppInstance: {
-      containers: resolver<AppInstanceResult, ContainerTable[]>(async (parent, args, context, info) => {
-        const instance = new Instance(parent.id);
-        return instance.getContainers();
-      }),
+      containers: resolver<AppInstanceResult, ContainerTable[]>(
+        async (parent, args, context) => {
+          const instance = new Instance(context, parent.id);
+          return instance.getContainers();
+        },
+      ),
     },
   },
 });

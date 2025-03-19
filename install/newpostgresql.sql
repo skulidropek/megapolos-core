@@ -551,6 +551,18 @@ CREATE TABLE public.group_user (
 );
 
 
+CREATE TABLE public.group_user_privilege (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    group_user_id uuid NOT NULL,
+    object_name character varying NOT NULL,
+    object_id character varying NOT NULL,
+    action character varying NOT NULL
+);
+
+ALTER TABLE ONLY public.group_user_privilege
+    ADD CONSTRAINT group_user_privilege_group_user_id_fkey FOREIGN KEY (group_user_id) REFERENCES public.group_user(id);
+
+
 --
 -- TOC entry 221 (class 1259 OID 60505)
 -- Name: image; Type: TABLE; Schema: public; Owner: -
@@ -909,6 +921,20 @@ CREATE TABLE public."user" (
     disable_date timestamp without time zone,
     os_user_id character varying
 );
+
+
+create table public.user_group_link (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    group_user_id uuid NOT NULL,
+);
+
+
+ALTER TABLE ONLY public.user_group_link
+    ADD CONSTRAINT user_group_link_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id);
+
+ALTER TABLE ONLY public.user_group_link 
+    ADD CONSTRAINT user_group_link_group_user_id_fkey FOREIGN KEY (group_user_id) REFERENCES public.group_user(id);
 
 
 --

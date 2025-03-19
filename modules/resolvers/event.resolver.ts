@@ -40,7 +40,7 @@ const eventModule = createModule({
     Query: {
     },
     Mutation: {
-      eventBuildEnded: resolver<{ input: BuildEventInput }, boolean>(async (parent, args, context, info) => {
+      eventBuildEnded: resolver<{ input: BuildEventInput }, boolean>(async (parent, args) => {
         EventsObserver.listener({
           type: 'buildEnded',
           data: {

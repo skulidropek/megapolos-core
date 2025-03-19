@@ -1,13 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { promises as fs } from 'fs';
 import fsSync from 'fs';
-
-import { megapolosPath } from '..';
-import EventsObserver from '../modules/events/eventsObserver';
 import { ContainerVolumeTable, VolumeTable } from '../modules/models/tables';
 import MegapolosNode from './Node';
-import Container from './Container';
-import { ContainerInput, ContainerVolumeInput } from '../types';
+import { ContainerVolumeInput } from '../types';
 import { promisify } from 'util';
 import BaseRepository from './BaseRepository';
 import { knex } from '../corePostgres';
@@ -54,7 +49,6 @@ class Volume extends BaseRepository<VolumeTable> {
   }
 
   async addToContainer(containerId: string, input: ContainerVolumeInput): Promise<ContainerVolumeTable> {
-    const volume = await this.getData();
     const volumeContainerId = uuidv4();
     if (input.is_dynamic) {
       // const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id + '/' + volumeContainerId;

@@ -1,7 +1,4 @@
-import { megapolosPath } from '..';
-import { ContainerDbTable, DomainTable } from '../modules/models/tables';
-import simpleGit from 'simple-git';
-import fse from 'fs-extra';
+import { ContainerDbTable } from '../modules/models/tables';
 import BaseRepository from './BaseRepository';
 import Db from './Db';
 import Container from './Container';
@@ -14,13 +11,13 @@ class ContainerDb extends BaseRepository<ContainerDbTable> {
 
   async checkEntityData(entity: Partial<ContainerDbTable>, isCreate?: boolean): Promise<boolean> {
     if (entity.container_id) {
-      await new Container(entity.container_id).getData();
+      await new Container(this.ctx, entity.container_id).getData();
     }
     if (entity.db_id) {
-      await new Db(entity.db_id).getData();
+      await new Db(this.ctx, entity.db_id).getData();
     }
     if (entity.db_user_id) {
-      await new DbUser(entity.db_user_id).getData();
+      await new DbUser(this.ctx, entity.db_user_id).getData();
     }
 
     return true;

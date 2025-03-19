@@ -51,6 +51,7 @@
     "pg": "^8.11.3",
     "rqlite-js": "2.5.5",
     "simple-git": "^3.22.0",
+    "sqlite3": "^5.1.7",
     "ssh2": "^1.15.0",
     "subscriptions-transport-ws": "^0.11.0",
     "uuid": "^9.0.0",

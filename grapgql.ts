@@ -11,12 +11,10 @@ import { Context } from './types';
 import userModule from './modules/resolvers/user.resolver';
 import nodeModule from './modules/resolvers/node.resolver';
 import appModule from './modules/resolvers/app.resolver';
-// import deviceModule from './modules/resolvers/device.resolver';
 import eventModule from './modules/resolvers/event.resolver';
 import volumeModule from './modules/resolvers/volume.resolver';
 import User from './classes/User';
 import EventsObserver from './modules/events/eventsObserver';
-// import resourceModule from './modules/resolvers/resource.resolver';
 import repositoryModule from './modules/resolvers/repository.resolver';
 import instanceModule from './modules/resolvers/instance.resolver';
 import containerModule from './modules/resolvers/container.resolver';
@@ -64,7 +62,7 @@ const graphqlServer = async () => {
         } catch (err) {
           throw new Error('Unauthorized');
         }
-        const user = new User(decoded.id);
+        const user = new User(undefined, decoded.id);
         const userData = await user.getData();
 
         if (!userData) {

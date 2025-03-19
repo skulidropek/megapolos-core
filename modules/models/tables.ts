@@ -103,6 +103,20 @@ export interface GroupUserTable {
   update_date: Date;
   disable_date: Date;
 }
+export interface GroupUserPrivilegeTable {
+  id: string;
+  group_user_id: string;
+  object_name: string;
+  object_id: string;
+  action: string;
+  create_date: Date;
+  update_date: Date;
+}
+export interface GroupUserWithPrivilegeTable {
+  id: string;
+  name: string;
+  privileges: GroupUserPrivilegeTable[];
+}
 export interface AppTable {
   id: string;
   name: string;

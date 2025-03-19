@@ -1,7 +1,5 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import { exec } from 'child_process';
-
 import graphqlServer from './grapgql';
 import MegapolosNode from './classes/Node';
 import User from './classes/User';
@@ -21,8 +19,10 @@ export const megapolosPath = __dirname;
   // await MegapolosNode.currentNode.dockerEvents();
   // await MegapolosNode.currentNode.restoreContainers();
 
-  const user = await new User().createRootUser();
-  console.log((await user.getDataWithToken()).token);
+  await new User(undefined).checkGroupUserLinks();
+  await new User(undefined).createRootUser();
+  const users = await new User(undefined).getUsersWithToken();
+  console.log(users.map((u) => ({ name: u.name, token: u.token })));
 
   graphqlServer();
 })();

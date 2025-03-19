@@ -1,9 +1,29 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import { resolver, UserInput } from '../../types';
-import { GroupUserTable, UserTable } from '../models/tables';
 import User from '../../classes/User';
+import UserGroup from '../../classes/UserGroup';
+import UserGroupPrivilege from '../../classes/UserGroupPrivilege';
+import { resolver, UserInput } from '../../types';
+import {
+  GroupUserPrivilegeTable,
+  GroupUserTable,
+  UserTable,
+} from '../models/tables';
+import { resources } from '../../src/features/rights/resources_list';
+
+interface PrivilegeInput {
+  role_id: string;
+  resource_type: string;
+  resource_id: string;
+  action: string;
+}
+
+interface GroupUserWithPrivilege {
+  id: string;
+  name: string;
+  privileges: GroupUserPrivilegeTable[];
+}
 
 const userModule = createModule({
   id: 'user-module',
@@ -13,6 +33,20 @@ const userModule = createModule({
       type GroupUser {
         id: String
         name: String
+      }
+      
+      type GroupUserWithPrivilege {
+        id: String
+        name: String
+        privileges: [GroupUserPrivilege]
+      }
+
+      type GroupUserPrivilege {
+        id: String
+        group_user_id: String
+        object_name: String
+        object_id: String
+        action: String
       }
 
       type User {
@@ -33,36 +67,104 @@ const userModule = createModule({
         name: String
       }
 
+      input PrivilegeInput {
+        role_id: String
+        resource_type: String
+        resource_id: String
+        action: String
+      }
+
       type Query {
         getUsers: [User]
         getMe: User
+        getAllUserGroups: [GroupUser]
+        getGroupUserPrivilege(group_user_id: String!): [GroupUserPrivilege]
+        getAllUserGroupsWithPrivileges: [GroupUserWithPrivilege]
+        getPrivilegeActions(resource_type: String!): [String]
       }
 
       type Mutation {
         addUser(input: UserInput!): Boolean
+        grantPrivilege(input: PrivilegeInput!): Boolean
+        revokePrivilege(id: String!): Boolean
       }
     `,
   ],
   resolvers: {
     Query: {
-      getUsers: resolver<void, (UserTable & { token?: String })[]>(async (parent, args, context, info) => {
-        return new User().getUsersWithToken();
-      }),
-      getMe: resolver<void, UserTable>(async (parent, args, context, info) => {
-        const results = await new User(context.user.id).getData();
+      getUsers: resolver<void, (UserTable & { token?: String })[]>(
+        async (parent, args, context) => {
+          return new User(context).getUsersWithToken();
+        },
+      ),
+      getMe: resolver<void, UserTable>(async (parent, args, context) => {
+        const results = await new User(context, context.user.id).getData();
         return results;
       }),
+      getAllUserGroups: resolver<void, GroupUserTable[]>(
+        async (parent, args, context) => {
+          return new UserGroup(context).getAll();
+        },
+      ),
+      getGroupUserPrivilege: resolver<
+      { group_user_id: string },
+      GroupUserPrivilegeTable[]
+      >(async (parent, args, context) => {
+        return new UserGroupPrivilege(context).getByFields({
+          group_user_id: args.group_user_id,
+        });
+      }),
+      getAllUserGroupsWithPrivileges: resolver<void, GroupUserWithPrivilege[]>(
+        async (parent, args, context) => {
+          const groups = await new UserGroup(context).getAll();
+          const privileges = await new UserGroupPrivilege(context).getAll();
+          return groups.map((group) => ({
+            id: group.id,
+            name: group.name,
+            privileges: privileges.filter((p) => p.group_user_id === group.id),
+          }));
+        },
+      ),
+      getPrivilegeActions: resolver<{ resource_type: string }, string[]>(
+        async (parent, args) => {
+          const resource = resources[args.resource_type];
+          if (!resource) {
+            throw new Error('Resource type not found');
+          }
+          return Object.values(resource.actions);
+        },
+      ),
     },
     Mutation: {
-      addUser: resolver<{ input: UserInput }, boolean>(async (parent, args, context, info) => {
-        await new User().create({ name: args.input.name, group_user_id: 'name' });
-        return true;
-      }),
+      addUser: resolver<{ input: UserInput }, boolean>(
+        async (parent, args, context) => {
+          await new User(context).create({name: args.input.name});
+          return true;
+        },
+      ),
+      grantPrivilege: resolver<{ input: PrivilegeInput }, boolean>(
+        async (parent, args, context) => {
+          await new UserGroupPrivilege(context).pushForResource(
+            args.input.role_id,
+            args.input.resource_type,
+            args.input.resource_id,
+            args.input.action,
+          );
+          return true;
+        },
+      ),
+      revokePrivilege: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          return new UserGroupPrivilege(context).revoke(args.id);
+        },
+      ),
     },
     User: {
-      group: resolver<UserTable, GroupUserTable>(async (parent, args, context, info) => {
-        return new User(parent.id).getGroup();
-      }),
+      group: resolver<UserTable, GroupUserTable>(
+        async (parent, args, context) => {
+          return new User(context, parent.id).getGroup();
+        },
+      ),
     },
   },
 });
