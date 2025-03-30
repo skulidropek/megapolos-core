@@ -1,8 +1,8 @@
-import User from '../../../classes/User';
+import User from '../repository/user/User';
 import {
   GroupUserPrivilegeTable,
   IEntity,
-} from '../../../modules/models/tables';
+} from '../db/tables';
 import { UserAction } from './resources_list';
 
 export class RightsChecker {
