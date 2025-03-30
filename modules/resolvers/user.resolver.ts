@@ -25,6 +25,11 @@ interface GroupUserWithPrivilege {
   privileges: GroupUserPrivilegeTable[];
 }
 
+interface AddUserToGroupInput {
+  user_id: string;
+  group_id: string;
+}
+
 const userModule = createModule({
   id: 'user-module',
   dirname: __dirname,
@@ -74,6 +79,11 @@ const userModule = createModule({
         action: String
       }
 
+      input AddUserToGroupInput {
+        user_id: String!
+        group_id: String!
+      }
+
       type Query {
         getUsers: [User]
         getMe: User
@@ -87,6 +97,7 @@ const userModule = createModule({
         addUser(input: UserInput!): Boolean
         grantPrivilege(input: PrivilegeInput!): Boolean
         revokePrivilege(id: String!): Boolean
+        addUserToGroup(input: AddUserToGroupInput!): Boolean
       }
     `,
   ],
@@ -158,6 +169,11 @@ const userModule = createModule({
           return new UserGroupPrivilege(context).revoke(args.id);
         },
       ),
+      addUserToGroup: resolver<{ input: AddUserToGroupInput }, boolean>(
+        async (parent, args, context) => {
+          return new User(context, args.input.user_id).addUserToGroup(args.input.group_id);
+        },
+      ), 
     },
     User: {
       group: resolver<UserTable, GroupUserTable>(
