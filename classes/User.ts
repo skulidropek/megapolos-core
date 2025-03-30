@@ -171,6 +171,18 @@ class User extends BaseRepository<UserTable> {
     return this.getByFields({ group_user_id: group[0].id });
   }
 
+  async addUserToGroup(group_id: string): Promise<boolean> {
+    if (!await this.amIRootUser()) {
+      this._throwAccessDenied();
+    }
+
+    await knex('user_group_link').insert({
+      user_id: this.id,
+      group_user_id: group_id,
+    });
+    return true;
+  }
+
   async delete(): Promise<boolean> {
     const data = await this.getData();
     await super.delete();
