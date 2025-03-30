@@ -1,10 +1,10 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, resolver } from '../../../domain/types';
-import { AppTable, ImageTable, RepositoryTable } from '../../db/tables';
+import { AppTable, ImageTable, RepositoryTable } from '../../../features/db/tables';
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../../events/eventsObserver';
-import App from '../../repository/App';
+import EventsObserver from '../../../features/events/eventsObserver';
+import App from '../../../features/repository/App';
 
 const appModule = createModule({
   id: 'app-module',

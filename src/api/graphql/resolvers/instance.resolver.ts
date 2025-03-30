@@ -1,16 +1,16 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import Instance from '../../repository/Instance';
+import Instance from '../../../features/repository/Instance';
 import {
   AppInstanceResult,
   resolver,
 } from '../../../domain/types';
-import EventsObserver from '../../events/eventsObserver';
+import EventsObserver from '../../../features/events/eventsObserver';
 import {
   AppInstanceTable,
   ContainerTable,
-} from '../../db/tables';
+} from '../../../features/db/tables';
 
 const instanceModule = createModule({
   id: 'instance-module',

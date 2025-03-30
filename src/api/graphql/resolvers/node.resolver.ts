@@ -3,12 +3,12 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { resolver } from '../../../domain/types';
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../../events/eventsObserver';
+import EventsObserver from '../../../features/events/eventsObserver';
 import packageFile from '../../../../package.json';
-import MegapolosNode from '../../repository/Node';
-import User from '../../repository/user/User';
-import Container from '../../repository/container/Container';
-import { ContainerTable, NodeTable } from '../../db/tables';
+import MegapolosNode from '../../../features/repository/Node';
+import User from '../../../features/repository/user/User';
+import Container from '../../../features/repository/container/Container';
+import { ContainerTable, NodeTable } from '../../../features/db/tables';
 
 const nodeModule = createModule({
   id: 'node-module',

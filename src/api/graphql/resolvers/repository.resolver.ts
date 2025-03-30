@@ -1,10 +1,10 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import Repository from '../../repository/Repository';
+import Repository from '../../../features/repository/Repository';
 import { resolver } from '../../../domain/types';
-import EventsObserver from '../../events/eventsObserver';
-import { RepositoryTable } from '../../db/tables';
+import EventsObserver from '../../../features/events/eventsObserver';
+import { RepositoryTable } from '../../../features/db/tables';
 
 const repositoryModule = createModule({
   id: 'repository-module',

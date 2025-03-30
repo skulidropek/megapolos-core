@@ -1,6 +1,6 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import pubsub from '../graphql/pubsub';
+import pubsub from '../../api/graphql/pubsub';
 import { MegapolosEvent } from './event';
 
 class EventsObserver {

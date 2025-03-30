@@ -2,10 +2,10 @@
 
 import { createModule, gql } from 'graphql-modules';
 import { ContainerVolumeInput, resolver } from '../../../domain/types';
-import EventsObserver from '../../events/eventsObserver';
-import { ContainerVolumeTable, VolumeTable } from '../../db/tables';
-import Volume from '../../repository/Volume';
-import Container from '../../repository/container/Container';
+import EventsObserver from '../../../features/events/eventsObserver';
+import { ContainerVolumeTable, VolumeTable } from '../../../features/db/tables';
+import Volume from '../../../features/repository/Volume';
+import Container from '../../../features/repository/container/Container';
 
 const volumeModule = createModule({
   id: 'volume-module',

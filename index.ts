@@ -1,6 +1,6 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import graphqlServer from './src/features/graphql/server';
+import graphqlServer from './src/api/graphql/server';
 import MegapolosNode from './src/features/repository/Node';
 import User from './src/features/repository/user/User';
 

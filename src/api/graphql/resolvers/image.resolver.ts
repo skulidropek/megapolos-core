@@ -1,17 +1,17 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import App from '../../repository/App';
-import Image from '../../repository/Image';
-import Repository from '../../repository/Repository';
+import App from '../../../features/repository/App';
+import Image from '../../../features/repository/Image';
+import Repository from '../../../features/repository/Repository';
 import { resolver } from '../../../domain/types';
-import EventsObserver from '../../events/eventsObserver';
+import EventsObserver from '../../../features/events/eventsObserver';
 import {
   ImageEnvRequirementTable,
   ImageTable,
   LogTable,
   RepositoryTable,
-} from '../../db/tables';
+} from '../../../features/db/tables';
 
 const imageModule = createModule({
   id: 'image-module',

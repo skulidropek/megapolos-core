@@ -1,15 +1,15 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../../events/eventsObserver';
+import EventsObserver from '../../../features/events/eventsObserver';
 import { resolver } from '../../../domain/types';
-import { DbBackupTable, DbSchemaSchema, DbSchemaTable, DbTable, DbUserTable, DbmsTable } from '../../db/tables';
-import BaseDbms from '../../repository/dbms/BaseDbms';
-import Dbms from '../../repository/dbms/Dbms';
-import DbUser from '../../repository/db/DbUser';
-import Db from '../../repository/db/Db';
-import DbBackup from '../../repository/db/DbBackup';
-import DbSchema from '../../repository/db/DbSchema';
+import { DbBackupTable, DbSchemaSchema, DbSchemaTable, DbTable, DbUserTable, DbmsTable } from '../../../features/db/tables';
+import BaseDbms from '../../../features/repository/dbms/BaseDbms';
+import Dbms from '../../../features/repository/dbms/Dbms';
+import DbUser from '../../../features/repository/db/DbUser';
+import Db from '../../../features/repository/db/Db';
+import DbBackup from '../../../features/repository/db/DbBackup';
+import DbSchema from '../../../features/repository/db/DbSchema';
 
 const dbmsModule = createModule({
   id: 'dbms-module',

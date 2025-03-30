@@ -1,16 +1,16 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import Container from '../../repository/container/Container';
-import ContainerDb from '../../repository/container/ContainerDb';
-import Db from '../../repository/db/Db';
-import DbUser from '../../repository/db/DbUser';
-import Domain from '../../repository/Domain';
-import Image from '../../repository/Image';
-import MegapolosNode from '../../repository/Node';
-import Volume from '../../repository/Volume';
+import Container from '../../../features/repository/container/Container';
+import ContainerDb from '../../../features/repository/container/ContainerDb';
+import Db from '../../../features/repository/db/Db';
+import DbUser from '../../../features/repository/db/DbUser';
+import Domain from '../../../features/repository/Domain';
+import Image from '../../../features/repository/Image';
+import MegapolosNode from '../../../features/repository/Node';
+import Volume from '../../../features/repository/Volume';
 import { ContainerResult, resolver } from '../../../domain/types';
-import EventsObserver from '../../events/eventsObserver';
+import EventsObserver from '../../../features/events/eventsObserver';
 import {
   ContainerDbTable,
   ContainerTable,
@@ -20,7 +20,7 @@ import {
   DomainTable,
   ImageTable,
   NodeTable,
-} from '../../db/tables';
+} from '../../../features/db/tables';
 
 const containerModule = createModule({
   id: 'container-module',

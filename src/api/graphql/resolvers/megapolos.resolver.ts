@@ -1,9 +1,9 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../../events/eventsObserver';
+import EventsObserver from '../../../features/events/eventsObserver';
 import { resolver } from '../../../domain/types';
-import { knex } from '../../db/knex';
+import { knex } from '../../../features/db/knex';
 
 export interface SearchResult {
   id: string;

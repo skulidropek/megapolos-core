@@ -1,16 +1,16 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import User from '../../repository/user/User';
-import UserGroup from '../../repository/user/UserGroup';
-import UserGroupPrivilege from '../../repository/user/UserGroupPrivilege';
+import User from '../../../features/repository/user/User';
+import UserGroup from '../../../features/repository/user/UserGroup';
+import UserGroupPrivilege from '../../../features/repository/user/UserGroupPrivilege';
 import { resolver, UserInput } from '../../../domain/types';
 import {
   GroupUserPrivilegeTable,
   GroupUserTable,
   UserTable,
-} from '../../db/tables';
-import { resources } from '../../rights/resources_list';
+} from '../../../features/db/tables';
+import { resources } from '../../../features/rights/resources_list';
 
 interface PrivilegeInput {
   role_id: string;

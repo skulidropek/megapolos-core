@@ -1,10 +1,10 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../../events/eventsObserver';
+import EventsObserver from '../../../features/events/eventsObserver';
 import { resolver } from '../../../domain/types';
-import { DomainTable } from '../../db/tables';
-import Domain from '../../repository/Domain';
+import { DomainTable } from '../../../features/db/tables';
+import Domain from '../../../features/repository/Domain';
 
 const domainModule = createModule({
   id: 'domain-module',
