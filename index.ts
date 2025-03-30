@@ -1,8 +1,8 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
-import graphqlServer from './grapgql';
-import MegapolosNode from './classes/Node';
-import User from './classes/User';
+import graphqlServer from './src/features/graphql/server';
+import MegapolosNode from './src/features/repository/Node';
+import User from './src/features/repository/user/User';
 
 if (process.getuid() != 0) {
   console.trace('You must run this app as root');
