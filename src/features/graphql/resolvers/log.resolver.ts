@@ -1,7 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import { resolver } from '../../../domain/types';
 import { LogTable } from '../../db/tables';
 import Log from '../../repository/Log';

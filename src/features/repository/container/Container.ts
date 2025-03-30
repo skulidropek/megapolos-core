@@ -2,7 +2,7 @@ import fsSync from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import docker from '../../docker/coreDocker';
 import { knex } from '../../db/knex';
-import EventsObserver from '../../graphql/events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import {
   ContainerDbTable,
   ContainerEnvOptionTable,

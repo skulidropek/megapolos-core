@@ -6,7 +6,7 @@ import {
   AppInstanceResult,
   resolver,
 } from '../../../domain/types';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import {
   AppInstanceTable,
   ContainerTable,

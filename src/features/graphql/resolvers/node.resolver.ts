@@ -3,7 +3,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { resolver } from '../../../domain/types';
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import packageFile from '../../../../package.json';
 import MegapolosNode from '../../repository/Node';
 import User from '../../repository/user/User';

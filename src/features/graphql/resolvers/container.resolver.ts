@@ -10,7 +10,7 @@ import Image from '../../repository/Image';
 import MegapolosNode from '../../repository/Node';
 import Volume from '../../repository/Volume';
 import { ContainerResult, resolver } from '../../../domain/types';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import {
   ContainerDbTable,
   ContainerTable,

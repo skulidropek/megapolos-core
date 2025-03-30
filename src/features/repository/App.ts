@@ -1,7 +1,7 @@
 import { AppInput, ContainerInput } from '../../domain/types';
 import Image from './Image';
 import Instance from './Instance';
-import EventsObserver from '../graphql/events/eventsObserver';
+import EventsObserver from '../events/eventsObserver';
 import { AppInstanceTable, AppTable, ImageTable, RepositoryTable } from '../db/tables';
 import User from './user/User';
 import BaseRepository from './BaseRepository';

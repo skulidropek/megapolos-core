@@ -5,7 +5,7 @@ import App from '../../repository/App';
 import Image from '../../repository/Image';
 import Repository from '../../repository/Repository';
 import { resolver } from '../../../domain/types';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import {
   ImageEnvRequirementTable,
   ImageTable,

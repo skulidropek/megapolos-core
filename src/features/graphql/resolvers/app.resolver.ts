@@ -3,7 +3,7 @@
 import { AppInput, resolver } from '../../../domain/types';
 import { AppTable, ImageTable, RepositoryTable } from '../../db/tables';
 import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import App from '../../repository/App';
 
 const appModule = createModule({

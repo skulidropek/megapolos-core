@@ -3,7 +3,7 @@
 import { createModule, gql } from 'graphql-modules';
 import Repository from '../../repository/Repository';
 import { resolver } from '../../../domain/types';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import { RepositoryTable } from '../../db/tables';
 
 const repositoryModule = createModule({

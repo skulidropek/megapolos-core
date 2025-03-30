@@ -12,7 +12,7 @@ import appModule from './resolvers/app.resolver';
 import eventModule from './resolvers/event.resolver';
 import volumeModule from './resolvers/volume.resolver';
 import User from '../repository/user/User';
-import EventsObserver from './events/eventsObserver';
+import EventsObserver from '../events/eventsObserver';
 import repositoryModule from './resolvers/repository.resolver';
 import instanceModule from './resolvers/instance.resolver';
 import containerModule from './resolvers/container.resolver';

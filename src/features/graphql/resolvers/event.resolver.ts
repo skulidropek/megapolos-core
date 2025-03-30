@@ -2,7 +2,7 @@
 
 import { createModule, gql } from 'graphql-modules';
 import { resolver } from '../../../domain/types';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import { JSONResolver } from 'graphql-scalars';
 
 

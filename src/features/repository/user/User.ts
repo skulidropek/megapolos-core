@@ -6,7 +6,7 @@ import {
 } from '../../db/tables';
 
 import { knex } from '../../db/knex';
-import EventsObserver from '../../graphql/events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import BaseRepository from '../BaseRepository';
 import UserGroup from './UserGroup';
 import UserGroupPrivilege from './UserGroupPrivilege';

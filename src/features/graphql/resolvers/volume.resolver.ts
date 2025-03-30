@@ -2,7 +2,7 @@
 
 import { createModule, gql } from 'graphql-modules';
 import { ContainerVolumeInput, resolver } from '../../../domain/types';
-import EventsObserver from '../events/eventsObserver';
+import EventsObserver from '../../events/eventsObserver';
 import { ContainerVolumeTable, VolumeTable } from '../../db/tables';
 import Volume from '../../repository/Volume';
 import Container from '../../repository/container/Container';

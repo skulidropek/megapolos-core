@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import dns from 'dns';
 import { v4 as uuidv4 } from 'uuid';
-import EventsObserver from '../graphql/events/eventsObserver';
+import EventsObserver from '../events/eventsObserver';
 import User from './user/User';
 import Process from '../process/Process';
 import BaseProcess from '../process/BaseProcess';
@@ -18,7 +18,7 @@ import ExternalProcess from '../process/ExternalProcess';
 import Log from './Log';
 import jp from 'jsonpath';
 import BaseRepository from './BaseRepository';
-import DockerEvent from '../graphql/events/docker.event';
+import DockerEvent from '../events/docker.event';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function asyncSpawn(command:string, onoutput, onerror): Promise<{ stdout: string, stderr: string, code: number }> {
