@@ -14,7 +14,8 @@ class Volume extends BaseRepository<VolumeTable> {
   async create(input: Partial<VolumeTable>): Promise<VolumeTable> {
     const result = await super.create(input);
     if (input.type === 'auto' || input.type === 'dynamic_auto') {
-      const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + result.id;
+      const megapolosVolume =
+        MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + result.id;
       if (!fsSync.existsSync(megapolosVolume)) {
         // await fs.mkdir(megapolosVolume);
       }
@@ -26,7 +27,8 @@ class Volume extends BaseRepository<VolumeTable> {
   async delete(): Promise<boolean> {
     const volume = await this.getData();
     if (volume.type === 'auto' || volume.type === 'dynamic_auto') {
-      const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
+      const megapolosVolume =
+        MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
       if (fsSync.existsSync(megapolosVolume)) {
         // await fs.rmdir(megapolosVolume, { recursive: true });
       }
@@ -36,7 +38,11 @@ class Volume extends BaseRepository<VolumeTable> {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async uploadFile(filename: string, data: string): Promise<void> {
-    if (filename.match(/^.+$/) || filename.includes('/') || filename.includes('\\')) {
+    if (
+      filename.match(/^.+$/) ||
+      filename.includes('/') ||
+      filename.includes('\\')
+    ) {
       throw new Error('Invalid filename');
     }
     const volume = await this.getData();
@@ -46,7 +52,10 @@ class Volume extends BaseRepository<VolumeTable> {
     // await fs.writeFile(volume.outer_path + '/' + filename, data, 'base64');
   }
 
-  async addToContainer(containerId: string, input: ContainerVolumeInput): Promise<ContainerVolumeTable> {
+  async addToContainer(
+    containerId: string,
+    input: ContainerVolumeInput
+  ): Promise<ContainerVolumeTable> {
     const volumeContainerId = uuidv4();
     if (input.is_dynamic) {
       // const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id + '/' + volumeContainerId;
@@ -59,23 +68,31 @@ class Volume extends BaseRepository<VolumeTable> {
       container_id: containerId,
       volume_id: this.id,
       name: input.name,
-      inner_path: input.is_dynamic ? '/megapolos/' + volumeContainerId : input.inner_path,
+      inner_path: input.is_dynamic
+        ? '/megapolos/' + volumeContainerId
+        : input.inner_path,
       is_dynamic: input.is_dynamic ? 1 : 0,
     });
-    return knex<ContainerVolumeTable>('container_volume').select('*').where('id', volumeContainerId).first();
+    return knex<ContainerVolumeTable>('container_volume')
+      .select('*')
+      .where('id', volumeContainerId)
+      .first();
   }
 
   async removeFromContainer(containerVolumeId: string): Promise<boolean> {
-    await knex<ContainerVolumeTable>('container_volume').delete().where('id', containerVolumeId);
+    await knex<ContainerVolumeTable>('container_volume')
+      .delete()
+      .where('id', containerVolumeId);
     return true;
   }
 
-  async getVolumesOfContainer(containerId: string): Promise<ContainerVolumeTable[]> {
+  async getVolumesOfContainer(
+    containerId: string
+  ): Promise<ContainerVolumeTable[]> {
     return knex<ContainerVolumeTable>('container_volume').select('*').where({
       container_id: containerId,
     });
   }
-
 }
 
 export default Volume;

@@ -2,15 +2,9 @@
 
 import { createModule, gql } from 'graphql-modules';
 import Instance from '../../../features/repository/Instance';
-import {
-  AppInstanceResult,
-  resolver,
-} from '../../../domain/types';
+import { AppInstanceResult, resolver } from '../../../domain/types';
 import EventsObserver from '../../../features/events/eventsObserver';
-import {
-  AppInstanceTable,
-  ContainerTable,
-} from '../../../features/db/tables';
+import { AppInstanceTable, ContainerTable } from '../../../features/db/tables';
 
 const instanceModule = createModule({
   id: 'instance-module',
@@ -34,8 +28,8 @@ const instanceModule = createModule({
       }
 
       input AppInstanceInput {
-        app_id: String,
-        name: String,
+        app_id: String
+        name: String
       }
 
       type Query {
@@ -49,7 +43,7 @@ const instanceModule = createModule({
         stopAppInstance(id: String!): Boolean
         restartAppInstance(id: String!): Boolean
         removeAppInstance(id: String!): Boolean
-        editAppInstance(id: String! name: String!): Boolean
+        editAppInstance(id: String!, name: String!): Boolean
         buildAppInstance(id: String!): Boolean
       }
     `,
@@ -59,12 +53,12 @@ const instanceModule = createModule({
       getAppInstances: resolver<void, AppInstanceResult[]>(
         async (parent, args, context) => {
           return new Instance(context).getAll();
-        },
+        }
       ),
       getAppInstance: resolver<{ id: string }, AppInstanceResult>(
         async (parent, args, context) => {
           return new Instance(context, args.id).getData();
-        },
+        }
       ),
     },
     Mutation: {
@@ -73,21 +67,21 @@ const instanceModule = createModule({
           await new Instance(context).create(args.input);
           EventsObserver.listener({ type: 'createAppInstance', data: args });
           return true;
-        },
+        }
       ),
       startAppInstance: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new Instance(context, args.id).start();
           EventsObserver.listener({ type: 'startAppInstance', data: args });
           return true;
-        },
+        }
       ),
       stopAppInstance: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new Instance(context, args.id).stop();
           EventsObserver.listener({ type: 'stopAppInstance', data: args });
           return true;
-        },
+        }
       ),
       restartAppInstance: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
@@ -95,28 +89,28 @@ const instanceModule = createModule({
           await new Instance(context, args.id).start();
           EventsObserver.listener({ type: 'startAppInstance', data: args });
           return true;
-        },
+        }
       ),
       removeAppInstance: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new Instance(context, args.id).delete();
           EventsObserver.listener({ type: 'removeAppInstance', data: args });
           return true;
-        },
+        }
       ),
       editAppInstance: resolver<{ id: string; name: string }, boolean>(
         async (parent, args, context) => {
           await new Instance(context, args.id).edit({ name: args.name });
           EventsObserver.listener({ type: 'editAppInstance', data: args });
           return true;
-        },
+        }
       ),
       buildAppInstance: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new Instance(context, args.id).build();
           EventsObserver.listener({ type: 'buildAppInstance', data: args });
           return true;
-        },
+        }
       ),
     },
     AppInstance: {
@@ -124,7 +118,7 @@ const instanceModule = createModule({
         async (parent, args, context) => {
           const instance = new Instance(context, parent.id);
           return instance.getContainers();
-        },
+        }
       ),
     },
   },

@@ -3,7 +3,6 @@ import User from '../repository/user/User';
 import BaseProcess, { ProcessStatus } from './BaseProcess';
 
 class Process extends BaseProcess {
-
   user: User;
 
   onoutput: (data: string) => void;

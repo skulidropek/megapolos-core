@@ -1,6 +1,13 @@
 import Knex from 'knex';
 import BaseDbms from './BaseDbms';
-import { DbBackupTable, DbSchemaSchema, DbSchemaSchemaTable, DbTable, DbUserTable, LogType } from '../../db/tables';
+import {
+  DbBackupTable,
+  DbSchemaSchema,
+  DbSchemaSchemaTable,
+  DbTable,
+  DbUserTable,
+  LogType,
+} from '../../db/tables';
 import Artifact from '../Artifact';
 import MegapolosNode from '../Node';
 import User from '../user/User';
@@ -20,7 +27,7 @@ class PostgresDmbs extends BaseDbms {
       connection: {
         user: data.user,
         host: data.host,
-        password: data.password,              
+        password: data.password,
         database: db,
       },
       pool: {
@@ -34,7 +41,10 @@ class PostgresDmbs extends BaseDbms {
 
   async createDbChange(db: Partial<DbTable>): Promise<boolean> {
     const knex = await this.getKnex('postgres');
-    const exists = await knex.raw('SELECT 1 FROM pg_database WHERE datname = ?', [db.name]);
+    const exists = await knex.raw(
+      'SELECT 1 FROM pg_database WHERE datname = ?',
+      [db.name]
+    );
     if (!exists.rows.length) {
       await knex.raw('CREATE DATABASE ?', [db.name]);
     }
@@ -49,25 +59,41 @@ class PostgresDmbs extends BaseDbms {
   }
 
   async createUserChange(user: Partial<DbUserTable>): Promise<boolean> {
-    const exists = await (await this.getKnex('postgres')).raw(
-      'SELECT 1 FROM pg_roles WHERE rolname = ?', [user.name]);
+    const exists = await (
+      await this.getKnex('postgres')
+    ).raw('SELECT 1 FROM pg_roles WHERE rolname = ?', [user.name]);
     if (!exists.rows.length) {
-      await (await this.getKnex('postgres')).raw('CREATE USER ? LOGIN PASSWORD ?', [user.name, user.password]);
+      await (
+        await this.getKnex('postgres')
+      ).raw('CREATE USER ? LOGIN PASSWORD ?', [user.name, user.password]);
     } else {
-      await (await this.getKnex('postgres')).raw('ALTER USER ? WITH PASSWORD ?', [user.name, user.password]);
+      await (
+        await this.getKnex('postgres')
+      ).raw('ALTER USER ? WITH PASSWORD ?', [user.name, user.password]);
     }
     return true;
   }
 
   async addUserToDbChange(userName: string, dbName: string): Promise<boolean> {
     const knex = await this.getKnex(dbName);
-    await knex.raw('GRANT ALL PRIVILEGES ON DATABASE ? TO ?', [dbName, userName]);
-    await knex.raw('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ?', [userName]);
+    await knex.raw('GRANT ALL PRIVILEGES ON DATABASE ? TO ?', [
+      dbName,
+      userName,
+    ]);
+    await knex.raw('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ?', [
+      userName,
+    ]);
     await knex.raw('GRANT ALL PRIVILEGES ON SCHEMA public TO ?', [userName]);
-    await knex.raw(`ALTER DEFAULT PRIVILEGES IN SCHEMA public
-        GRANT ALL PRIVILEGES ON TABLES TO ?`, [userName]);
-    await knex.raw(`ALTER DEFAULT PRIVILEGES IN SCHEMA public
-        GRANT ALL PRIVILEGES ON SEQUENCES TO ?`, [userName]);
+    await knex.raw(
+      `ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT ALL PRIVILEGES ON TABLES TO ?`,
+      [userName]
+    );
+    await knex.raw(
+      `ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT ALL PRIVILEGES ON SEQUENCES TO ?`,
+      [userName]
+    );
     return true;
   }
 
@@ -98,10 +124,12 @@ JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
   AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
 WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND tc.table_schema = 'public'
   */
-  
+
   async getSchema(db: string): Promise<DbSchemaSchema> {
     const knex = await this.getKnex(db);
-    const tables = await knex('information_schema.tables').select('table_name').where('table_schema', 'public');
+    const tables = await knex('information_schema.tables')
+      .select('table_name')
+      .where('table_schema', 'public');
     const foreignKeys = await knex.raw(`
     WITH unnested_confkey AS (
       SELECT oid, unnest(confkey) as confkey
@@ -142,31 +170,46 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
       tables: [],
     };
     for (let k in tables) {
-      const table:DbSchemaSchemaTable = {
+      const table: DbSchemaSchemaTable = {
         name: tables[k].table_name,
         fields: [],
         foreignKeys: [],
       };
       const fields = await knex('information_schema.columns')
-        .select('column_name', 'data_type', knex.raw('udt_name::regtype'), 'is_nullable')
+        .select(
+          'column_name',
+          'data_type',
+          knex.raw('udt_name::regtype'),
+          'is_nullable'
+        )
         .where('table_name', table.name);
       fields.forEach((field: any) => {
         table.fields.push({
           name: field.column_name,
-          type: field.data_type === 'USER-DEFINED' || field.data_type === 'ARRAY' ? field.udt_name : field.data_type,
+          type:
+            field.data_type === 'USER-DEFINED' || field.data_type === 'ARRAY'
+              ? field.udt_name
+              : field.data_type,
           notNull: field.is_nullable === 'NO',
-          unique: contraints.rows.find((row: any) => 
-            row.table_name === table.name && row.column_name === field.column_name && 
-          row.constraint_type === 'UNIQUE',
-          ) !== undefined,
-          primaryKey: contraints.rows.find((row: any) => 
-            row.table_name === table.name && row.column_name === field.column_name &&
-          row.constraint_type === 'PRIMARY KEY',
-          ) !== undefined,
+          unique:
+            contraints.rows.find(
+              (row: any) =>
+                row.table_name === table.name &&
+                row.column_name === field.column_name &&
+                row.constraint_type === 'UNIQUE'
+            ) !== undefined,
+          primaryKey:
+            contraints.rows.find(
+              (row: any) =>
+                row.table_name === table.name &&
+                row.column_name === field.column_name &&
+                row.constraint_type === 'PRIMARY KEY'
+            ) !== undefined,
         });
       });
-      table.foreignKeys = 
-        foreignKeys.rows.filter((row: any) => row.constraint_table === table.name).map((row: any) => ({
+      table.foreignKeys = foreignKeys.rows
+        .filter((row: any) => row.constraint_table === table.name)
+        .map((row: any) => ({
           name: row.constraint_name,
           field: row.constraint_column,
           foreignTable: row.referenced_table,
@@ -177,41 +220,74 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
     return result;
   }
 
-  async backupProcess(db: Db, backup: DbBackup, artifact: Artifact, withoutData: boolean): Promise<DbBackupTable> {
+  async backupProcess(
+    db: Db,
+    backup: DbBackup,
+    artifact: Artifact,
+    withoutData: boolean
+  ): Promise<DbBackupTable> {
     const data = await this.getData();
     const dbData = await db.getData();
     if (data.host === 'localhost') {
       data.host = '172.17.0.1';
     }
-    const file = await artifact.getPath() + '/backup.sql';
+    const file = (await artifact.getPath()) + '/backup.sql';
     const backupData = await backup.getData();
     const log = new Log(this.ctx);
-    await log.create({ 
-      name: 'Backup postgrsql db ' + data.name + '.' + dbData.name + ' to backup ' + backupData.name,
+    await log.create({
+      name:
+        'Backup postgrsql db ' +
+        data.name +
+        '.' +
+        dbData.name +
+        ' to backup ' +
+        backupData.name,
       type: LogType.DbBackup,
       object_id: backupData.id,
       object_name: backupData.name,
     });
-    await MegapolosNode.currentNode.shellCommand(`docker run -i --rm -e PGPASSWORD=${data.password} postgres pg_dump -c -h ${data.host} -U ${data.user} ${withoutData ? '-s' : ''} --if-exists --no-owner --no-privileges ${dbData.name} > ${file}`, new User(undefined, ''), log).output;
+    await MegapolosNode.currentNode.shellCommand(
+      `docker run -i --rm -e PGPASSWORD=${
+        data.password
+      } postgres pg_dump -c -h ${data.host} -U ${data.user} ${
+        withoutData ? '-s' : ''
+      } --if-exists --no-owner --no-privileges ${dbData.name} > ${file}`,
+      new User(undefined, ''),
+      log
+    ).output;
     return backup.getData();
   }
 
-  async restoreProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<boolean> {
+  async restoreProcess(
+    db: Db,
+    backup: DbBackup,
+    artifact: Artifact
+  ): Promise<boolean> {
     const data = await this.getData();
     const dbData = await db.getData();
     if (data.host === 'localhost') {
       data.host = '172.17.0.1';
     }
-    const file = await artifact.getPath() + '/backup.sql';
+    const file = (await artifact.getPath()) + '/backup.sql';
     const backupData = await backup.getData();
     const log = new Log(this.ctx);
-    await log.create({ 
-      name: 'Restore postgrsql db ' + data.name + '.' + dbData.name + ' from backup ' + backupData.name,
+    await log.create({
+      name:
+        'Restore postgrsql db ' +
+        data.name +
+        '.' +
+        dbData.name +
+        ' from backup ' +
+        backupData.name,
       type: LogType.DbBackup,
       object_id: backupData.id,
       object_name: backupData.name,
     });
-    await MegapolosNode.currentNode.shellCommand(`cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`, new User(undefined), log).output;
+    await MegapolosNode.currentNode.shellCommand(
+      `cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`,
+      new User(undefined),
+      log
+    ).output;
     return true;
   }
 
@@ -239,10 +315,13 @@ END$$;
     return true;
   }
 
-  async massDbQueryChange(dbNames: string[], query: string): Promise<{ dbName: string; result: string; error: string; }[]> {
-    const results: { dbName: string; result: string; error: string; }[] = [];
+  async massDbQueryChange(
+    dbNames: string[],
+    query: string
+  ): Promise<{ dbName: string; result: string; error: string }[]> {
+    const results: { dbName: string; result: string; error: string }[] = [];
     for (let i in dbNames) {
-      const result: { dbName: string; result: string; error: string; } = {
+      const result: { dbName: string; result: string; error: string } = {
         dbName: dbNames[i],
         result: '',
         error: '',
@@ -250,7 +329,7 @@ END$$;
       const dbName = dbNames[i];
       const knex = await this.getKnex(dbName);
       try {
-        result.result = JSON.stringify((await knex.raw(query)));
+        result.result = JSON.stringify(await knex.raw(query));
       } catch (e) {
         result.error = e.message;
       }
@@ -259,27 +338,40 @@ END$$;
     return results;
   }
 
-  async downloadBackupTextProcess(backup: DbBackup, artifact: Artifact): Promise<string> {
-    const file = await artifact.getPath() + '/backup.sql';
+  async downloadBackupTextProcess(
+    backup: DbBackup,
+    artifact: Artifact
+  ): Promise<string> {
+    const file = (await artifact.getPath()) + '/backup.sql';
     return readFile(file, 'utf8');
   }
 
-  async uploadBackupTextProcess(text: string, backup: DbBackup, artifact: Artifact): Promise<DbBackupTable> {
-    const file = await artifact.getPath() + '/backup.sql';
+  async uploadBackupTextProcess(
+    text: string,
+    backup: DbBackup,
+    artifact: Artifact
+  ): Promise<DbBackupTable> {
+    const file = (await artifact.getPath()) + '/backup.sql';
     await writeFile(file, text);
     return backup.getData();
   }
 
   async getInternalDbs(): Promise<string[]> {
-    return (await (await this.getKnex('postgres'))
-      .select('datname').from('pg_database').whereRaw('datistemplate = false'))
-      .map((row: any) => row.datname);
+    return (
+      await (await this.getKnex('postgres'))
+        .select('datname')
+        .from('pg_database')
+        .whereRaw('datistemplate = false')
+    ).map((row: any) => row.datname);
   }
 
   async getInternalUsers(): Promise<string[]> {
-    return (await (await this.getKnex('postgres'))
-      .select('rolname').from('pg_roles').whereRaw('rolname NOT LIKE \'pg_%\''))
-      .map((row: any) => row.rolname);
+    return (
+      await (await this.getKnex('postgres'))
+        .select('rolname')
+        .from('pg_roles')
+        .whereRaw("rolname NOT LIKE 'pg_%'")
+    ).map((row: any) => row.rolname);
   }
 }
 

@@ -21,10 +21,7 @@ abstract class BaseRepository<T extends IEntity> {
     return this._data;
   }
 
-  constructor(
-    ctx?: Context,
-    id: string | T | undefined = undefined,
-  ) {
+  constructor(ctx?: Context, id: string | T | undefined = undefined) {
     if (id && typeof id === 'string') {
       this.id = id;
     } else if (id && typeof id === 'object') {
@@ -50,7 +47,7 @@ abstract class BaseRepository<T extends IEntity> {
   }
 
   async checkActionAccess(action: string) {
-    if (!await this.haveActionAccess(action)) {
+    if (!(await this.haveActionAccess(action))) {
       this._throwAccessDenied();
     }
   }
@@ -60,11 +57,15 @@ abstract class BaseRepository<T extends IEntity> {
       return entities;
     }
 
-    return RightsChecker.filter(this.ctx?.user?.id, {
-      resourceType: this.getTable(),
-      resourceId: '*',
-      action: defaultRights.read,
-    }, entities);
+    return RightsChecker.filter(
+      this.ctx?.user?.id,
+      {
+        resourceType: this.getTable(),
+        resourceId: '*',
+        action: defaultRights.read,
+      },
+      entities
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -75,7 +76,7 @@ abstract class BaseRepository<T extends IEntity> {
   async checkEntitiesOfOrganization(
     ids: string[],
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    organizationId: string,
+    organizationId: string
   ): Promise<T[]> {
     const entities = await this.getByIds(ids);
     return entities;
@@ -89,10 +90,10 @@ abstract class BaseRepository<T extends IEntity> {
     if (!update && this._data) return this._data;
     if (!this.id) throw new Error('Id not found');
     await this.checkActionAccess(defaultRights.read);
-    const entity = await knex.select('*').from(this.getTable()).where(
-      'id',
-      this.id,
-    )
+    const entity = await knex
+      .select('*')
+      .from(this.getTable())
+      .where('id', this.id)
       .first();
     if (!entity) throw new Error('Entity not found');
     return entity;
@@ -100,41 +101,49 @@ abstract class BaseRepository<T extends IEntity> {
 
   async getAll(): Promise<T[]> {
     const result = await this.filterEntities(
-      knex.select(`${this.getTable()}.*`).from(this.getTable())
-        .orderBy(this._orderBy(), this._orderByDirection()),
+      knex
+        .select(`${this.getTable()}.*`)
+        .from(this.getTable())
+        .orderBy(this._orderBy(), this._orderByDirection())
     );
     return this.filterEntitiesByAccess(result);
   }
 
   async getByIds(ids: string[]): Promise<T[]> {
     const result = await this.filterEntities(
-      knex.select(`${this.getTable()}.*`)
-        .from(this.getTable()).whereIn(`${this.getTable()}.id`, ids)
-        .orderBy(this._orderBy(), this._orderByDirection()),
+      knex
+        .select(`${this.getTable()}.*`)
+        .from(this.getTable())
+        .whereIn(`${this.getTable()}.id`, ids)
+        .orderBy(this._orderBy(), this._orderByDirection())
     );
     return this.filterEntitiesByAccess(result);
   }
 
   async getByFields(fields: Partial<T>): Promise<T[]> {
     const result = await this.filterEntities(
-      knex.select(`${this.getTable()}.*`)
-        .from(this.getTable()).where(fields)
-        .orderBy(this._orderBy(), this._orderByDirection()),
+      knex
+        .select(`${this.getTable()}.*`)
+        .from(this.getTable())
+        .where(fields)
+        .orderBy(this._orderBy(), this._orderByDirection())
     );
     return this.filterEntitiesByAccess(result);
   }
 
   async getByQuery(
-    callback: (knex: Knex.QueryBuilder<any, T>) => Knex.QueryBuilder,
+    callback: (knex: Knex.QueryBuilder<any, T>) => Knex.QueryBuilder
   ): Promise<T[]> {
     const result = await this.filterEntities(
       callback(
-        knex.select(`${this.getTable()}.*`).from(this.getTable())
+        knex
+          .select(`${this.getTable()}.*`)
+          .from(this.getTable())
           .orderBy(
             this._orderBy(),
-            this._orderByDirection(),
-          ) as Knex.QueryBuilder,
-      ),
+            this._orderByDirection()
+          ) as Knex.QueryBuilder
+      )
     );
     return this.filterEntitiesByAccess(result);
   }
@@ -146,10 +155,12 @@ abstract class BaseRepository<T extends IEntity> {
     const [created] = await knex(this.getTable()).insert(entity).returning('*');
     this.id = created.id;
     if (!!resources[this.getTable()]) {
-      const { default: UserGroupPrivilege } = await import('./user/UserGroupPrivilege');
+      const { default: UserGroupPrivilege } = await import(
+        './user/UserGroupPrivilege'
+      );
       await new UserGroupPrivilege(this.ctx).pushOwner(
         this.getTable(),
-        this.id,
+        this.id
       );
     }
     return created;
@@ -159,8 +170,10 @@ abstract class BaseRepository<T extends IEntity> {
     await this.checkActionAccess(defaultRights.edit);
     entity.update_date = new Date();
     await this.checkEntityData(entity);
-    const [edited] = await knex(this.getTable()).where('id', this.id)
-      .update(entity).returning('*');
+    const [edited] = await knex(this.getTable())
+      .where('id', this.id)
+      .update(entity)
+      .returning('*');
     await this.getData(true);
     return edited;
   }
@@ -168,15 +181,19 @@ abstract class BaseRepository<T extends IEntity> {
   async delete(): Promise<boolean> {
     await this.checkActionAccess(defaultRights.remove);
     await this.getData();
-    await knex(this.getTable()).where('id', this.id)
-      .delete();
+    await knex(this.getTable()).where('id', this.id).delete();
     return true;
   }
 
   protected _throwAccessDenied() {
     throw new Error(
-      'Access denied (table: ' + this.getTable() + ', uuid: ' + this.id
-        + ', userId: ' + this.ctx?.user?.id + ')',
+      'Access denied (table: ' +
+        this.getTable() +
+        ', uuid: ' +
+        this.id +
+        ', userId: ' +
+        this.ctx?.user?.id +
+        ')'
     );
   }
 

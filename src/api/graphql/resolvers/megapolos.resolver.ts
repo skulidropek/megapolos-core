@@ -8,21 +8,55 @@ import { knex } from '../../../features/db/knex';
 export interface SearchResult {
   id: string;
   name: string;
-  type: 'repository' | 'app' | 'image' | 'container' | 'node' | 'domain' | 'user' |
-  'dbms' | 'db' | 'db_user' | 'db_backup' | 'db_schema' | 'app_instance' | 'log' | 'volume';
+  type:
+    | 'repository'
+    | 'app'
+    | 'image'
+    | 'container'
+    | 'node'
+    | 'domain'
+    | 'user'
+    | 'dbms'
+    | 'db'
+    | 'db_user'
+    | 'db_backup'
+    | 'db_schema'
+    | 'app_instance'
+    | 'log'
+    | 'volume';
 }
 
 class Megapolos {
   async globalSearch(query: string): Promise<SearchResult[]> {
     const result: SearchResult[] = [];
     const tables = [
-      'repository', 'app', 'image', 'container', 'node', 'domain', 'user',
-      'dbms', 'db', 'db_user', 'db_backup', 'db_schema', 'app_instance', 'log', 'volume',
+      'repository',
+      'app',
+      'image',
+      'container',
+      'node',
+      'domain',
+      'user',
+      'dbms',
+      'db',
+      'db_user',
+      'db_backup',
+      'db_schema',
+      'app_instance',
+      'log',
+      'volume',
     ];
     for (const i in tables) {
       const table = tables[i];
-      const data = await knex(table).select(['id', 'name']).where('name', 'like', `%${query}%`);
-      result.push(...data.map((item: SearchResult) => ({ ...item, type: table as SearchResult['type'] })));
+      const data = await knex(table)
+        .select(['id', 'name'])
+        .where('name', 'like', `%${query}%`);
+      result.push(
+        ...data.map((item: SearchResult) => ({
+          ...item,
+          type: table as SearchResult['type'],
+        }))
+      );
     }
     return result;
   }
@@ -36,19 +70,21 @@ const megapolosModule = createModule({
       type Query {
         globalSearch(query: String!): [SearchResult]
       }
-        type SearchResult {
-            id: String
-            name: String
-            type: String
-        }
+      type SearchResult {
+        id: String
+        name: String
+        type: String
+      }
     `,
   ],
   resolvers: {
     Query: {
-      globalSearch: resolver<{ query: string }, SearchResult[]>(async (parent, args) => {
-        EventsObserver.listener({ type: 'globalSearch', data: args });
-        return new Megapolos().globalSearch(args.query);
-      }),
+      globalSearch: resolver<{ query: string }, SearchResult[]>(
+        async (parent, args) => {
+          EventsObserver.listener({ type: 'globalSearch', data: args });
+          return new Megapolos().globalSearch(args.query);
+        }
+      ),
     },
   },
 });

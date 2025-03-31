@@ -18,23 +18,23 @@ const logModule = createModule({
       type Mutation {
         createLog(log: LogInput): Log
         removeLog(id: String!): Boolean
-        editLog(id: String! log: LogInput): Log
+        editLog(id: String!, log: LogInput): Log
         closeLog(id: String!): Boolean
       }
-        type Log {
-            id: String
-            text: String
-            name: String
-            password: String
-            create_date: DateTime
-            update_date: DateTime
-            remove_date: DateTime
-            is_closed: Boolean
-            close_date: DateTime
-        }
-        input LogInput {
-            name: String
-        }
+      type Log {
+        id: String
+        text: String
+        name: String
+        password: String
+        create_date: DateTime
+        update_date: DateTime
+        remove_date: DateTime
+        is_closed: Boolean
+        close_date: DateTime
+      }
+      input LogInput {
+        name: String
+      }
     `,
   ],
   resolvers: {
@@ -47,7 +47,7 @@ const logModule = createModule({
         async (parent, args, context) => {
           EventsObserver.listener({ type: 'getLog', data: args });
           return new Log(context, args.id).getData();
-        },
+        }
       ),
     },
     Mutation: {
@@ -55,24 +55,30 @@ const logModule = createModule({
         async (parent, args, context) => {
           EventsObserver.listener({ type: 'createLog', data: args });
           return new Log(context).create(args.log);
-        },
+        }
       ),
-      editLog: resolver<{ id: string, log: Partial<LogTable> }, LogTable>(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'editLog', data: args });
-        const log = new Log(context, args.id);
-        await log.edit(args.log);
-        return log.getData();
-      }),
-      removeLog: resolver<{ id: string }, boolean>(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'removeLog', data: args });
-        const log = new Log(context, args.id);
-        await log.delete();
-        return true;
-      }),
-      closeLog: resolver<{ id: string }, boolean>(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'closeLog', data: args });
-        return new Log(context, args.id).close();
-      }),
+      editLog: resolver<{ id: string; log: Partial<LogTable> }, LogTable>(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'editLog', data: args });
+          const log = new Log(context, args.id);
+          await log.edit(args.log);
+          return log.getData();
+        }
+      ),
+      removeLog: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'removeLog', data: args });
+          const log = new Log(context, args.id);
+          await log.delete();
+          return true;
+        }
+      ),
+      closeLog: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          EventsObserver.listener({ type: 'closeLog', data: args });
+          return new Log(context, args.id).close();
+        }
+      ),
     },
     Log: {
       text: resolver<LogTable, string>(async (parent, args, context) => {

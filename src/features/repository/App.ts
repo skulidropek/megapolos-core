@@ -2,7 +2,12 @@ import { AppInput, ContainerInput } from '../../domain/types';
 import Image from './Image';
 import Instance from './Instance';
 import EventsObserver from '../events/eventsObserver';
-import { AppInstanceTable, AppTable, ImageTable, RepositoryTable } from '../db/tables';
+import {
+  AppInstanceTable,
+  AppTable,
+  ImageTable,
+  RepositoryTable,
+} from '../db/tables';
 import User from './user/User';
 import BaseRepository from './BaseRepository';
 import Repository from './Repository';
@@ -26,23 +31,29 @@ class App extends BaseRepository<AppTable> {
         image: image.image,
       });
     }
-    EventsObserver.listener({ 'type': 'installApp', data: { userId, input } });
+    EventsObserver.listener({ type: 'installApp', data: { userId, input } });
     return app;
   }
 
   async getDataWithImages(): Promise<AppTable & { images?: ImageTable[] }> {
-    const result:(AppTable & { images?: ImageTable[] }) = await this.getData();
+    const result: AppTable & { images?: ImageTable[] } = await this.getData();
     const images = await this.getImages();
     result.images = await Promise.all(images);
     return result;
   }
-  
-  createInstance(name: string, containers: ContainerInput[], isDevice = false): Promise<AppInstanceTable> {
+
+  createInstance(
+    name: string,
+    containers: ContainerInput[],
+    isDevice = false
+  ): Promise<AppInstanceTable> {
     return new Instance(this.ctx).create({ app_id: this.id, name }, isDevice);
   }
 
   async removeInstances(): Promise<void> {
-    const instances = (await this.getInstances()).map(instance => new Instance(this.ctx, instance.id));
+    const instances = (await this.getInstances()).map(
+      (instance) => new Instance(this.ctx, instance.id)
+    );
     for (let i in instances) {
       await instances[i].delete();
     }
@@ -74,7 +85,9 @@ class App extends BaseRepository<AppTable> {
 
   async delete(): Promise<boolean> {
     await this.removeInstances();
-    const images = (await this.getImages()).map(image => new Image(this.ctx, image.id));
+    const images = (await this.getImages()).map(
+      (image) => new Image(this.ctx, image.id)
+    );
     for (let i in images) {
       await images[i].delete();
     }

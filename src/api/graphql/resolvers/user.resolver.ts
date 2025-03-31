@@ -39,7 +39,7 @@ const userModule = createModule({
         id: String
         name: String
       }
-      
+
       type GroupUserWithPrivilege {
         id: String
         name: String
@@ -106,7 +106,7 @@ const userModule = createModule({
       getUsers: resolver<void, (UserTable & { token?: String })[]>(
         async (parent, args, context) => {
           return new User(context).getUsersWithToken();
-        },
+        }
       ),
       getMe: resolver<void, UserTable>(async (parent, args, context) => {
         const results = await new User(context, context.user.id).getData();
@@ -115,11 +115,11 @@ const userModule = createModule({
       getAllUserGroups: resolver<void, GroupUserTable[]>(
         async (parent, args, context) => {
           return new UserGroup(context).getAll();
-        },
+        }
       ),
       getGroupUserPrivilege: resolver<
-      { group_user_id: string },
-      GroupUserPrivilegeTable[]
+        { group_user_id: string },
+        GroupUserPrivilegeTable[]
       >(async (parent, args, context) => {
         return new UserGroupPrivilege(context).getByFields({
           group_user_id: args.group_user_id,
@@ -134,7 +134,7 @@ const userModule = createModule({
             name: group.name,
             privileges: privileges.filter((p) => p.group_user_id === group.id),
           }));
-        },
+        }
       ),
       getPrivilegeActions: resolver<{ resource_type: string }, string[]>(
         async (parent, args) => {
@@ -143,7 +143,7 @@ const userModule = createModule({
             throw new Error('Resource type not found');
           }
           return Object.values(resource.actions);
-        },
+        }
       ),
     },
     Mutation: {
@@ -151,7 +151,7 @@ const userModule = createModule({
         async (parent, args, context) => {
           await new User(context).create({ name: args.input.name });
           return true;
-        },
+        }
       ),
       grantPrivilege: resolver<{ input: PrivilegeInput }, boolean>(
         async (parent, args, context) => {
@@ -159,27 +159,29 @@ const userModule = createModule({
             args.input.role_id,
             args.input.resource_type,
             args.input.resource_id,
-            args.input.action,
+            args.input.action
           );
           return true;
-        },
+        }
       ),
       revokePrivilege: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           return new UserGroupPrivilege(context).revoke(args.id);
-        },
+        }
       ),
       addUserToGroup: resolver<{ input: AddUserToGroupInput }, boolean>(
         async (parent, args, context) => {
-          return new User(context, args.input.user_id).addUserToGroup(args.input.group_id);
-        },
-      ), 
+          return new User(context, args.input.user_id).addUserToGroup(
+            args.input.group_id
+          );
+        }
+      ),
     },
     User: {
       group: resolver<UserTable, GroupUserTable>(
         async (parent, args, context) => {
           return new User(context, parent.id).getGroup();
-        },
+        }
       ),
     },
   },

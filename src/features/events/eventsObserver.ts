@@ -4,7 +4,6 @@ import pubsub from '../../api/graphql/pubsub';
 import { MegapolosEvent } from './event';
 
 class EventsObserver {
-
   static async getIterator() {
     return pubsub.asyncIterator(['EVENT']);
   }

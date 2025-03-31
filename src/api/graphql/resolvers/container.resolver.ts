@@ -100,7 +100,6 @@ const containerModule = createModule({
         name: String
       }
 
-
       input ContainerVolumeInput {
         name: String
         volume: String
@@ -116,21 +115,27 @@ const containerModule = createModule({
         node_id: String
         domain_id: String
       }
-      
+
       type Query {
         getContainer(id: String): Container
         getContainerLog(id: String): String
         getContainers: [Container]
-        listContainerFiles(id: String! path: String!): ContainerFiles
-        showContainerFile(id: String! path: String!): String
+        listContainerFiles(id: String!, path: String!): ContainerFiles
+        showContainerFile(id: String!, path: String!): String
       }
 
       type Mutation {
-        addContainer(appInstanceId: String! data: ContainerInput!): Boolean
-        updateContainer(id: String! noRebuild: Boolean): Boolean
-        changeContainerEnvs(id: String!, envs: [ContainerParameterInput]): Boolean
-        changeContainerVariables(id: String!, variables: [ContainerVariableInput]): Boolean
-        editContainer(id: String! data: ContainerInput!): Boolean
+        addContainer(appInstanceId: String!, data: ContainerInput!): Boolean
+        updateContainer(id: String!, noRebuild: Boolean): Boolean
+        changeContainerEnvs(
+          id: String!
+          envs: [ContainerParameterInput]
+        ): Boolean
+        changeContainerVariables(
+          id: String!
+          variables: [ContainerVariableInput]
+        ): Boolean
+        editContainer(id: String!, data: ContainerInput!): Boolean
         removeContainer(id: String!): Boolean
         startContainer(id: String!): Boolean
         stopContainer(id: String!): Boolean
@@ -149,48 +154,50 @@ const containerModule = createModule({
       getContainer: resolver<{ id: string }, ContainerResult>(
         async (parent, args, context) => {
           return new Container(context, args.id).getDataWithDetails();
-        },
+        }
       ),
       getContainerLog: resolver<{ id: string }, string>(
         async (parent, args, context) => {
           return new Container(context, args.id).getDockerLog();
-        },
+        }
       ),
       getContainers: resolver<void, ContainerResult[]>(
         async (parent, args, context) => {
           return new Container(context).getAll();
-        },
+        }
       ),
-      listContainerFiles: resolver<{ id: string; path: string }, { files: string[]; directories: string[] }>(
-        async (parent, args, context) => {
-          return new Container(context, args.id).listFiles(args.path);
-        },
-      ),
+      listContainerFiles: resolver<
+        { id: string; path: string },
+        { files: string[]; directories: string[] }
+      >(async (parent, args, context) => {
+        return new Container(context, args.id).listFiles(args.path);
+      }),
       showContainerFile: resolver<{ id: string; path: string }, string>(
         async (parent, args, context) => {
           return new Container(context, args.id).showFile(args.path);
-        },
+        }
       ),
     },
     Mutation: {
-      changeContainerEnvs: resolver<{
-        id: string;
-        envs: {
-          key: string;
-          value: string;
-        }[];
-      }, boolean>(async (parent, args, context) => {
+      changeContainerEnvs: resolver<
+        {
+          id: string;
+          envs: {
+            key: string;
+            value: string;
+          }[];
+        },
+        boolean
+      >(async (parent, args, context) => {
         await new Container(context, args.id).changeEnvs(args.envs);
         EventsObserver.listener({ type: 'changeContainerEnvs', data: args });
         return true;
       }),
       changeContainerVariables: resolver<
-      { id: string; variables: ContainerVariableTable[] },
-      boolean
+        { id: string; variables: ContainerVariableTable[] },
+        boolean
       >(async (parent, args, context) => {
-        await new Container(context, args.id).changeVariables(
-          args.variables,
-        );
+        await new Container(context, args.id).changeVariables(args.variables);
         EventsObserver.listener({
           type: 'changeContainerVariables',
           data: args,
@@ -198,8 +205,8 @@ const containerModule = createModule({
         return true;
       }),
       addContainer: resolver<
-      { appInstanceId: string; data: ContainerTable },
-      boolean
+        { appInstanceId: string; data: ContainerTable },
+        boolean
       >(async (parent, args, context) => {
         await new Container(context).create({
           app_instance_id: args.appInstanceId,
@@ -213,39 +220,39 @@ const containerModule = createModule({
           await new Container(context, args.id).edit(args.data);
           EventsObserver.listener({ type: 'editContainer', data: args });
           return true;
-        },
+        }
       ),
       removeContainer: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new Container(context, args.id).delete();
           EventsObserver.listener({ type: 'removeContainer', data: args });
           return true;
-        },
+        }
       ),
       startContainer: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new Container(context, args.id).start();
           EventsObserver.listener({ type: 'startContainer', data: args });
           return true;
-        },
+        }
       ),
       stopContainer: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new Container(context, args.id).stop();
           EventsObserver.listener({ type: 'stopContainer', data: args });
           return true;
-        },
+        }
       ),
       addDbToContainer: resolver<{ input: ContainerDbTable }, ContainerDbTable>(
         async (parent, args, context) => {
           return new ContainerDb(context).create(args.input);
-        },
+        }
       ),
       removeDbFromContainer: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new ContainerDb(context, args.id).delete();
           return true;
-        },
+        }
       ),
     },
     Container: {
@@ -262,44 +269,37 @@ const containerModule = createModule({
       }),
       volumes: resolver<{}, ContainerVolumeTable[]>(
         async (parent, args, context) => {
-          return new Volume(context).getVolumesOfContainer(
-            parent.id,
-          );
-        },
+          return new Volume(context).getVolumesOfContainer(parent.id);
+        }
       ),
       envs: resolver<{}, { key: string; value: string }[]>(
         async (parent, args, context) => {
           if (parent.envs) {
             return parent.envs;
           }
-          return (await new Container(context, parent.id).getEnvs()).map((env) => (
-            {
+          return (await new Container(context, parent.id).getEnvs()).map(
+            (env) => ({
               key: env.container_env_name,
               value: env.container_env_value,
-            }
-          ));
-        },
+            })
+          );
+        }
       ),
       variables: resolver<{}, ContainerVariableTable[]>(
         async (parent, args, context) => {
           return new Container(context, parent.id).getVariables();
-        },
+        }
       ),
-      runtimeVariables: resolver<{}, string>(
-        async (parent, args, context) => {
-          return JSON.stringify(
-            await new Container(context, parent.id)
-              .getRuntimeVariables(),
-            null,
-            2,
-          );
-        },
-      ),
-      dbs: resolver<{}, ContainerDbTable[]>(
-        async (parent, args, context) => {
-          return new Container(context, parent.id).getDbs();
-        },
-      ),
+      runtimeVariables: resolver<{}, string>(async (parent, args, context) => {
+        return JSON.stringify(
+          await new Container(context, parent.id).getRuntimeVariables(),
+          null,
+          2
+        );
+      }),
+      dbs: resolver<{}, ContainerDbTable[]>(async (parent, args, context) => {
+        return new Container(context, parent.id).getDbs();
+      }),
     },
     ContainerDb: {
       db: resolver<{}, DbTable>(async (parent, args, context) => {

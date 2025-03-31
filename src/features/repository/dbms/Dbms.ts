@@ -6,15 +6,19 @@ import DbSchema from '../db/DbSchema';
 import PostgresDmbs from './PostgresDbms';
 
 class Dbms {
-  static async getById(id: string):Promise<BaseDbms> {
-    const dbms: DbmsTable = await knex.select().from('dbms').where('id', id).first();
+  static async getById(id: string): Promise<BaseDbms> {
+    const dbms: DbmsTable = await knex
+      .select()
+      .from('dbms')
+      .where('id', id)
+      .first();
     if (dbms?.type === 'postgres') {
       return new PostgresDmbs(undefined, dbms.id);
     }
     throw new Error('Dbms type not found');
   }
 
-  static async getByType(type: string):Promise<BaseDbms> {
+  static async getByType(type: string): Promise<BaseDbms> {
     if (type === 'postgres') {
       return new PostgresDmbs(undefined);
     }
@@ -31,13 +35,19 @@ class Dbms {
     return this.compareSchemaSchemas(schema1, schema2);
   }
 
-  static async compareSchemas(schema1id: string, schema2id: string): Promise<string[]> {
+  static async compareSchemas(
+    schema1id: string,
+    schema2id: string
+  ): Promise<string[]> {
     const schema1 = await new DbSchema(undefined, schema1id).getData();
     const schema2 = await new DbSchema(undefined, schema2id).getData();
     return this.compareSchemaSchemas(schema1.schema, schema2.schema);
   }
 
-  static async compareDbSchema(dbid: string, schemaid: string): Promise<string[]> {
+  static async compareDbSchema(
+    dbid: string,
+    schemaid: string
+  ): Promise<string[]> {
     const db = await new Db(undefined, dbid).getData();
     const dbms = await this.getById(db.dbms_id);
     const schema1 = await dbms.getSchema(db.name);
@@ -45,7 +55,10 @@ class Dbms {
     return this.compareSchemaSchemas(schema1, schema2.schema);
   }
 
-  static async compareSchemaSchemas(schema1: DbSchemaSchema, schema2: DbSchemaSchema): Promise<string[]> {
+  static async compareSchemaSchemas(
+    schema1: DbSchemaSchema,
+    schema2: DbSchemaSchema
+  ): Promise<string[]> {
     const result: string[] = ['', ''];
     schema1.tables.forEach((table1) => {
       const table2 = schema2.tables.find((table) => table.name === table1.name);
@@ -54,7 +67,9 @@ class Dbms {
         result[1] += '\n';
       } else {
         table1.fields.forEach((field1) => {
-          const field2 = table2.fields.find((field) => field.name === field1.name);
+          const field2 = table2.fields.find(
+            (field) => field.name === field1.name
+          );
           if (!field2) {
             result[0] += `Field ${table1.name}.${field1.name}\n`;
             result[1] += '\n';
@@ -73,14 +88,18 @@ class Dbms {
           }
         });
         table2.fields.forEach((field2) => {
-          const field1 = table1.fields.find((field) => field.name === field2.name);
+          const field1 = table1.fields.find(
+            (field) => field.name === field2.name
+          );
           if (!field1) {
             result[0] += '\n';
             result[1] += `Field ${table2.name}.${field2.name}\n`;
           }
         });
         table1.foreignKeys.forEach((foreignKey1) => {
-          const foreignKey2 = table2.foreignKeys.find((foreignKey) => foreignKey.name === foreignKey1.name);
+          const foreignKey2 = table2.foreignKeys.find(
+            (foreignKey) => foreignKey.name === foreignKey1.name
+          );
           if (!foreignKey2) {
             result[0] += `ForeignKey ${table1.name}.${foreignKey1.name}\n`;
             result[1] += '\n';
@@ -96,7 +115,9 @@ class Dbms {
           }
         });
         table2.foreignKeys.forEach((foreignKey2) => {
-          const foreignKey1 = table1.foreignKeys.find((foreignKey) => foreignKey.name === foreignKey2.name);
+          const foreignKey1 = table1.foreignKeys.find(
+            (foreignKey) => foreignKey.name === foreignKey2.name
+          );
           if (!foreignKey1) {
             result[0] += '\n';
             result[1] += `ForeignKey ${table2.name}.${foreignKey2.name}\n`;

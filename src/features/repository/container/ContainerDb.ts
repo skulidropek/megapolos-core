@@ -10,7 +10,10 @@ class ContainerDb extends BaseRepository<ContainerDbTable> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async checkEntityData(entity: Partial<ContainerDbTable>, isCreate?: boolean): Promise<boolean> {
+  async checkEntityData(
+    entity: Partial<ContainerDbTable>,
+    isCreate?: boolean
+  ): Promise<boolean> {
     if (entity.container_id) {
       await new Container(this.ctx, entity.container_id).getData();
     }
@@ -23,7 +26,6 @@ class ContainerDb extends BaseRepository<ContainerDbTable> {
 
     return true;
   }
-
 }
 
 export default ContainerDb;

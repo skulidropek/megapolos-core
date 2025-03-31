@@ -16,7 +16,7 @@ const volumeModule = createModule({
         filename: String!
         data: String!
       }
-      
+
       type Volume {
         id: String
         name: String
@@ -52,51 +52,86 @@ const volumeModule = createModule({
       type Mutation {
         addVolume(input: VolumeInput): Boolean
         deleteVolume(id: String): Boolean
-        addVolumeToContainer(container_id: String, input: ContainerVolumeInput): ContainerVolume
-        removeVolumeFromContainer(id: String container_id: String): Boolean
+        addVolumeToContainer(
+          container_id: String
+          input: ContainerVolumeInput
+        ): ContainerVolume
+        removeVolumeFromContainer(id: String, container_id: String): Boolean
         uploadFileToVolume(volume_id: String, file: Upload!): Boolean
         setDeviceBackupVolume(device_id: String, volume_id: String): Boolean
         removeDeviceBackupVolume(device_id: String): Boolean
         downloadDeviceBackup(backup_id: String): String
-        uploadDeviceBackup(device_id: String, name: String, file: Upload!): Boolean
+        uploadDeviceBackup(
+          device_id: String
+          name: String
+          file: Upload!
+        ): Boolean
         removeDeviceBackup(id: String): Boolean
         backupDevice(device_id: String, container_id: String): Boolean
-        restoreDeviceBackup(device_id: String, backup_id: String, container_id: String): Boolean
+        restoreDeviceBackup(
+          device_id: String
+          backup_id: String
+          container_id: String
+        ): Boolean
       }
     `,
   ],
   resolvers: {
     Query: {
-      getVolumes: resolver<void, VolumeTable[]>(async (parent, args, context) => {
-        return new Volume(context).getAll();
-      }),
+      getVolumes: resolver<void, VolumeTable[]>(
+        async (parent, args, context) => {
+          return new Volume(context).getAll();
+        }
+      ),
     },
     Mutation: {
-      addVolume: resolver<{ input: Partial<VolumeTable> }, boolean>(async (parent, args, context) => {
-        await new Volume(context).create(args.input);
-        EventsObserver.listener({ type: 'addVolume', data: args });
-        return true;
-      }),
-      deleteVolume: resolver<{ id: string }, boolean>(async (parent, args, context) => {
-        const id = args.id;
-        const volume = new Volume(context, id);
-        await volume.delete();
-        EventsObserver.listener({ type: 'deleteVolume', data: args });
-        return true;
-      }),
-      addVolumeToContainer: resolver<{ container_id: string, input: ContainerVolumeInput }, ContainerVolumeTable>(async (parent, args, context) => {
-        const containerVolume = await new Volume(context, args.input.volume).addToContainer(args.container_id, args.input);
+      addVolume: resolver<{ input: Partial<VolumeTable> }, boolean>(
+        async (parent, args, context) => {
+          await new Volume(context).create(args.input);
+          EventsObserver.listener({ type: 'addVolume', data: args });
+          return true;
+        }
+      ),
+      deleteVolume: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          const id = args.id;
+          const volume = new Volume(context, id);
+          await volume.delete();
+          EventsObserver.listener({ type: 'deleteVolume', data: args });
+          return true;
+        }
+      ),
+      addVolumeToContainer: resolver<
+        { container_id: string; input: ContainerVolumeInput },
+        ContainerVolumeTable
+      >(async (parent, args, context) => {
+        const containerVolume = await new Volume(
+          context,
+          args.input.volume
+        ).addToContainer(args.container_id, args.input);
         EventsObserver.listener({ type: 'addVolumeToContainer', data: args });
         return containerVolume;
       }),
-      removeVolumeFromContainer: resolver<{ id: string, container_id: string }, boolean>(async (parent, args, context) => {
+      removeVolumeFromContainer: resolver<
+        { id: string; container_id: string },
+        boolean
+      >(async (parent, args, context) => {
         await new Container(context, args.container_id).removeVolume(args.id);
-        EventsObserver.listener({ type: 'removeVolumeFromContainer', data: args });
+        EventsObserver.listener({
+          type: 'removeVolumeFromContainer',
+          data: args,
+        });
         return true;
       }),
-      uploadFileToVolume: resolver<{ volume_id: string, file: { filename: string, data: string } }, boolean>(async (parent, args, context) => {
+      uploadFileToVolume: resolver<
+        { volume_id: string; file: { filename: string; data: string } },
+        boolean
+      >(async (parent, args, context) => {
         console.log(args.file.filename, args.file.data.slice(0, 100));
-        new Volume(context, args.volume_id).uploadFile(args.file.filename, args.file.data);
+        new Volume(context, args.volume_id).uploadFile(
+          args.file.filename,
+          args.file.data
+        );
         return true;
       }),
     },

@@ -43,7 +43,7 @@ const imageModule = createModule({
         repository_id: String
         branch: String
       }
-        
+
       enum ImageEnvRequirementType {
         string
         number
@@ -73,11 +73,14 @@ const imageModule = createModule({
       }
 
       type Mutation {
-        addImage(appId: String! image: ImageInput!): Boolean
+        addImage(appId: String!, image: ImageInput!): Boolean
         buildImage(imageId: String!): Boolean
         buildImages(imageIds: [String]!): Boolean
-        editImage(id: String! image: ImageInput!): Boolean
-        changeImageEnvs(imageId: String! envs: [ImageEnvRequirementInput]!): Boolean
+        editImage(id: String!, image: ImageInput!): Boolean
+        changeImageEnvs(
+          imageId: String!
+          envs: [ImageEnvRequirementInput]!
+        ): Boolean
         removeImage(id: String!): Boolean
         updateNodesOfImage(imageId: String!): Boolean
       }
@@ -85,15 +88,13 @@ const imageModule = createModule({
   ],
   resolvers: {
     Query: {
-      getImages: resolver<{}, ImageTable[]>(
-        async (parent, args, context) => {
-          return new Image(context).getAll();
-        },
-      ),
+      getImages: resolver<{}, ImageTable[]>(async (parent, args, context) => {
+        return new Image(context).getAll();
+      }),
       getImage: resolver<{ id: string }, ImageTable>(
         async (parent, args, context) => {
           return new Image(context, args.id).getData();
-        },
+        }
       ),
     },
     Mutation: {
@@ -102,28 +103,28 @@ const imageModule = createModule({
           await new Image(context, args.id).edit(args.image);
           EventsObserver.listener({ type: 'editImage', data: args });
           return true;
-        },
+        }
       ),
       addImage: resolver<{ appId: string; image: ImageTable }, boolean>(
         async (parent, args, context) => {
           await new App(context, args.appId).addImage(args.image);
           EventsObserver.listener({ type: 'addImage', data: args });
           return true;
-        },
+        }
       ),
       removeImage: resolver<{ id: string }, boolean>(
         async (parent, args, context) => {
           await new Image(context, args.id).delete();
           EventsObserver.listener({ type: 'removeImage', data: args });
           return true;
-        },
+        }
       ),
       buildImage: resolver<{ imageId: string }, boolean>(
         async (parent, args, context) => {
           await new Image(context, args.imageId).build();
           EventsObserver.listener({ type: 'buildImage', data: args });
           return true;
-        },
+        }
       ),
       buildImages: resolver<{ imageIds: string[] }, boolean>(
         async (parent, args, context) => {
@@ -135,7 +136,7 @@ const imageModule = createModule({
           })();
           EventsObserver.listener({ type: 'buildImages', data: args });
           return true;
-        },
+        }
       ),
       updateNodesOfImage: resolver<{ imageId: string }, boolean>(
         async (parent, args, context) => {
@@ -143,15 +144,16 @@ const imageModule = createModule({
           image.updateNodes();
           EventsObserver.listener({ type: 'updateNodesOfImage', data: args });
           return true;
-        },
+        }
       ),
-      changeImageEnvs: resolver<{ imageId: string; envs: ImageEnvRequirementTable[] }, boolean>(
-        async (parent, args, context) => {
-          await new Image(context, args.imageId).changeEnvs(args.envs);
-          EventsObserver.listener({ type: 'changeImageEnvs', data: args });
-          return true;
-        },
-      ),
+      changeImageEnvs: resolver<
+        { imageId: string; envs: ImageEnvRequirementTable[] },
+        boolean
+      >(async (parent, args, context) => {
+        await new Image(context, args.imageId).changeEnvs(args.envs);
+        EventsObserver.listener({ type: 'changeImageEnvs', data: args });
+        return true;
+      }),
     },
     Image: {
       repository: resolver<ImageTable, RepositoryTable>(
@@ -159,17 +161,17 @@ const imageModule = createModule({
           return parent.repository_id
             ? new Repository(context, parent.repository_id).getData()
             : null;
-        },
+        }
       ),
       envs: resolver<ImageTable, ImageEnvRequirementTable[]>(
         async (parent, args, context) => {
           return new Image(context, parent.id).getEnvs();
-        },
+        }
       ),
       last_build_log: resolver<ImageTable, LogTable>(
         async (parent, args, context) => {
           return new Image(context, parent.id).getLastBuildLog();
-        },
+        }
       ),
     },
   },

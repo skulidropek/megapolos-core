@@ -18,36 +18,43 @@ class ContainerProcess extends BaseProcess {
     this.status = ProcessStatus.Running;
     return new Promise(async (resolve, reject) => {
       const container = await this.container.getDockerContainer();
-      container.exec({
-        Cmd: ['bash', '-c', '--', this.command],
-        AttachStdout: true,
-        AttachStderr: true,
-      }, (err, exec) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        exec.start({}, (error, stream) => {
-          if (error) {
-            reject(error);
+      container.exec(
+        {
+          Cmd: ['bash', '-c', '--', this.command],
+          AttachStdout: true,
+          AttachStderr: true,
+        },
+        (err, exec) => {
+          if (err) {
+            reject(err);
             return;
           }
-          const stdout = new Writable({ write: (chunk) => {
-            this.stdout += chunk.toString();
-            this.onoutput(chunk.toString());
-          } });
-          const stderr = new Writable({ write: (chunk) => {
-            this.stderr += chunk.toString();
-            this.onerror(chunk.toString());
-          } });
-          container.modem.demuxStream(stream, stdout, stderr);
-          stream.on('end', (data) => {
-            this.status = ProcessStatus.Finished;
-            console.log(data);
-            resolve();
+          exec.start({}, (error, stream) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            const stdout = new Writable({
+              write: (chunk) => {
+                this.stdout += chunk.toString();
+                this.onoutput(chunk.toString());
+              },
+            });
+            const stderr = new Writable({
+              write: (chunk) => {
+                this.stderr += chunk.toString();
+                this.onerror(chunk.toString());
+              },
+            });
+            container.modem.demuxStream(stream, stdout, stderr);
+            stream.on('end', (data) => {
+              this.status = ProcessStatus.Finished;
+              console.log(data);
+              resolve();
+            });
           });
-        });
-      });
+        }
+      );
     });
   }
 }

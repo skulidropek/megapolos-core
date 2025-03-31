@@ -1,8 +1,5 @@
 import User from '../repository/user/User';
-import {
-  GroupUserPrivilegeTable,
-  IEntity,
-} from '../db/tables';
+import { GroupUserPrivilegeTable, IEntity } from '../db/tables';
 import { UserAction } from './resources_list';
 
 export class RightsChecker {
@@ -18,7 +15,7 @@ export class RightsChecker {
   static async filter<T extends IEntity>(
     userId: string,
     action: UserAction,
-    entities: T[],
+    entities: T[]
   ): Promise<T[]> {
     if (!userId) {
       return entities;
@@ -30,7 +27,7 @@ export class RightsChecker {
         resourceType: action.resourceType,
         resourceId: entity.id,
         action: action.action,
-      }),
+      })
     );
     return entitiesFiltered;
   }
@@ -41,21 +38,23 @@ export class RightsChecker {
 
   static privilegeIsMatch(
     privilege: GroupUserPrivilegeTable,
-    action: UserAction,
+    action: UserAction
   ): boolean {
-    return (privilege.object_name == '*'
-      || privilege.object_name == action.resourceType)
-      && (privilege.object_id == '*'
-        || privilege.object_id == action.resourceId)
-      && (privilege.action == '*' || privilege.action == action.action);
+    return (
+      (privilege.object_name == '*' ||
+        privilege.object_name == action.resourceType) &&
+      (privilege.object_id == '*' ||
+        privilege.object_id == action.resourceId) &&
+      (privilege.action == '*' || privilege.action == action.action)
+    );
   }
 
   static privilegesIsMatch(
     privileges: GroupUserPrivilegeTable[],
-    action: UserAction,
+    action: UserAction
   ): boolean {
     let value = privileges.some((p) =>
-      RightsChecker.privilegeIsMatch(p, action),
+      RightsChecker.privilegeIsMatch(p, action)
     );
     return value;
   }

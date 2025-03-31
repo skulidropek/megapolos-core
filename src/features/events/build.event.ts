@@ -7,5 +7,5 @@ export interface BuildEndedEvent extends MegapolosEvent {
   data: {
     imageName: string;
     containerId: string;
-  }
+  };
 }

@@ -9,9 +9,11 @@ class DbUser extends BaseRepository<DbUserTable> {
   }
 
   async getDbs(): Promise<DbTable[]> {
-    return knex.select().from('db').
-      leftJoin('db_db_user', 'db.id', 'db_db_user.db_id').
-      where('db_db_user.db_user_id', this.id);
+    return knex
+      .select()
+      .from('db')
+      .leftJoin('db_db_user', 'db.id', 'db_db_user.db_id')
+      .where('db_db_user.db_user_id', this.id);
   }
 
   async getDbms(): Promise<DbmsTable> {

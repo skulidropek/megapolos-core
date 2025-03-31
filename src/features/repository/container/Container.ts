@@ -65,7 +65,6 @@ class Container extends BaseRepository<ContainerTable> {
     return super.create(data);
   }
 
-
   async getDockerContainer() {
     const data = await this.getData();
     const node = new MegapolosNode(this.ctx, data.node_id);
@@ -107,7 +106,10 @@ class Container extends BaseRepository<ContainerTable> {
     const entity = await this.getData();
     if (data.outer_port) {
       if (data.outer_port !== entity.outer_port) {
-        const node = new MegapolosNode(this.ctx, data.node_id || entity.node_id);
+        const node = new MegapolosNode(
+          this.ctx,
+          data.node_id || entity.node_id
+        );
         await node.checkPort(data.outer_port);
       }
     }
@@ -133,8 +135,8 @@ class Container extends BaseRepository<ContainerTable> {
         });
       }
     }
-    const megapolosVolume = MegapolosNode.currentNode.getMegapolosPath()
-      + '/volumes/' + this.id;
+    const megapolosVolume =
+      MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
     if (fsSync.existsSync(megapolosVolume)) {
       MegapolosNode.currentNode.validatePath(megapolosVolume);
       // await fs.rmdir(megapolosVolume, { recursive: true });
@@ -174,15 +176,19 @@ class Container extends BaseRepository<ContainerTable> {
 
   async removeVolume(containerVolumeId: string): Promise<void> {
     const volumes = await new Volume(this.ctx).getVolumesOfContainer(this.id);
-    const volumeContainer = volumes.find((_volume) =>
-      _volume.id === containerVolumeId,
+    const volumeContainer = volumes.find(
+      (_volume) => _volume.id === containerVolumeId
     );
     if (!volumeContainer) {
       throw new Error('Volume not found');
     }
     if (volumeContainer.is_dynamic) {
-      const volumePath = MegapolosNode.currentNode.getMegapolosPath()
-        + '/volumes/' + this.id + '/' + volumeContainer.id;
+      const volumePath =
+        MegapolosNode.currentNode.getMegapolosPath() +
+        '/volumes/' +
+        this.id +
+        '/' +
+        volumeContainer.id;
       MegapolosNode.currentNode.validatePath(volumePath);
       try {
         // await exec(`umount ${volumePath}`);
@@ -200,7 +206,9 @@ class Container extends BaseRepository<ContainerTable> {
 
   async getDataWithDetails(): Promise<ContainerResult> {
     const container: ContainerResult = await this.getData();
-    const volumes = await new Volume(this.ctx).getVolumesOfContainer(container.id);
+    const volumes = await new Volume(this.ctx).getVolumesOfContainer(
+      container.id
+    );
     container.volumes = volumes;
     const envs = await this.getContainerEnvOptions();
     container.envs = envs.map((env) => ({
@@ -209,9 +217,9 @@ class Container extends BaseRepository<ContainerTable> {
     }));
     if (container.docker_runtime_id) {
       try {
-        const dockerStatus =
-          (await docker.getContainer(container.docker_runtime_id).inspect())
-            .State.Status;
+        const dockerStatus = (
+          await docker.getContainer(container.docker_runtime_id).inspect()
+        ).State.Status;
         container.docker_status = dockerStatus;
       } catch (e) {
         container.docker_status = 'not exist';
@@ -221,10 +229,12 @@ class Container extends BaseRepository<ContainerTable> {
     return container;
   }
 
-  async changeEnvs(input: {
-    key: string;
-    value: string;
-  }[]) {
+  async changeEnvs(
+    input: {
+      key: string;
+      value: string;
+    }[]
+  ) {
     await this.checkActionAccess(resources.container.actions.edit);
     await this.removeContainerEnvOptions();
     for (let i in input) {
@@ -241,10 +251,9 @@ class Container extends BaseRepository<ContainerTable> {
 
   async changeVariables(input: Partial<ContainerVariableTable>[]) {
     await this.checkActionAccess(resources.container.actions.edit);
-    await knex<ContainerVariableTable>('container_variable').delete().where(
-      'container_id',
-      this.id,
-    );
+    await knex<ContainerVariableTable>('container_variable')
+      .delete()
+      .where('container_id', this.id);
     for (let i in input) {
       await knex<ContainerVariableTable>('container_variable').insert({
         container_id: this.id,
@@ -253,9 +262,10 @@ class Container extends BaseRepository<ContainerTable> {
     }
   }
 
-  shellCommand(
-    command: string,
-  ): { id: string; output: Promise<{ stdout: string; stderr: string }> } {
+  shellCommand(command: string): {
+    id: string;
+    output: Promise<{ stdout: string; stderr: string }>;
+  } {
     const commandId = uuidv4();
     return {
       id: commandId,
@@ -304,15 +314,18 @@ class Container extends BaseRepository<ContainerTable> {
 
   async getVariables(): Promise<ContainerVariableTable[]> {
     await this.checkActionAccess(resources.container.actions.read);
-    return knex<ContainerVariableTable>('container_variable').select('*').where(
-      'container_id',
-      this.id,
-    );
+    return knex<ContainerVariableTable>('container_variable')
+      .select('*')
+      .where('container_id', this.id);
   }
 
-  async getVolumes(): Promise< { containerVolume: ContainerVolumeTable; volume: Volume }[] > {
+  async getVolumes(): Promise<
+    { containerVolume: ContainerVolumeTable; volume: Volume }[]
+  > {
     await this.checkActionAccess(resources.container.actions.read);
-    const containerVolumes = await new Volume(this.ctx).getVolumesOfContainer(this.id);
+    const containerVolumes = await new Volume(this.ctx).getVolumesOfContainer(
+      this.id
+    );
     return containerVolumes.map((containerVolume) => ({
       containerVolume,
       volume: new Volume(this.ctx, containerVolume.volume_id),
@@ -327,11 +340,13 @@ class Container extends BaseRepository<ContainerTable> {
   async getDockerLog(): Promise<string> {
     await this.checkActionAccess(resources.container.actions.read);
     const data = await this.getData();
-    return new MegapolosNode(this.ctx, data.node_id).getDockerContainerLog(data.id);
+    return new MegapolosNode(this.ctx, data.node_id).getDockerContainerLog(
+      data.id
+    );
   }
 
   async listFiles(
-    path: string,
+    path: string
   ): Promise<{ files: string[]; directories: string[] }> {
     await this.checkActionAccess(resources.container.actions.read);
     const output = await this.shellCommand(`ls -p ${path}`).output;
@@ -343,7 +358,7 @@ class Container extends BaseRepository<ContainerTable> {
       }
       if (line.endsWith('/')) {
         directories.push(
-          (path === '/' ? path : path + '/') + line.slice(0, -1),
+          (path === '/' ? path : path + '/') + line.slice(0, -1)
         );
       } else {
         files.push((path === '/' ? path : path + '/') + line);
@@ -375,10 +390,9 @@ class Container extends BaseRepository<ContainerTable> {
 
   async removeContainerEnvOptions() {
     await this.checkActionAccess(resources.container.actions.edit);
-    await knex<ContainerEnvOptionTable>('container_env_option').delete().where(
-      'container_id',
-      this.id,
-    );
+    await knex<ContainerEnvOptionTable>('container_env_option')
+      .delete()
+      .where('container_id', this.id);
   }
 
   async getDomain(): Promise<DomainTable | null> {
@@ -391,7 +405,7 @@ class Container extends BaseRepository<ContainerTable> {
   }
 
   async getRuntimeVariables(
-    withoutInstance: boolean = false,
+    withoutInstance: boolean = false
   ): Promise<ContainerRuntimeVariables> {
     await this.checkActionAccess(resources.container.actions.read);
     const domain = await this.getDomain();
@@ -441,7 +455,7 @@ class Container extends BaseRepository<ContainerTable> {
   async addDb(
     dbId: string,
     dbUserId: string,
-    name: string,
+    name: string
   ): Promise<ContainerDbTable> {
     await this.checkActionAccess(resources.container.actions.edit);
     return new ContainerDb(this.ctx).create({

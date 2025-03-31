@@ -5,7 +5,6 @@ import { resolver } from '../../../domain/types';
 import EventsObserver from '../../../features/events/eventsObserver';
 import { JSONResolver } from 'graphql-scalars';
 
-
 interface BuildEventInput {
   container_id: string;
 }
@@ -37,18 +36,19 @@ const eventModule = createModule({
   ],
   resolvers: {
     JSON: JSONResolver,
-    Query: {
-    },
+    Query: {},
     Mutation: {
-      eventBuildEnded: resolver<{ input: BuildEventInput }, boolean>(async (parent, args) => {
-        EventsObserver.listener({
-          type: 'buildEnded',
-          data: {
-            containerId: args.input.container_id,
-          },
-        });
-        return true;
-      }),
+      eventBuildEnded: resolver<{ input: BuildEventInput }, boolean>(
+        async (parent, args) => {
+          EventsObserver.listener({
+            type: 'buildEnded',
+            data: {
+              containerId: args.input.container_id,
+            },
+          });
+          return true;
+        }
+      ),
     },
     Subscription: {
       event: {

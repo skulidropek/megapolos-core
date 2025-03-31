@@ -1,7 +1,11 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import { AppInput, resolver } from '../../../domain/types';
-import { AppTable, ImageTable, RepositoryTable } from '../../../features/db/tables';
+import {
+  AppTable,
+  ImageTable,
+  RepositoryTable,
+} from '../../../features/db/tables';
 import { createModule, gql } from 'graphql-modules';
 import EventsObserver from '../../../features/events/eventsObserver';
 import App from '../../../features/repository/App';
@@ -34,42 +38,57 @@ const appModule = createModule({
       type Mutation {
         installApp(input: AppInput!): Boolean
         uninstallApp(id: String!): Boolean
-        editApp(id: String! name: String!): Boolean
+        editApp(id: String!, name: String!): Boolean
       }
     `,
   ],
   resolvers: {
     Query: {
-      getApps: resolver<void, (AppTable & { images?: ImageTable[] })[]>(async (parent, args, context) => {
-        return new App(context).getAll();
-      }),
-      getApp: resolver<{ id: string }, (AppTable & { images?: ImageTable[] })>(async (parent, args, context) => {
-        return new App(context, args.id).getData();
-      }),
+      getApps: resolver<void, (AppTable & { images?: ImageTable[] })[]>(
+        async (parent, args, context) => {
+          return new App(context).getAll();
+        }
+      ),
+      getApp: resolver<{ id: string }, AppTable & { images?: ImageTable[] }>(
+        async (parent, args, context) => {
+          return new App(context, args.id).getData();
+        }
+      ),
     },
     Mutation: {
-      installApp: resolver<{ input: AppInput }, boolean>(async (parent, args, context) => {
-        await new App(context).installApp(context.user.id, args.input);
-        EventsObserver.listener({ type: 'installApp', data: args });
-        return true;
-      }),
-      uninstallApp: resolver<{ id: string }, boolean>(async (parent, args, context) => {
-        await new App(context, args.id).delete();
-        EventsObserver.listener({ type: 'uninstallApp', data: args });
-        return true;
-      }),
-      editApp: resolver<{ id: string, name: string }, boolean>(async (parent, args, context) => {
-        await new App(context, args.id).edit({ name: args.name });
-        EventsObserver.listener({ type: 'editApp', data: args });
-        return true;
-      }),
+      installApp: resolver<{ input: AppInput }, boolean>(
+        async (parent, args, context) => {
+          await new App(context).installApp(context.user.id, args.input);
+          EventsObserver.listener({ type: 'installApp', data: args });
+          return true;
+        }
+      ),
+      uninstallApp: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          await new App(context, args.id).delete();
+          EventsObserver.listener({ type: 'uninstallApp', data: args });
+          return true;
+        }
+      ),
+      editApp: resolver<{ id: string; name: string }, boolean>(
+        async (parent, args, context) => {
+          await new App(context, args.id).edit({ name: args.name });
+          EventsObserver.listener({ type: 'editApp', data: args });
+          return true;
+        }
+      ),
     },
     App: {
-      images: resolver<AppTable & { images?: ImageTable[] }, ImageTable[]>(async (parent, args, context) => {
-        const app = new App(context, parent.id);
-        return app.getImages();
-      }),
-      repositories: resolver<AppTable & { images?: ImageTable[] }, RepositoryTable[]>(async (parent, args, context) => {
+      images: resolver<AppTable & { images?: ImageTable[] }, ImageTable[]>(
+        async (parent, args, context) => {
+          const app = new App(context, parent.id);
+          return app.getImages();
+        }
+      ),
+      repositories: resolver<
+        AppTable & { images?: ImageTable[] },
+        RepositoryTable[]
+      >(async (parent, args, context) => {
         const app = new App(context, parent.id);
         return app.getRepositories();
       }),

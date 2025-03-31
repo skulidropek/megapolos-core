@@ -14,7 +14,7 @@ class Artifact extends BaseRepository<ArtifactTable> {
     return result;
   }
 
-  async getPath():Promise<string> {
+  async getPath(): Promise<string> {
     const data = await this.getData();
     return megapolosPath + '/artifacts/' + data.id;
   }

@@ -32,7 +32,7 @@ class Image extends BaseRepository<ImageTable> {
       return;
     }
     const path = megapolosPath + '/data/' + uuidv4();
-    if (!await fse.exists(path)) {
+    if (!(await fse.exists(path))) {
       await fse.mkdir(path);
     }
     const repository = new Repository(this.ctx, data.repository_id);
@@ -50,8 +50,7 @@ class Image extends BaseRepository<ImageTable> {
           type: LogType.ImageBuild,
         });
 
-        let tags =
-          `-t ${data.image} -t ${config.registryHost}:443/${data.image}`;
+        let tags = `-t ${data.image} -t ${config.registryHost}:443/${data.image}`;
         if (config.devMode) {
           tags = `-t ${data.image}`;
         }
@@ -59,23 +58,23 @@ class Image extends BaseRepository<ImageTable> {
         const result = await MegapolosNode.currentNode.shellCommand(
           `cd ${path} && docker build ${tags} .`,
           new User(this.ctx),
-          log,
+          log
         ).output;
         if (!config.devMode) {
           await MegapolosNode.currentNode.shellCommand(
             `docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}:443`,
             new User(this.ctx, this.ctx.user.id),
-            log,
+            log
           ).output;
           await MegapolosNode.currentNode.shellCommand(
             `docker push ${config.registryHost}:443/${data.image}`,
             new User(this.ctx, this.ctx.user.id),
-            log,
+            log
           ).output;
           await MegapolosNode.currentNode.shellCommand(
             'docker image prune -f',
             new User(this.ctx, this.ctx.user.id),
-            log,
+            log
           ).output;
         }
         await this.edit({
@@ -103,7 +102,9 @@ class Image extends BaseRepository<ImageTable> {
 
   async updateNodes(): Promise<void> {
     await this.checkActionAccess(resources.image.actions.update_nodes);
-    const containers = await new Container(this.ctx).getByFields({ image_id: this.id });
+    const containers = await new Container(this.ctx).getByFields({
+      image_id: this.id,
+    });
     const nodes: string[] = [];
     for (let i in containers) {
       const container = containers[i];
@@ -128,10 +129,11 @@ class Image extends BaseRepository<ImageTable> {
   }
 
   async changeVariables(
-    variables: ImageVariableRequirementTable[],
+    variables: ImageVariableRequirementTable[]
   ): Promise<boolean> {
     await this.checkActionAccess(resources.image.actions.edit);
-    await knex('image_variable_requirement').where({ image_id: this.id })
+    await knex('image_variable_requirement')
+      .where({ image_id: this.id })
       .delete();
     for (let i in variables) {
       const variable = variables[i];
@@ -154,12 +156,14 @@ class Image extends BaseRepository<ImageTable> {
 
   async getLastBuildLog(): Promise<LogTable> {
     await this.checkActionAccess(resources.image.actions.read);
-    return (await new Log(this.ctx).getByQuery(_knex =>
-      _knex.where({ object_id: this.id, type: LogType.ImageBuild }).orderBy(
-        'create_date',
-        'desc',
-      ).limit(1),
-    ))[0];
+    return (
+      await new Log(this.ctx).getByQuery((_knex) =>
+        _knex
+          .where({ object_id: this.id, type: LogType.ImageBuild })
+          .orderBy('create_date', 'desc')
+          .limit(1)
+      )
+    )[0];
   }
 }
 

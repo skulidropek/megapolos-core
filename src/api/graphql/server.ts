@@ -28,9 +28,12 @@ const graphqlServer = async () => {
   try {
     const application = createApplication({
       modules: [
-        userModule, nodeModule, appModule, 
-        // deviceModule, 
-        eventModule, volumeModule, 
+        userModule,
+        nodeModule,
+        appModule,
+        // deviceModule,
+        eventModule,
+        volumeModule,
         // resourceModule,
         repositoryModule,
         instanceModule,
@@ -42,22 +45,30 @@ const graphqlServer = async () => {
         megapolosModule,
       ],
     });
-   
-    const { schema, createExecution, createSubscription, createApolloExecutor } = application;
+
+    const {
+      schema,
+      createExecution,
+      createSubscription,
+      createApolloExecutor,
+    } = application;
     const execute = createExecution();
     const subscribe = createSubscription();
 
     const app = express();
- 
+
     const httpServer = createServer(app);
- 
-    const server = new ApolloServer({ schema,
+
+    const server = new ApolloServer({
+      schema,
       executor: createApolloExecutor(),
-      context: async ({ req }):Promise<Context> => {
+      context: async ({ req }): Promise<Context> => {
         const token = req.headers.token || '';
         let decoded: JwtPayload & { id: string };
         try {
-          decoded = jwt.verify(token as string, config.secret) as JwtPayload & { id: string };
+          decoded = jwt.verify(token as string, config.secret) as JwtPayload & {
+            id: string;
+          };
         } catch (err) {
           throw new Error('Unauthorized');
         }
@@ -72,7 +83,6 @@ const graphqlServer = async () => {
       },
     });
 
-
     SubscriptionServer.create(
       {
         schema,
@@ -82,22 +92,23 @@ const graphqlServer = async () => {
       {
         server: httpServer,
         path: '/',
-      },
+      }
     );
 
     await server.start();
-    server.applyMiddleware({ app, path: '/', bodyParserConfig: {
-      limit: '10gb',
-    } });
-
-    const port = 5100;
- 
-    httpServer.listen({ port,
-      host: '0.0.0.0',
-    }, () => {
-      console.log(`Apollo server ready at ${port}`);
+    server.applyMiddleware({
+      app,
+      path: '/',
+      bodyParserConfig: {
+        limit: '10gb',
+      },
     });
 
+    const port = 5100;
+
+    httpServer.listen({ port, host: '0.0.0.0' }, () => {
+      console.log(`Apollo server ready at ${port}`);
+    });
   } catch (e) {
     console.trace(e);
     EventsObserver.listener({ type: 'error', data: e });

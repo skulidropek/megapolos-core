@@ -1,6 +1,13 @@
 import moment from 'moment';
 import { knex } from '../../db/knex';
-import { DbBackupTable, DbSchemaSchema, DbSchemaTable, DbTable, DbUserTable, DbmsTable } from '../../db/tables';
+import {
+  DbBackupTable,
+  DbSchemaSchema,
+  DbSchemaTable,
+  DbTable,
+  DbUserTable,
+  DbmsTable,
+} from '../../db/tables';
 import Artifact from '../Artifact';
 import BaseRepository from '../BaseRepository';
 import Db from '../db/Db';
@@ -13,7 +20,10 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return 'dbms';
   }
 
-  async createDb(db: Partial<DbTable>, withoutChange: boolean = false): Promise<DbTable> {
+  async createDb(
+    db: Partial<DbTable>,
+    withoutChange: boolean = false
+  ): Promise<DbTable> {
     const result = await new Db(this.ctx).create({ ...db, dbms_id: this.id });
     if (!withoutChange) {
       await this.createDbChange(db);
@@ -21,19 +31,31 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return result;
   }
 
-  async createUser(user: Partial<DbUserTable>, withoutChange: boolean = false): Promise<DbUserTable> {
-    const result = await new DbUser(this.ctx).create({ ...user, dbms_id: this.id });
+  async createUser(
+    user: Partial<DbUserTable>,
+    withoutChange: boolean = false
+  ): Promise<DbUserTable> {
+    const result = await new DbUser(this.ctx).create({
+      ...user,
+      dbms_id: this.id,
+    });
     if (!withoutChange) {
       await this.createUserChange(user);
     }
     return result;
   }
 
-  async addUserToDb(userId: string, dbId: string, withoutChange: boolean = false): Promise<boolean> {
-    await knex.insert({
-      db_id: dbId,
-      db_user_id: userId,
-    }).into('db_db_user');
+  async addUserToDb(
+    userId: string,
+    dbId: string,
+    withoutChange: boolean = false
+  ): Promise<boolean> {
+    await knex
+      .insert({
+        db_id: dbId,
+        db_user_id: userId,
+      })
+      .into('db_db_user');
     if (!withoutChange) {
       const user = await new DbUser(this.ctx, userId).getData();
       const db = await new Db(this.ctx, dbId).getData();
@@ -78,13 +100,22 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return [];
   }
 
-  async backup(dbId: string, name: string, withoutData: boolean): Promise<DbBackupTable> {
+  async backup(
+    dbId: string,
+    name: string,
+    withoutData: boolean
+  ): Promise<DbBackupTable> {
     const data = await this.getData();
     const artifact = new Artifact(this.ctx);
     const db = new Db(this.ctx, dbId);
     const dbData = await db.getData();
     if (!name) {
-      name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
+      name =
+        data.name +
+        ' ' +
+        dbData.name +
+        ' ' +
+        moment().format('YYYY-MM-DD HH:mm:ss');
     }
     await artifact.create({
       name: 'Db backup ' + name,
@@ -100,7 +131,12 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async backupProcess(db: Db, backup: DbBackup, artifact: Artifact, withoutData: boolean): Promise<DbBackupTable> {
+  async backupProcess(
+    db: Db,
+    backup: DbBackup,
+    artifact: Artifact,
+    withoutData: boolean
+  ): Promise<DbBackupTable> {
     return new DbBackup(this.ctx).getData();
   }
 
@@ -114,11 +150,23 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return result;
   }
 
-  async cloneDb(fromDbId: string, toDbId: string, fromDbUserId?: string): Promise<boolean> {
+  async cloneDb(
+    fromDbId: string,
+    toDbId: string,
+    fromDbUserId?: string
+  ): Promise<boolean> {
     const fromDb = await new Db(this.ctx, fromDbId).getData();
     const toDb = await new Db(this.ctx, toDbId).getData();
-    const backupFrom = await this.backup(fromDbId, `Clone ${fromDb.name} to ${toDb.name}, backup ${fromDb.name}`, false);
-    await this.backup(toDbId, `Clone ${fromDb.name} to ${toDb.name}, backup ${toDb.name}`, false);
+    const backupFrom = await this.backup(
+      fromDbId,
+      `Clone ${fromDb.name} to ${toDb.name}, backup ${fromDb.name}`,
+      false
+    );
+    await this.backup(
+      toDbId,
+      `Clone ${fromDb.name} to ${toDb.name}, backup ${toDb.name}`,
+      false
+    );
     await this.restore(toDbId, backupFrom.id);
     if (fromDbUserId) {
       await this.setOwner(toDbId, fromDbUserId);
@@ -150,26 +198,39 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     return true;
   }
 
-  async massDbQuery(dbNames: string[], query: string): Promise<{
-    dbName: string,
-    result: string,
-    error: string,
-  }[]> {
+  async massDbQuery(
+    dbNames: string[],
+    query: string
+  ): Promise<
+    {
+      dbName: string;
+      result: string;
+      error: string;
+    }[]
+  > {
     return this.massDbQueryChange(dbNames, query);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async massDbQueryChange(dbNames: string[], query: string): Promise<{
-    dbName: string,
-    result: string,
-    error: string,
-  }[]> {
+  async massDbQueryChange(
+    dbNames: string[],
+    query: string
+  ): Promise<
+    {
+      dbName: string;
+      result: string;
+      error: string;
+    }[]
+  > {
     return [];
   }
 
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async restoreProcess(db: Db, backup: DbBackup, artifact: Artifact): Promise<boolean> {
+  async restoreProcess(
+    db: Db,
+    backup: DbBackup,
+    artifact: Artifact
+  ): Promise<boolean> {
     return true;
   }
 
@@ -180,7 +241,10 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async downloadBackupTextProcess(backup: DbBackup, artifact: Artifact): Promise<string> {
+  async downloadBackupTextProcess(
+    backup: DbBackup,
+    artifact: Artifact
+  ): Promise<string> {
     return '';
   }
 
@@ -200,7 +264,11 @@ class BaseDbms extends BaseRepository<DbmsTable> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async uploadBackupTextProcess(text: string, backup: DbBackup, artifact: Artifact): Promise<DbBackupTable> {
+  async uploadBackupTextProcess(
+    text: string,
+    backup: DbBackup,
+    artifact: Artifact
+  ): Promise<DbBackupTable> {
     return backup.getData();
   }
 
@@ -216,14 +284,19 @@ class BaseDbms extends BaseRepository<DbmsTable> {
     const db = await new Db(this.ctx, dbId).getData();
     const dbData = await this.getData();
     if (!name) {
-      name = data.name + ' ' + dbData.name + ' ' + moment().format('YYYY-MM-DD HH:mm:ss');
+      name =
+        data.name +
+        ' ' +
+        dbData.name +
+        ' ' +
+        moment().format('YYYY-MM-DD HH:mm:ss');
     }
     const schema = await this.getSchema(db.name);
     return new DbSchema(this.ctx).create({
       schema,
       name,
     });
-  }    
+  }
 }
 
 export default BaseDbms;

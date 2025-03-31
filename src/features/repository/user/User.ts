@@ -20,8 +20,13 @@ class User extends BaseRepository<UserTable> {
   }
 
   async amIRootUser(): Promise<boolean> {
-    const roles = await knex('group_user').select('group_user.*')
-      .innerJoin('user_group_link', 'group_user.id', 'user_group_link.group_user_id')
+    const roles = await knex('group_user')
+      .select('group_user.*')
+      .innerJoin(
+        'user_group_link',
+        'group_user.id',
+        'user_group_link.group_user_id'
+      )
       .where('user_group_link.user_id', this.ctx.user.id);
     return roles.some((role) => role.id == User.rootRoleId);
   }
@@ -72,7 +77,9 @@ class User extends BaseRepository<UserTable> {
   }
 
   async createRootGroup(): Promise<GroupUserTable> {
-    const rootGroup = await new UserGroup(this.ctx).getByFields({ name: 'root' });
+    const rootGroup = await new UserGroup(this.ctx).getByFields({
+      name: 'root',
+    });
     if (rootGroup.length) {
       User.rootRoleId = rootGroup[0].id;
       return rootGroup[0];
@@ -99,9 +106,9 @@ class User extends BaseRepository<UserTable> {
       group_user_id: rootGroup.id,
     });
     if (
-      !privileges.length
-      || !privileges.find((p) =>
-        p.object_name == '*' && p.object_id == '*' && p.action == '*',
+      !privileges.length ||
+      !privileges.find(
+        (p) => p.object_name == '*' && p.object_id == '*' && p.action == '*'
       )
     ) {
       await new UserGroupPrivilege(this.ctx).create({
@@ -119,7 +126,7 @@ class User extends BaseRepository<UserTable> {
   async getUsersWithToken(): Promise<(UserTable & { token?: string })[]> {
     const users = await this.getAll();
     return Promise.all(
-      users.map((user) => new User(this.ctx, user.id).getDataWithToken()),
+      users.map((user) => new User(this.ctx, user.id).getDataWithToken())
     );
   }
 
@@ -142,26 +149,16 @@ class User extends BaseRepository<UserTable> {
     return knex
       .select('group_user_privilege.*')
       .from('group_user_privilege')
-      .join(
-        'group_user',
-        'group_user.id',
-        'group_user_privilege.group_user_id',
-      )
-      .join(
-        'user_group_link',
-        'user_group_link.group_user_id',
-        'group_user.id',
-      )
-      .join(
-        'user',
-        'user.id',
-        'user_group_link.user_id',
-      )
+      .join('group_user', 'group_user.id', 'group_user_privilege.group_user_id')
+      .join('user_group_link', 'user_group_link.group_user_id', 'group_user.id')
+      .join('user', 'user.id', 'user_group_link.user_id')
       .where('user.id', this.id);
   }
 
   async getByGroupName(groupName: string): Promise<UserTable[]> {
-    const group = await new UserGroup(this.ctx).getByFields({ name: groupName });
+    const group = await new UserGroup(this.ctx).getByFields({
+      name: groupName,
+    });
     if (!group.length) {
       return [];
     }
@@ -169,7 +166,7 @@ class User extends BaseRepository<UserTable> {
   }
 
   async addUserToGroup(group_id: string): Promise<boolean> {
-    if (!await this.amIRootUser()) {
+    if (!(await this.amIRootUser())) {
       this._throwAccessDenied();
     }
 

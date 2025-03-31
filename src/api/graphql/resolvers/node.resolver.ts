@@ -31,10 +31,18 @@ const nodeModule = createModule({
       type Mutation {
         createNode(node: NodeInput): Node
         removeNode(id: String!): Boolean
-        editNode(id: String! node: NodeInput): Node
-        shellCommand(command: String! containerId: String nodeId: String): ShellCommandResult
-        shellCommandStart(command: String! containerId: String nodeId: String): String
-        updateNode(id: String! init: Boolean withRebuild: Boolean): Boolean
+        editNode(id: String!, node: NodeInput): Node
+        shellCommand(
+          command: String!
+          containerId: String
+          nodeId: String
+        ): ShellCommandResult
+        shellCommandStart(
+          command: String!
+          containerId: String
+          nodeId: String
+        ): String
+        updateNode(id: String!, init: Boolean, withRebuild: Boolean): Boolean
         updateNodes(nodeIds: [String]!): Boolean
         initNode(id: String!): Boolean
         prepareNodeForCore(id: String!): Boolean
@@ -74,96 +82,139 @@ const nodeModule = createModule({
       version: resolver<void, string>(async () => {
         return packageFile.version;
       }),
-      getShellCommandStatus: resolver<{ id: string }, string>(async (parent, args) => {
-        // return commands[args.id] ? 'running' : '';
-        return MegapolosNode.currentNode.commands[args.id].status;
-      }),
+      getShellCommandStatus: resolver<{ id: string }, string>(
+        async (parent, args) => {
+          // return commands[args.id] ? 'running' : '';
+          return MegapolosNode.currentNode.commands[args.id].status;
+        }
+      ),
       getNodes: resolver<void, NodeTable[]>(async (parent, args, context) => {
         return new MegapolosNode(context).getAll();
       }),
-      getNode: resolver<{ id: string }, NodeTable>(async (parent, args, context) => {
-        return new MegapolosNode(context, args.id).getData();
-      }),
+      getNode: resolver<{ id: string }, NodeTable>(
+        async (parent, args, context) => {
+          return new MegapolosNode(context, args.id).getData();
+        }
+      ),
     },
     Mutation: {
-      createNode: resolver<{ node: NodeTable }, NodeTable>(async (parent, args, context) => {
-        return new MegapolosNode(context).create(args.node);
-      }),
-      removeNode: resolver<{ id: string }, Boolean>(async (parent, args, context) => {
-        const node = new MegapolosNode(context, args.id);
-        await node.delete();
-        return true;
-      }),
-      editNode: resolver<{ id: string, node: NodeTable }, NodeTable>(async (parent, args, context) => {
-        const node = new MegapolosNode(context, args.id);
-        return node.edit(args.node);
-      }),
-      shellCommand: resolver<{ command: string, containerId: string, nodeId: string }, { stdout: string, stderr: string }>(async (parent, args, context) => {
+      createNode: resolver<{ node: NodeTable }, NodeTable>(
+        async (parent, args, context) => {
+          return new MegapolosNode(context).create(args.node);
+        }
+      ),
+      removeNode: resolver<{ id: string }, Boolean>(
+        async (parent, args, context) => {
+          const node = new MegapolosNode(context, args.id);
+          await node.delete();
+          return true;
+        }
+      ),
+      editNode: resolver<{ id: string; node: NodeTable }, NodeTable>(
+        async (parent, args, context) => {
+          const node = new MegapolosNode(context, args.id);
+          return node.edit(args.node);
+        }
+      ),
+      shellCommand: resolver<
+        { command: string; containerId: string; nodeId: string },
+        { stdout: string; stderr: string }
+      >(async (parent, args, context) => {
         EventsObserver.listener({ type: 'shellCommandStarted', data: args });
         // return shellCommand(args.command, args.containerId, context.user);
         if (args.containerId) {
           const container = new Container(context, args.containerId);
           return container.shellCommand(args.command).output;
         } else if (args.nodeId) {
-          return new MegapolosNode(context, args.nodeId).shellCommand(args.command, new User(context, context.user.id)).output;
+          return new MegapolosNode(context, args.nodeId).shellCommand(
+            args.command,
+            new User(context, context.user.id)
+          ).output;
         } else {
-          return MegapolosNode.currentNode.shellCommand(args.command, new User(context, context.user.id)).output;
+          return MegapolosNode.currentNode.shellCommand(
+            args.command,
+            new User(context, context.user.id)
+          ).output;
         }
       }),
-      shellCommandStart: resolver<{ command: string, containerId: string, nodeId: string }, string>(async (parent, args, context) => {
+      shellCommandStart: resolver<
+        { command: string; containerId: string; nodeId: string },
+        string
+      >(async (parent, args, context) => {
         EventsObserver.listener({ type: 'shellCommandStarted', data: args });
         if (args.containerId) {
           const container = new Container(context, args.containerId);
           const result = container.shellCommand(args.command);
           return result.id;
         } else if (args.nodeId) {
-          const result = new MegapolosNode(context, args.nodeId).shellCommand(args.command, new User(context, context.user.id));
+          const result = new MegapolosNode(context, args.nodeId).shellCommand(
+            args.command,
+            new User(context, context.user.id)
+          );
           return result.id;
         } else {
-          const result = MegapolosNode.currentNode.shellCommand(args.command, new User(context, context.user.id));
+          const result = MegapolosNode.currentNode.shellCommand(
+            args.command,
+            new User(context, context.user.id)
+          );
           return result.id;
         }
         // const commandId = uuidv4();
         // shellCommand(args.command, args.containerId, context.user, commandId);
       }),
-      updateNode: resolver<{ id: string, init: boolean, withRebuild: boolean }, boolean>(async (parent, args, context) => {
+      updateNode: resolver<
+        { id: string; init: boolean; withRebuild: boolean },
+        boolean
+      >(async (parent, args, context) => {
         const node = new MegapolosNode(context, args.id);
         node.update(args.init, args.withRebuild);
         return true;
       }),
-      updateNodes: resolver<{ nodeIds: string[] }, boolean>(async (parent, args, context) => {
-        (async () => {
-          for (let i in args.nodeIds) {
-            const nodeId = args.nodeIds[i];
-            const node = new MegapolosNode(context, nodeId);
-            await node.update();
-          }
-        })();
-        return true;
-      }),
-      initNode: resolver<{ id: string }, boolean>(async (parent, args, context) => {
-        const node = new MegapolosNode(context, args.id);
-        await node.init();
-        return true;
-      }),
-      prepareNodeForCore: resolver<{ id: string }, boolean>(async (parent, args, context) => {
-        const node = new MegapolosNode(context, args.id);
-        await node.prepareForCore();
-        return true;
-      }),
-      installRegistryToNode: resolver<{ id: string }, boolean>(async (parent, args, context) => {
-        const node = new MegapolosNode(context, args.id);
-        await node.installRegistry();
-        return true;
-      }),
+      updateNodes: resolver<{ nodeIds: string[] }, boolean>(
+        async (parent, args, context) => {
+          (async () => {
+            for (let i in args.nodeIds) {
+              const nodeId = args.nodeIds[i];
+              const node = new MegapolosNode(context, nodeId);
+              await node.update();
+            }
+          })();
+          return true;
+        }
+      ),
+      initNode: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          const node = new MegapolosNode(context, args.id);
+          await node.init();
+          return true;
+        }
+      ),
+      prepareNodeForCore: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          const node = new MegapolosNode(context, args.id);
+          await node.prepareForCore();
+          return true;
+        }
+      ),
+      installRegistryToNode: resolver<{ id: string }, boolean>(
+        async (parent, args, context) => {
+          const node = new MegapolosNode(context, args.id);
+          await node.installRegistry();
+          return true;
+        }
+      ),
     },
     Node: {
-      containers: resolver<NodeTable, ContainerTable[]>(async (parent, args, context) => {
-        return new MegapolosNode(context, parent.id).getContainers();
-      }),
-      runningContainers: resolver<NodeTable, string[]>(async (parent, args, context) => {
-        return new MegapolosNode(context, parent.id).getDockerContainers();
-      }),
+      containers: resolver<NodeTable, ContainerTable[]>(
+        async (parent, args, context) => {
+          return new MegapolosNode(context, parent.id).getContainers();
+        }
+      ),
+      runningContainers: resolver<NodeTable, string[]>(
+        async (parent, args, context) => {
+          return new MegapolosNode(context, parent.id).getDockerContainers();
+        }
+      ),
       ip: resolver<NodeTable, string>(async (parent, args, context) => {
         return new MegapolosNode(context, parent.id).getIp();
       }),

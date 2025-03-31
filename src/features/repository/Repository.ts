@@ -48,15 +48,14 @@ class Repository extends BaseRepository<RepositoryTable> {
     await this.checkActionAccess(resources.repository.actions.push);
     await simpleGit(await this._getPath()).push(
       'origin',
-      branchFrom + ':' + branchTo,
+      branchFrom + ':' + branchTo
     );
   }
-
 
   async copyBranchTo(path: string, branch: string): Promise<void> {
     await this.checkActionAccess(resources.repository.actions.read);
     const repositoryPath = await this._getPath();
-    if (!await fse.exists(path)) {
+    if (!(await fse.exists(path))) {
       await fse.mkdir(path);
     }
     await fse.copy(repositoryPath, path);
@@ -74,7 +73,7 @@ class Repository extends BaseRepository<RepositoryTable> {
 
   async listFiles(
     branch: string,
-    path: string,
+    path: string
   ): Promise<{ files: string[]; directories: string[] }> {
     await this.checkActionAccess(resources.repository.actions.read);
     if (path === '') {
@@ -85,10 +84,9 @@ class Repository extends BaseRepository<RepositoryTable> {
     const repositoryPath = await this._getPath();
     const files: string[] = [];
     const directories: string[] = [];
-    const lines =
-      (await simpleGit(repositoryPath).raw(['ls-tree', branch, path])).split(
-        '\n',
-      );
+    const lines = (
+      await simpleGit(repositoryPath).raw(['ls-tree', branch, path])
+    ).split('\n');
     for (const line of lines) {
       const parts = line.split(/\s+/);
       if (parts.length > 1) {
@@ -113,13 +111,13 @@ class Repository extends BaseRepository<RepositoryTable> {
   async _clone(): Promise<void> {
     const data = await this.getData();
     const path = await this._getPath();
-    if (!await fse.exists(path)) {
+    if (!(await fse.exists(path))) {
       await fse.mkdir(path);
     }
     if (data.user) {
       data.url = data.url.replace(
         /^https:\/\//,
-        'https://' + data.user + ':' + data.password + '@',
+        'https://' + data.user + ':' + data.password + '@'
       );
     }
     await simpleGit().clone(data.url, path);
