@@ -1,6 +1,6 @@
 import { Resolver, Query, Ctx } from 'type-graphql';
 import { createBaseResolver } from '../base_resolver';
-import { User, UserInput } from '../../../domain/entites/User';
+import { User, UserInput } from '../../../domain/entities/User.entity';
 import { Context } from '../server';
 
 @Resolver()

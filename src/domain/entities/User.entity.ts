@@ -5,7 +5,7 @@ import {
   PrimaryKey,
   Property,
 } from '@mikro-orm/core';
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, ID, InputType, ObjectType } from 'type-graphql';
 import { GroupUser } from './GroupUser.entity';
 
 @Entity()
@@ -46,4 +46,8 @@ export class User {
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
   osUserId?: string;
+}
+
+@InputType()
+export class UserInput extends User {
 }

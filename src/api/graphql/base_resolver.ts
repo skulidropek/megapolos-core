@@ -1,12 +1,4 @@
-import {
-  Resolver,
-  Query,
-  Mutation,
-  Arg,
-  ClassType,
-  Field,
-  Ctx,
-} from 'type-graphql';
+import { Resolver, Query, Mutation, Arg, ClassType, Ctx } from 'type-graphql';
 import { FilterQuery } from '@mikro-orm/core';
 import { Context } from './server';
 
@@ -73,12 +65,3 @@ export function createBaseResolver<T extends { id: string }, I extends object>(
 
   return BaseResolver;
 }
-
-// function createInputType<T extends { id: string }>(entityClass: ClassType<T>) {
-//   @InputType(`${entityClass.name}Input`)
-//   class BaseInput extends entityClass {
-//     @Field(() => String)
-//     id!: string;
-//   }
-//   return BaseInput;
-// }
