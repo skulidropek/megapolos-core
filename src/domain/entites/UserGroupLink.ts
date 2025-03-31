@@ -1,10 +1,10 @@
-import { Entity, ManyToOne, type Opt, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, type Opt, PrimaryKey } from '@mikro-orm/core';
 import { GroupUser } from './GroupUser';
 import { User } from './User';
 
 @Entity()
 export class UserGroupLink {
-  @Property({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
+  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
   id!: string & Opt;
 
   @ManyToOne({ entity: () => User })

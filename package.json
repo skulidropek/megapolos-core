@@ -59,6 +59,7 @@
     "sqlite3": "^5.1.7",
     "ssh2": "^1.15.0",
     "subscriptions-transport-ws": "^0.11.0",
+    "type-graphql": "^2.0.0-rc.2",
     "uuid": "^9.0.0",
     "ws": "^8.11.0"
   },
@@ -95,6 +96,8 @@
   },
   "mikro-orm": {
     "useTsNode": true,
-    "configPaths": ["./src/features/db/mikro-orm.config.ts"]
+    "configPaths": [
+      "./mikro-orm.config.ts"
+    ]
   }
 }
