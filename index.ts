@@ -1,6 +1,7 @@
 /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 import graphqlServer from './src/api/graphql/server';
+import { initMikroOrm } from './src/features/db/mikro-orm';
 import MegapolosNode from './src/features/repository/Node';
 import User from './src/features/repository/user/User';
 
@@ -14,6 +15,7 @@ export const megapolosPath = __dirname;
 // exec('mount --make-shared /');
 
 (async () => {
+  await initMikroOrm();
   MegapolosNode.createCurrentNode();
 
   // await MegapolosNode.currentNode.dockerEvents();

@@ -61,9 +61,7 @@ class User extends BaseRepository<UserTable> {
 
     const toInsert = [];
     for (const user of users) {
-      console.log(user.id, user.group_user_id);
       if (!links.find((l) => l.user_id == user.id)) {
-        console.log('insert', user.id, user.group_user_id);
         toInsert.push({
           user_id: user.id,
           group_user_id: user.group_user_id,

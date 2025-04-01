@@ -1,8 +1,8 @@
 // /* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
 
 // import jwt, { JwtPayload } from 'jsonwebtoken';
-import { createServer } from 'http';
-import { SubscriptionServer } from 'subscriptions-transport-ws';
+// import { createServer } from 'http';
+// import { SubscriptionServer } from 'subscriptions-transport-ws';
 // import express from 'express';
 // import { ApolloServer } from 'apollo-server-express';
 // import { createApplication } from 'graphql-modules';
@@ -120,25 +120,20 @@ import { SubscriptionServer } from 'subscriptions-transport-ws';
 
 import { ApolloServer } from '@apollo/server';
 import { buildSchema } from 'type-graphql';
-import { UserResolver } from './resolvers/user.orm.resolver';
-import { MikroORM, EntityManager } from '@mikro-orm/core';
+import { UserResolver, UserTableResolver } from './resolvers/user.orm.resolver';
 import express from 'express';
 import cors from 'cors';
 import { expressMiddleware } from '@apollo/server/express4';
-import ormConfig from '../../../mikro-orm.config';
 
 export interface Context {
-  orm: MikroORM;
   req: express.Request;
   res: express.Response;
-  em: EntityManager;
 }
 
 async function bootstrap() {
   const schema = await buildSchema({
-    resolvers: [UserResolver],
+    resolvers: [UserResolver, UserTableResolver],
   });
-  const orm = await MikroORM.init(ormConfig);
 
   const server = new ApolloServer<Context>({
     schema,
@@ -154,8 +149,6 @@ async function bootstrap() {
     cors(),
     expressMiddleware(server, {
       context: async ({ req, res }) => ({
-        em: orm.em.fork(),
-        orm,
         req,
         res,
       }),
