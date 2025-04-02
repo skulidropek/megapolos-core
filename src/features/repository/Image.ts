@@ -10,7 +10,7 @@ import {
   LogTable,
   LogType,
 } from '../db/tables';
-import { resources } from '../rights/resources_list';
+import { resources } from '../rights/resources.list';
 import App from './App';
 import BaseRepository from './BaseRepository';
 import Container from './container/Container';

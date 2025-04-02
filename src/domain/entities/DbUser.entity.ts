@@ -1,29 +1,25 @@
 import {
+  Collection,
   Entity,
+  ManyToMany,
   ManyToOne,
-  type Opt,
-  PrimaryKey,
   Property,
 } from '@mikro-orm/core';
 import { Dbms } from './Dbms.entity';
+import { BaseEntity } from './Base.entity';
+import { Db } from './Db.entity';
 
 @Entity()
-export class DbUser {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  id!: string & Opt;
-
+export class DbUser extends BaseEntity {
   @Property({ length: -1 })
   name!: string;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true })
-  updateDate?: Date;
 
   @ManyToOne({ entity: () => Dbms })
   dbms!: Dbms;
 
   @Property({ length: -1, nullable: true })
   password?: string;
+
+  @ManyToMany({ entity: () => Db, pivotTable: 'db_db_user' })
+  dbs = new Collection<Db>(this);
 }

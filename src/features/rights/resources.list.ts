@@ -1,4 +1,4 @@
-export interface UserAction {
+interface UserAction {
   resourceType: string;
   resourceId: string;
   action: string;
@@ -34,4 +34,4 @@ const resources = {
   },
 };
 
-export { defaultRights, resources };
+export { defaultRights, resources, UserAction };

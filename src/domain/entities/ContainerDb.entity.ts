@@ -1,19 +1,11 @@
-import {
-  Entity,
-  ManyToOne,
-  type Opt,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/core';
+import { Entity, ManyToOne, Property } from '@mikro-orm/core';
 import { Container } from './Container.entity';
 import { Db } from './Db.entity';
 import { DbUser } from './DbUser.entity';
+import { BaseEntity } from './Base.entity';
 
 @Entity()
-export class ContainerDb {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  id!: string & Opt;
-
+export class ContainerDb extends BaseEntity {
   @ManyToOne({ entity: () => Db })
   db!: Db;
 
@@ -22,12 +14,6 @@ export class ContainerDb {
 
   @ManyToOne({ entity: () => Container })
   container!: Container;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true })
-  updateDate?: Date;
 
   @Property({ length: -1 })
   name!: string;

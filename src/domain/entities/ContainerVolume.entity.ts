@@ -10,16 +10,16 @@ import { Volume } from './Volume.entity';
 
 @Entity()
 export class ContainerVolume {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
+  @PrimaryKey({ type: 'uuid' })
   id!: string & Opt;
 
   @Property({ length: -1 })
   name!: string;
 
-  @ManyToOne({ entity: () => Container, defaultRaw: `gen_random_uuid()` })
+  @ManyToOne({ entity: () => Container })
   container!: Container & Opt;
 
-  @ManyToOne({ entity: () => Volume, defaultRaw: `gen_random_uuid()` })
+  @ManyToOne({ entity: () => Volume })
   volume!: Volume & Opt;
 
   @Property({ length: -1 })

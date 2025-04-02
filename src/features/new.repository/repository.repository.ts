@@ -1,11 +1,11 @@
 import fse from 'fs-extra';
 import simpleGit from 'simple-git';
-import { BaseRepo } from './base.repository';
+import BaseRepo from './base.repository';
 import {
   Repository,
   RepositoryFiles,
 } from '../../domain/entities/Repository.entity';
-import { resources } from '../rights/resources_list';
+import { resources } from '../rights/resources.list';
 import { megapolosPath } from '../../..';
 
 export default class RepositoryRepo extends BaseRepo<Repository> {

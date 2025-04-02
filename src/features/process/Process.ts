@@ -1,18 +1,14 @@
 import { spawn } from 'child_process';
-import User from '../repository/user/User';
 import BaseProcess, { ProcessStatus } from './BaseProcess';
 
 class Process extends BaseProcess {
-  user: User;
-
   onoutput: (data: string) => void;
 
   onerror: (data: string) => void;
 
-  constructor(command: string, user: User) {
+  constructor(command: string) {
     super();
     this.command = command;
-    this.user = user;
   }
 
   async start(): Promise<void> {

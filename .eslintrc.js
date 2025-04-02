@@ -23,5 +23,5 @@ module.exports = {
       },
     ],
   },
-  // ignorePatterns: ["node_modules", "dist", "data", "volumes", "repositories"],
+  ignorePatterns: ['node_modules', 'dist', 'data', 'volumes', 'repositories'],
 };

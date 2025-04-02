@@ -1,18 +1,10 @@
-import { Entity, type Opt, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, Property } from '@mikro-orm/core';
+import { BaseEntity } from './Base.entity';
 
 @Entity()
-export class DbSchema {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  id!: string & Opt;
-
+export class DbSchema extends BaseEntity {
   @Property({ length: -1 })
   name!: string;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true })
-  updateDate?: Date;
 
   @Property({ length: -1, nullable: true })
   type?: string;

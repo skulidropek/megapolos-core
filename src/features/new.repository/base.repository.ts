@@ -1,12 +1,12 @@
-import { EntityData, RequiredEntityData } from '@mikro-orm/core';
+import { EntityData, FilterQuery, RequiredEntityData } from '@mikro-orm/core';
 import { Context } from '../../api/graphql/server';
 import { BaseEntity } from '../../domain/entities/Base.entity';
 import { makeEm } from '../db/mikro-orm';
-import { defaultRights, resources } from '../rights/resources_list';
-import { RightsChecker } from '../rights/rights_checker';
+import { defaultRights, resources } from '../rights/resources.list';
+import { RightsChecker } from '../rights/RightsChecker';
 import { GroupUserPrivilege } from '../../domain/entities/GroupUserPrivilege.entity';
 
-export abstract class BaseRepo<Entity extends BaseEntity> {
+export default abstract class BaseRepo<Entity extends BaseEntity> {
   private _entity?: Entity;
 
   constructor(
@@ -39,7 +39,7 @@ export abstract class BaseRepo<Entity extends BaseEntity> {
     return this.filterEntitiesByAccess(entities);
   }
 
-  async getByFields(fields: Partial<Entity>): Promise<Entity[]> {
+  async getByFields(fields: FilterQuery<Entity>): Promise<Entity[]> {
     const entities = (await makeEm().find(
       this.entityClass,
       fields

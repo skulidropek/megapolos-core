@@ -1,6 +1,6 @@
 import { Entity, ManyToOne, type Opt, Property } from '@mikro-orm/core';
 import { User } from './User.entity';
-import { ObjectType, Field, ID } from 'type-graphql';
+import { ObjectType, Field } from 'type-graphql';
 import { BaseEntity } from './Base.entity';
 
 @Entity()

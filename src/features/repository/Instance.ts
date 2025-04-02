@@ -1,6 +1,6 @@
 import EventsObserver from '../events/eventsObserver';
 import { AppInstanceTable, ContainerTable } from '../db/tables';
-import { resources } from '../rights/resources_list';
+import { resources } from '../rights/resources.list';
 import { AppInstanceResult } from '../../domain/types';
 import BaseRepository from './BaseRepository';
 import Container, { ContainerRuntimeVariables } from './container/Container';

@@ -1,15 +1,15 @@
 import BaseProcess, { ProcessStatus } from './BaseProcess';
-import MegapolosNode from '../repository/Node';
 import { Client } from 'ssh2';
+import MegapolosNodeRepo from '../new.repository/megapolos.node.repository';
 
 class ExternalProcess extends BaseProcess {
-  node: MegapolosNode;
+  node: MegapolosNodeRepo;
 
   onoutput: (data: string) => void;
 
   onerror: (data: string) => void;
 
-  constructor(command: string, node: MegapolosNode) {
+  constructor(command: string, node: MegapolosNodeRepo) {
     super();
     this.command = command;
     this.node = node;
@@ -17,7 +17,7 @@ class ExternalProcess extends BaseProcess {
 
   async start(): Promise<void> {
     this.status = ProcessStatus.Running;
-    const data = await this.node.getData();
+    const data = await this.node.getEntity();
     return new Promise((resolve, reject) => {
       const conn = new Client();
       conn

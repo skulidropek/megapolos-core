@@ -1,8 +1,8 @@
 import { Knex } from 'knex';
 import { knex } from '../db/knex';
 import { IEntity } from '../db/tables';
-import { defaultRights, resources } from '../rights/resources_list';
-import { RightsChecker } from '../rights/rights_checker';
+import { defaultRights, resources } from '../rights/resources.list';
+import { RightsChecker } from '../rights/RightsChecker';
 import { Context } from '../../domain/types';
 
 abstract class BaseRepository<T extends IEntity> {

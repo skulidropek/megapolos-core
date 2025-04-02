@@ -1,6 +1,7 @@
-import User from '../repository/user/User';
-import { GroupUserPrivilegeTable, IEntity } from '../db/tables';
-import { UserAction } from './resources_list';
+import { IEntity } from '../db/tables';
+import { UserAction } from './resources.list';
+import { GroupUserPrivilege } from '../../domain/entities/GroupUserPrivilege.entity';
+import UserRepo from '../new.repository/user/user.repository';
 
 export class RightsChecker {
   static async check(userId: string, action: UserAction): Promise<boolean> {
@@ -33,24 +34,23 @@ export class RightsChecker {
   }
 
   static _getPrivileges(userId: string) {
-    return new User(undefined, userId).getPrivileges();
+    return new UserRepo(undefined, userId).getPrivileges();
   }
 
   static privilegeIsMatch(
-    privilege: GroupUserPrivilegeTable,
+    privilege: GroupUserPrivilege,
     action: UserAction
   ): boolean {
     return (
-      (privilege.object_name == '*' ||
-        privilege.object_name == action.resourceType) &&
-      (privilege.object_id == '*' ||
-        privilege.object_id == action.resourceId) &&
+      (privilege.objectName == '*' ||
+        privilege.objectName == action.resourceType) &&
+      (privilege.objectId == '*' || privilege.objectId == action.resourceId) &&
       (privilege.action == '*' || privilege.action == action.action)
     );
   }
 
   static privilegesIsMatch(
-    privileges: GroupUserPrivilegeTable[],
+    privileges: GroupUserPrivilege[],
     action: UserAction
   ): boolean {
     let value = privileges.some((p) =>

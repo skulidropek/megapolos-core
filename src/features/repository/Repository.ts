@@ -2,7 +2,7 @@ import fse from 'fs-extra';
 import simpleGit from 'simple-git';
 import { megapolosPath } from '../../..';
 import { RepositoryTable } from '../db/tables';
-import { resources } from '../rights/resources_list';
+import { resources } from '../rights/resources.list';
 import BaseRepository from './BaseRepository';
 
 class Repository extends BaseRepository<RepositoryTable> {

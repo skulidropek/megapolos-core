@@ -22,7 +22,7 @@ import Image from '../Image';
 import Instance, { InstanceRuntimeVariables } from '../Instance';
 import MegapolosNode from '../Node';
 import Volume from '../Volume';
-import { resources } from '../../rights/resources_list';
+import { resources } from '../../rights/resources.list';
 
 export enum ContainerLifeStatus {
   Stopped = 'stopped',

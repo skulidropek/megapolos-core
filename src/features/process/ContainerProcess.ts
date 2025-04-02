@@ -1,14 +1,14 @@
 import User from '../repository/user/User';
-import Container from '../repository/container/Container';
 import BaseProcess, { ProcessStatus } from './BaseProcess';
 import { Writable } from 'stream';
+import { ContainerRepo } from '../new.repository/cantainer/container.repository';
 
 class ContainerProcess extends BaseProcess {
   user: User;
 
-  container: Container;
+  container: ContainerRepo;
 
-  constructor(command: string, container: Container) {
+  constructor(command: string, container: ContainerRepo) {
     super();
     this.command = command;
     this.container = container;

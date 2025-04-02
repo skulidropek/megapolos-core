@@ -10,7 +10,7 @@ import {
   GroupUserTable,
   UserTable,
 } from '../../../features/db/tables';
-import { resources } from '../../../features/rights/resources_list';
+import { resources } from '../../../features/rights/resources.list';
 
 interface PrivilegeInput {
   role_id: string;

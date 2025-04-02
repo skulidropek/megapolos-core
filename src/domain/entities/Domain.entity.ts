@@ -1,25 +1,23 @@
-import { Entity, type Opt, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, Property } from '@mikro-orm/core';
+import { Field, ObjectType } from 'type-graphql';
+import { BaseEntity } from './Base.entity';
 
 @Entity()
-export class Domain {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  id!: string & Opt;
-
+@ObjectType()
+export class Domain extends BaseEntity {
   @Property({ length: -1 })
+  @Field()
   name!: string;
 
   @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
   auth?: string;
 
   @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
   user?: string;
 
   @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
   password?: string;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true })
-  updateDate?: Date;
 }

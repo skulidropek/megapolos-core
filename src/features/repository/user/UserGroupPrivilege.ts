@@ -1,6 +1,6 @@
 import { knex } from '../../db/knex';
 import { GroupUserPrivilegeTable } from '../../db/tables';
-import { RightsChecker } from '../../rights/rights_checker';
+import { RightsChecker } from '../../rights/RightsChecker';
 import BaseRepository from '../BaseRepository';
 import User from '../user/User';
 
