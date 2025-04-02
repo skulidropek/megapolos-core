@@ -120,7 +120,7 @@
 
 import { ApolloServer } from '@apollo/server';
 import { buildSchema } from 'type-graphql';
-import { UserResolver, UserTableResolver } from './resolvers/user.orm.resolver';
+import { UserResolver, UserTableResolver } from './new.resolvers/user.resolver';
 import express from 'express';
 import cors from 'cors';
 import { expressMiddleware } from '@apollo/server/express4';

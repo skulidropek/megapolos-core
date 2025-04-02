@@ -2,28 +2,18 @@ import { Resolver, Query, Mutation, Arg, ClassType, Ctx } from 'type-graphql';
 import { FilterQuery } from '@mikro-orm/core';
 import { Context } from './server';
 import { GraphQLResolveInfo } from 'graphql';
-import {
-  generateGraphQLInputType,
-  GenerationType,
-} from '../../library/graphql_types_generator';
 import { makeEm } from '../../features/db/mikro-orm';
 
-export function CreateBaseResolver<T extends { id: string }>(
+export function CreateBaseResolver<
+  T extends { id: string },
+  I extends { toStruct: () => any },
+  P extends { toStruct: () => any }
+>(
   className: string,
-  EntityClass: ClassType<T>
+  EntityClass: ClassType<T>,
+  InputClass: ClassType<I>,
+  InputPartialClass: ClassType<P>
 ) {
-  const InputClass = generateGraphQLInputType(
-    EntityClass,
-    `${className}Input`,
-    GenerationType.input
-  );
-
-  const InputPartialClass = generateGraphQLInputType(
-    EntityClass,
-    `${className}InputPartial`,
-    GenerationType.inputPartial
-  );
-
   @Resolver()
   abstract class BaseResolver {
     @Query(() => [EntityClass], { name: `getAll${className}` })
@@ -42,7 +32,7 @@ export function CreateBaseResolver<T extends { id: string }>(
     @Mutation(() => EntityClass, { name: `create${className}` })
     async create(
       @Ctx() ctx: Context,
-      @Arg('values', () => InputClass) values: { toStruct: () => any }
+      @Arg('values', () => InputClass) values: I
     ): Promise<T> {
       const rawEntity = await makeEm()
         .qb(EntityClass)
@@ -55,7 +45,7 @@ export function CreateBaseResolver<T extends { id: string }>(
     async update(
       @Ctx() ctx: Context,
       @Arg('id') id: string,
-      @Arg('values', () => InputPartialClass) values: { toStruct: () => any }
+      @Arg('values', () => InputPartialClass) values: P
     ): Promise<T> {
       const rawEntity = await makeEm()
         .qb(EntityClass)
