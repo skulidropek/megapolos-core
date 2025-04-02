@@ -1,29 +1,20 @@
-import {
-  Entity,
-  ManyToOne,
-  type Opt,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/core';
+import { Entity, ManyToOne, type Opt, Property } from '@mikro-orm/core';
 import { User } from './User.entity';
+import { ObjectType, Field, ID } from 'type-graphql';
+import { BaseEntity } from './Base.entity';
 
 @Entity()
-export class App {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  id!: string & Opt;
-
+@ObjectType()
+export class App extends BaseEntity {
   @Property({ length: -1, unique: 'app_name_key' })
+  @Field()
   name!: string;
 
-  @ManyToOne({ entity: () => User, defaultRaw: `gen_random_uuid()` })
+  @ManyToOne({ entity: () => User })
+  @Field(() => User)
   ownerUser!: User & Opt;
 
   @Property({ type: 'string', length: -1, nullable: true })
+  @Field({ nullable: true })
   status?: string = 'stoppd';
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  updateDate?: Date;
 }

@@ -6,7 +6,7 @@ import { defaultRights, resources } from '../rights/resources_list';
 import { RightsChecker } from '../rights/rights_checker';
 import { GroupUserPrivilege } from '../../domain/entities/GroupUserPrivilege.entity';
 
-export abstract class BaseRepository<Entity extends BaseEntity> {
+export abstract class BaseRepo<Entity extends BaseEntity> {
   private _entity?: Entity;
 
   constructor(

@@ -129,6 +129,10 @@ import express from 'express';
 import cors from 'cors';
 import { expressMiddleware } from '@apollo/server/express4';
 import { User } from '../../domain/entities/User.entity';
+import {
+  RepositoryResolver,
+  RepositoryTableResolver,
+} from './new.resolvers/repository.resolver';
 
 export interface Context {
   req: express.Request;
@@ -142,6 +146,8 @@ async function bootstrap() {
       UserResolver,
       UserTableResolver,
       GroupUserPrivilegeTableResolver,
+      RepositoryResolver,
+      RepositoryTableResolver,
     ],
   });
 

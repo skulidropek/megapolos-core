@@ -2,7 +2,7 @@ import { Resolver, Query, Mutation, Arg, ClassType, Ctx } from 'type-graphql';
 import { Context } from './server';
 import { GraphQLResolveInfo } from 'graphql';
 import { IEntity } from '../../features/db/tables';
-import { BaseRepository } from '../../features/new.repository/base.repository';
+import { BaseRepo } from '../../features/new.repository/base.repository';
 
 export function CreateBaseResolver<
   T extends IEntity,
@@ -10,7 +10,7 @@ export function CreateBaseResolver<
   P extends object
 >(
   className: string,
-  Repository: new (ctx: Context, id?: string) => BaseRepository<T>,
+  Repository: new (ctx: Context, id?: string) => BaseRepo<T>,
   EntityClass: ClassType<T>,
   InputClass: ClassType<I>,
   UpdateClass: ClassType<P>

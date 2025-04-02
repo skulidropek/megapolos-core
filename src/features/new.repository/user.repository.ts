@@ -1,15 +1,10 @@
-import { BaseRepository } from './base.repository';
+import { BaseRepo } from './base.repository';
 import { User } from '../../domain/entities/User.entity';
-import { Context } from '../../api/graphql/server';
 import { UserGroupLink } from '../../domain/entities/UserGroupLink.entity';
 import { makeEm } from '../db/mikro-orm';
 import { RequiredEntityData } from '@mikro-orm/core';
 
-export class UserRepository extends BaseRepository<User> {
-  constructor(ctx: Context, id?: string) {
-    super(ctx, id);
-  }
-
+export class UserRepo extends BaseRepo<User> {
   get entityClass() {
     return User;
   }

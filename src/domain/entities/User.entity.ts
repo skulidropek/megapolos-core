@@ -10,7 +10,6 @@ import { Field, ID, ObjectType } from 'type-graphql';
 import { GroupUser } from './GroupUser.entity';
 import { Hint } from '../../library/graphql_types_generator';
 import { BaseEntity } from './Base.entity';
-import { UserGroupLink } from './UserGroupLink.entity';
 
 @Entity()
 @ObjectType()

@@ -8,7 +8,7 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
-import { UserRepository } from '../../../features/new.repository/user.repository';
+import { UserRepo } from '../../../features/new.repository/user.repository';
 import { Context } from '../server';
 import { GroupUserPrivilege } from '../../../domain/entities/GroupUserPrivilege.entity';
 
@@ -27,14 +27,14 @@ export const UserUpdateInput = generateGraphQLInputType(
 @Resolver()
 export class UserResolver extends CreateBaseResolver(
   'User',
-  UserRepository,
+  UserRepo,
   User,
   UserInput,
   UserUpdateInput
 ) {
   @Query(() => [User])
   async activeUsers(@Ctx() ctx: Context): Promise<User[]> {
-    return new UserRepository(ctx).getByFields({ userStatus: 'enable' });
+    return new UserRepo(ctx).getByFields({ userStatus: 'enable' });
   }
 }
 
