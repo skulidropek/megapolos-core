@@ -1,13 +1,19 @@
-import { Entity, type Opt, PrimaryKey, Property } from '@mikro-orm/core';
-import { Field, ID, ObjectType } from 'type-graphql';
+import {
+  Collection,
+  Entity,
+  ManyToMany,
+  OneToMany,
+  Property,
+} from '@mikro-orm/core';
+import { Field, ObjectType } from 'type-graphql';
+import { Hint } from '../../library/graphql_types_generator';
+import { User } from './User.entity';
+import { BaseEntity } from './Base.entity';
+import { GroupUserPrivilege } from './GroupUserPrivilege.entity';
 
 @Entity()
 @ObjectType()
-export class GroupUser {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  @Field(() => ID)
-  id!: string & Opt;
-
+export class GroupUser extends BaseEntity {
   @Property({ length: -1 })
   @Field()
   name!: string;
@@ -16,15 +22,18 @@ export class GroupUser {
   @Field({ nullable: true })
   restApi?: string;
 
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  @Field({ nullable: true })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  @Field({ nullable: true })
-  updateDate?: Date;
-
   @Property({ columnType: 'timestamp(6)', nullable: true })
   @Field({ nullable: true })
   disableDate?: Date;
+
+  @ManyToMany(() => User, undefined, { pivotTable: 'user_group_link' })
+  @Field(() => [User])
+  @Hint({ skip: true })
+  users = new Collection<User>(this);
+
+  // one to many privileges
+  @OneToMany(() => GroupUserPrivilege, (privilege) => privilege.groupUser)
+  @Field(() => [GroupUserPrivilege])
+  @Hint({ skip: true })
+  privileges = new Collection<GroupUserPrivilege>(this);
 }

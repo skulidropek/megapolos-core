@@ -10,6 +10,7 @@ export interface HintMetadata {
   type?: () => any;
   skipOnInput?: boolean;
   skip?: boolean;
+  skipOnUpdate?: boolean;
 }
 
 export function Hint(metadata: HintMetadata) {
@@ -28,7 +29,7 @@ function getHintMetadata(
 export enum GenerationType {
   input = 'input',
   partial = 'partial',
-  inputPartial = 'inputPartial',
+  update = 'update',
 }
 
 const GT = GenerationType;
@@ -39,7 +40,18 @@ export function generateGraphQLInputType<T>(
   generationType: GenerationType
 ) {
   const metadataStorage = getMetadataStorage();
-  const fields = metadataStorage.fields.filter((f) => f.target === classType);
+  let fields = metadataStorage.fields.filter((f) => f.target === classType);
+
+  for (
+    let currentProto = Object.getPrototypeOf(classType);
+    currentProto && currentProto.prototype;
+    currentProto = Object.getPrototypeOf(currentProto)
+  ) {
+    fields = [
+      ...fields,
+      ...metadataStorage.fields.filter((f) => f.target === currentProto),
+    ];
+  }
 
   @InputType(inputName)
   class DynamicInput {
@@ -51,9 +63,6 @@ export function generateGraphQLInputType<T>(
         .filter((f) => f.target === DynamicInput)
         .forEach((field) => {
           const hint = getHintMetadata(DynamicInput.prototype, field.name);
-          if (hint && hint.key === null) {
-            return;
-          }
 
           const value =
             instance[field.name] === undefined
@@ -70,12 +79,17 @@ export function generateGraphQLInputType<T>(
     }
   }
 
-  const isInput = [GT.input, GT.inputPartial].includes(generationType);
-  const isPartial = [GT.partial, GT.inputPartial].includes(generationType);
+  const isInput = [GT.input, GT.update].includes(generationType);
+  const isPartial = [GT.partial, GT.update].includes(generationType);
+  const isUpdate = generationType === GT.update;
 
   fields.forEach((field) => {
     const hint = getHintMetadata(classType.prototype, field.name);
-    if (hint?.skip || (hint?.skipOnInput && isInput)) {
+    if (
+      hint?.skip ||
+      (hint?.skipOnInput && isInput) ||
+      (hint?.skipOnUpdate && isUpdate)
+    ) {
       return;
     }
 

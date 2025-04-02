@@ -1,24 +1,25 @@
 import { Resolver, Query, Mutation, Arg, ClassType, Ctx } from 'type-graphql';
-import { FilterQuery } from '@mikro-orm/core';
 import { Context } from './server';
 import { GraphQLResolveInfo } from 'graphql';
-import { makeEm } from '../../features/db/mikro-orm';
+import { IEntity } from '../../features/db/tables';
+import { BaseRepository } from '../../features/new.repository/base.repository';
 
 export function CreateBaseResolver<
-  T extends { id: string },
-  I extends { toStruct: () => any },
-  P extends { toStruct: () => any }
+  T extends IEntity,
+  I extends object,
+  P extends object
 >(
   className: string,
+  Repository: new (ctx: Context, id?: string) => BaseRepository<T>,
   EntityClass: ClassType<T>,
   InputClass: ClassType<I>,
-  InputPartialClass: ClassType<P>
+  UpdateClass: ClassType<P>
 ) {
   @Resolver()
   abstract class BaseResolver {
     @Query(() => [EntityClass], { name: `getAll${className}` })
     async getAll(@Ctx() ctx: Context): Promise<T[]> {
-      return makeEm().find(EntityClass, {});
+      return new Repository(ctx).getAll();
     }
 
     @Query(() => EntityClass, { nullable: true, name: `get${className}` })
@@ -26,7 +27,7 @@ export function CreateBaseResolver<
       @Arg('id') id: string,
       @Ctx() ctx: Context
     ): Promise<T | null> {
-      return makeEm().findOne(EntityClass, { id } as FilterQuery<T>);
+      return new Repository(ctx, id).getEntity();
     }
 
     @Mutation(() => EntityClass, { name: `create${className}` })
@@ -34,37 +35,21 @@ export function CreateBaseResolver<
       @Ctx() ctx: Context,
       @Arg('values', () => InputClass) values: I
     ): Promise<T> {
-      const rawEntity = await makeEm()
-        .qb(EntityClass)
-        .insert(values.toStruct() as any)
-        .execute('get');
-      return makeEm().map(EntityClass, rawEntity as any);
+      return new Repository(ctx).create(values as any);
     }
 
-    @Mutation(() => EntityClass, { name: `update${className}` })
+    @Mutation(() => Boolean, { name: `update${className}` })
     async update(
       @Ctx() ctx: Context,
       @Arg('id') id: string,
-      @Arg('values', () => InputPartialClass) values: P
-    ): Promise<T> {
-      const rawEntity = await makeEm()
-        .qb(EntityClass)
-        .update(values.toStruct() as any)
-        .where({ id })
-        .returning('*')
-        .execute('get');
-      return makeEm().map(EntityClass, rawEntity as any);
+      @Arg('values', () => UpdateClass) values: P
+    ): Promise<boolean> {
+      return new Repository(ctx, id).update(values as any);
     }
 
     @Mutation(() => Boolean, { name: `delete${className}` })
     async delete(@Ctx() ctx: Context, @Arg('id') id: string): Promise<boolean> {
-      const result = await makeEm()
-        .qb(EntityClass)
-        .delete()
-        .where({ id })
-        .execute();
-
-      return result.affectedRows > 0;
+      return new Repository(ctx, id).delete();
     }
   }
 

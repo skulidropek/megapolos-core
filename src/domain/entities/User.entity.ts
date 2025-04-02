@@ -1,34 +1,33 @@
 import {
+  Collection,
   Entity,
+  ManyToMany,
   ManyToOne,
   type Opt,
-  PrimaryKey,
   Property,
 } from '@mikro-orm/core';
 import { Field, ID, ObjectType } from 'type-graphql';
 import { GroupUser } from './GroupUser.entity';
 import { Hint } from '../../library/graphql_types_generator';
+import { BaseEntity } from './Base.entity';
+import { UserGroupLink } from './UserGroupLink.entity';
 
 @Entity()
 @ObjectType()
-export class User {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  @Field(() => ID)
-  @Hint({ skipOnInput: true })
-  id!: string & Opt;
-
+export class User extends BaseEntity {
   @Property({ length: -1 })
   @Field()
   name!: string;
 
   @ManyToOne({ entity: () => GroupUser })
   @Field(() => GroupUser)
-  @Hint({
-    key: 'groupUserId',
-    dbKey: 'group_user_id',
-    type: () => ID,
-  })
+  @Hint({ type: () => ID, skipOnUpdate: true })
   groupUser!: GroupUser;
+
+  @ManyToMany(() => GroupUser, undefined, { pivotTable: 'user_group_link' })
+  @Field(() => [GroupUser])
+  @Hint({ skip: true })
+  groups = new Collection<GroupUser>(this);
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
@@ -38,14 +37,6 @@ export class User {
   @Field(() => String, { nullable: true })
   @Hint({ defaultValue: 'enable' })
   userStatus: string & Opt = 'enable';
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  @Field({ nullable: true })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  @Field({ nullable: true })
-  updateDate?: Date;
 
   @Property({ columnType: 'timestamp(6)', nullable: true })
   @Field({ nullable: true })

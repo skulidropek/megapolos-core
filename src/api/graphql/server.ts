@@ -120,19 +120,29 @@
 
 import { ApolloServer } from '@apollo/server';
 import { buildSchema } from 'type-graphql';
-import { UserResolver, UserTableResolver } from './new.resolvers/user.resolver';
+import {
+  GroupUserPrivilegeTableResolver,
+  UserResolver,
+  UserTableResolver,
+} from './new.resolvers/user.resolver';
 import express from 'express';
 import cors from 'cors';
 import { expressMiddleware } from '@apollo/server/express4';
+import { User } from '../../domain/entities/User.entity';
 
 export interface Context {
   req: express.Request;
   res: express.Response;
+  user?: User;
 }
 
 async function bootstrap() {
   const schema = await buildSchema({
-    resolvers: [UserResolver, UserTableResolver],
+    resolvers: [
+      UserResolver,
+      UserTableResolver,
+      GroupUserPrivilegeTableResolver,
+    ],
   });
 
   const server = new ApolloServer<Context>({

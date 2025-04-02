@@ -1,32 +1,25 @@
-import {
-  Entity,
-  ManyToOne,
-  type Opt,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/core';
+import { Entity, ManyToOne, type Opt, Property } from '@mikro-orm/core';
 import { GroupUser } from './GroupUser.entity';
+import { BaseEntity } from './Base.entity';
+import { ObjectType } from 'type-graphql';
+import { Field } from 'type-graphql';
 
 @Entity()
-export class GroupUserPrivilege {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  id!: string & Opt;
-
-  @ManyToOne({ entity: () => GroupUser, defaultRaw: `gen_random_uuid()` })
+@ObjectType()
+export class GroupUserPrivilege extends BaseEntity {
+  @ManyToOne({ entity: () => GroupUser })
+  @Field(() => GroupUser)
   groupUser!: GroupUser & Opt;
 
   @Property({ length: -1 })
+  @Field()
   objectName!: string;
 
   @Property({ length: -1 })
+  @Field()
   objectId!: string;
 
   @Property({ length: -1 })
+  @Field()
   action!: string;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  updateDate?: Date;
 }

@@ -1,4 +1,4 @@
-import { Resolver, Query, Ctx, FieldResolver, Root, Info } from 'type-graphql';
+import { Query, Ctx, FieldResolver, Root, Info, Resolver } from 'type-graphql';
 import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { User } from '../../../domain/entities/User.entity';
 import { GroupUser } from '../../../domain/entities/GroupUser.entity';
@@ -8,6 +8,9 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
+import { UserRepository } from '../../../features/new.repository/user.repository';
+import { Context } from '../server';
+import { GroupUserPrivilege } from '../../../domain/entities/GroupUserPrivilege.entity';
 
 export const UserInput = generateGraphQLInputType(
   User,
@@ -15,22 +18,23 @@ export const UserInput = generateGraphQLInputType(
   GenerationType.input
 );
 
-export const UserInputPartial = generateGraphQLInputType(
+export const UserUpdateInput = generateGraphQLInputType(
   User,
-  `UserInputPartial`,
-  GenerationType.inputPartial
+  `UserUpdateInput`,
+  GenerationType.update
 );
 
 @Resolver()
 export class UserResolver extends CreateBaseResolver(
   'User',
+  UserRepository,
   User,
   UserInput,
-  UserInputPartial
+  UserUpdateInput
 ) {
   @Query(() => [User])
-  async activeUsers(): Promise<User[]> {
-    return makeEm().find(User, { restApi: null });
+  async activeUsers(@Ctx() ctx: Context): Promise<User[]> {
+    return new UserRepository(ctx).getByFields({ userStatus: 'enable' });
   }
 }
 
@@ -43,6 +47,25 @@ export class UserTableResolver extends BaseTableResolver {
   ): Promise<GroupUser> {
     return this.returnOnlyIdIfNeeded(info, user.groupUser.id, async () => {
       return await makeEm().findOneOrFail(GroupUser, { id: user.groupUser.id });
+    });
+  }
+
+  @FieldResolver(() => [GroupUser], { nullable: false })
+  async groups(@Root() user: User): Promise<GroupUser[]> {
+    return await makeEm().find(GroupUser, {
+      users: { id: user.id },
+    });
+  }
+}
+
+@Resolver(() => GroupUser)
+export class GroupUserPrivilegeTableResolver extends BaseTableResolver {
+  @FieldResolver(() => [GroupUserPrivilege], { nullable: false })
+  async privileges(
+    @Root() groupUser: GroupUser
+  ): Promise<GroupUserPrivilege[]> {
+    return await makeEm().find(GroupUserPrivilege, {
+      groupUser: groupUser.id,
     });
   }
 }
