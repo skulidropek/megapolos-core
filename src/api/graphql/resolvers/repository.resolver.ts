@@ -1,139 +1,124 @@
-/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+import {
+  Query,
+  Ctx,
+  Root,
+  Resolver,
+  Mutation,
+  Arg,
+  FieldResolver,
+  Info,
+} from 'type-graphql';
+import { BaseTableResolver, CreateBaseResolver } from '../base.resolver';
+import {
+  Repository,
+  RepositoryFiles,
+} from '../../../domain/entities/Repository.entity';
+import {
+  generateGraphQLInputType,
+  GenerationType,
+} from '../../../library/graphql_types_generator';
+import RepositoryRepo from '../../../features/new.repository/repository.repository';
+import { Context } from '../server';
+import { GraphQLResolveInfo } from 'graphql';
+import { App } from '../../../domain/entities/App.entity';
+import { makeEm } from '../../../features/db/mikro-orm';
 
-import { createModule, gql } from 'graphql-modules';
-import Repository from '../../../features/repository/Repository';
-import { resolver } from '../../../domain/types';
-import EventsObserver from '../../../features/events/eventsObserver';
-import { RepositoryTable } from '../../../features/db/tables';
+export const RepositoryInput = generateGraphQLInputType(
+  Repository,
+  `RepositoryInput`,
+  GenerationType.input
+);
 
-const repositoryModule = createModule({
-  id: 'repository-module',
-  dirname: __dirname,
-  typeDefs: [
-    gql`
-      type Query {
-        getRepositories: [Repository]
-        getRepository(id: String!): Repository
-        getBranches(id: String!): [String]
-        listRepositoryFiles(
-          id: String!
-          branch: String!
-          path: String!
-        ): RepositoryFiles
-        showRepositoryFile(id: String!, branch: String!, path: String!): String
-      }
-      type Mutation {
-        createRepository(repository: RepositoryInput): Repository
-        removeRepository(id: String!): Boolean
-        editRepository(id: String!, repository: RepositoryInput): Repository
-        fetchRepository(id: String!): Boolean
-      }
-      type Repository {
-        id: String
-        name: String
-        url: String
-        user: String
-        password: String
-        create_date: DateTime
-        update_date: DateTime
-        remove_date: DateTime
-        branches: [String]
-        last_fetch_date: DateTime
-        app_id: String
-      }
-      type RepositoryFiles {
-        files: [String]
-        directories: [String]
-      }
-      input RepositoryInput {
-        name: String
-        url: String
-        user: String
-        password: String
-        app_id: String
-      }
-    `,
-  ],
-  resolvers: {
-    Query: {
-      getRepositories: resolver<{}, RepositoryTable[]>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getRepositories', data: args });
-          return new Repository(context).getAll();
-        }
-      ),
-      getRepository: resolver<{ id: string }, RepositoryTable>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getRepository', data: args });
-          return new Repository(context, args.id).getData();
-        }
-      ),
-      getBranches: resolver<{ id: string }, string[]>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getBranches', data: args });
-          return new Repository(context, args.id).getBranches();
-        }
-      ),
-      listRepositoryFiles: resolver<
-        { id: string; branch: string; path: string },
-        { files: string[]; directories: string[] }
-      >(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'listRepositoryFiles', data: args });
-        return new Repository(context, args.id).listFiles(
-          args.branch,
-          args.path
-        );
-      }),
-      showRepositoryFile: resolver<
-        { id: string; branch: string; path: string },
-        string
-      >(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'showRepositoryFile', data: args });
-        return new Repository(context, args.id).showFile(
-          args.branch,
-          args.path
-        );
-      }),
-    },
-    Mutation: {
-      createRepository: resolver<
-        { repository: Partial<RepositoryTable> },
-        RepositoryTable
-      >(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'createRepository', data: args });
-        return new Repository(context).create(args.repository);
-      }),
-      fetchRepository: resolver<{ id: string }, boolean>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'fetchRepository', data: args });
-          await new Repository(context, args.id).fetch();
-          return true;
-        }
-      ),
-      editRepository: resolver<
-        { id: string; repository: Partial<RepositoryTable> },
-        RepositoryTable
-      >(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'editRepository', data: args });
-        return new Repository(context, args.id).edit(args.repository);
-      }),
-      removeRepository: resolver<{ id: string }, boolean>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'removeRepository', data: args });
-          await new Repository(context, args.id).delete();
-          return true;
-        }
-      ),
-    },
-    Repository: {
-      branches: resolver<RepositoryTable, string[]>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getBranches', data: args });
-          return new Repository(context, parent.id).getBranches();
-        }
-      ),
-    },
-  },
-});
+export const RepositoryUpdateInput = generateGraphQLInputType(
+  Repository,
+  `RepositoryUpdateInput`,
+  GenerationType.update
+);
 
-export default repositoryModule;
+@Resolver()
+export class RepositoryResolver extends CreateBaseResolver(
+  'Repository',
+  RepositoryRepo,
+  Repository,
+  RepositoryInput,
+  RepositoryUpdateInput
+) {
+  @Query(() => [String])
+  async getBranches(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string
+  ): Promise<string[]> {
+    return new RepositoryRepo(ctx, id).getBranches();
+  }
+
+  @Query(() => String)
+  async showFile(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string,
+    @Arg('branch') branch: string,
+    @Arg('path') path: string
+  ): Promise<string> {
+    return new RepositoryRepo(ctx, id).showFile(branch, path);
+  }
+
+  @Query(() => RepositoryFiles)
+  async listFiles(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string,
+    @Arg('branch') branch: string,
+    @Arg('path', { defaultValue: '' }) path: string
+  ): Promise<RepositoryFiles> {
+    return new RepositoryRepo(ctx, id).listFiles(branch, path);
+  }
+
+  @Mutation(() => Boolean)
+  async fetch(@Ctx() ctx: Context, @Arg('id') id: string): Promise<boolean> {
+    await new RepositoryRepo(ctx, id).fetch();
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async push(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string,
+    @Arg('branchFrom') branchFrom: string,
+    @Arg('branchTo') branchTo: string
+  ): Promise<boolean> {
+    await new RepositoryRepo(ctx, id).push(branchFrom, branchTo);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async copyBranchTo(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string,
+    @Arg('path') path: string,
+    @Arg('branch') branch: string
+  ): Promise<boolean> {
+    await new RepositoryRepo(ctx, id).copyBranchTo(path, branch);
+    return true;
+  }
+}
+
+@Resolver(() => Repository)
+export class RepositoryTableResolver extends BaseTableResolver {
+  @FieldResolver(() => App, { nullable: true })
+  async app(
+    @Root() repository: Repository,
+    @Info() info: GraphQLResolveInfo
+  ): Promise<App | null> {
+    if (!repository.app) return null;
+
+    return this.returnOnlyIdIfNeeded(info, repository.app.id, async () => {
+      return await makeEm().findOneOrFail(App, { id: repository.app.id });
+    });
+  }
+
+  @FieldResolver(() => [String])
+  async branches(
+    @Root() repository: Repository,
+    @Ctx() ctx: Context
+  ): Promise<string[]> {
+    return new RepositoryRepo(ctx, repository.id).getBranches();
+  }
+}

@@ -124,7 +124,7 @@ import {
   GroupUserPrivilegeTableResolver,
   UserResolver,
   UserTableResolver,
-} from './new.resolvers/user.resolver';
+} from './resolvers/user.resolver';
 import express from 'express';
 import cors from 'cors';
 import { expressMiddleware } from '@apollo/server/express4';
@@ -132,27 +132,24 @@ import { User } from '../../domain/entities/User.entity';
 import {
   RepositoryResolver,
   RepositoryTableResolver,
-} from './new.resolvers/repository.resolver';
-import { DomainResolver } from './new.resolvers/domain.resolver';
-import {
-  ImageResolver,
-  ImageTableResolver,
-} from './new.resolvers/image.resolver';
+} from './resolvers/repository.resolver';
+import { DomainResolver } from './resolvers/domain.resolver';
+import { ImageResolver, ImageTableResolver } from './resolvers/image.resolver';
 import {
   AppInstanceResolver,
   AppInstanceTableResolver,
-} from './new.resolvers/instance.resolver';
-import { NodeResolver, NodeTableResolver } from './new.resolvers/node.resolver';
-import { VolumeResolver } from './new.resolvers/volume.resolver';
-import { LogResolver } from './new.resolvers/log.resolver';
-import { EventResolver } from './new.resolvers/event.resolver';
-import { AppResolver, AppTableResolver } from './new.resolvers/app.resolver';
-import { DbmsResolver, DbmsTableResolver } from './new.resolvers/dbms.resolver';
+} from './resolvers/instance.resolver';
+import { NodeResolver, NodeTableResolver } from './resolvers/node.resolver';
+import { VolumeResolver } from './resolvers/volume.resolver';
+import { LogResolver } from './resolvers/log.resolver';
+import { EventResolver } from './resolvers/event.resolver';
+import { AppResolver, AppTableResolver } from './resolvers/app.resolver';
+import { DbmsResolver, DbmsTableResolver } from './resolvers/dbms.resolver';
 import {
   ContainerResolver,
   ContainerTableResolver,
-} from './new.resolvers/container.resolver';
-import { MegapolosResolver } from './new.resolvers/megapolos.resolver';
+} from './resolvers/container.resolver';
+import { MegapolosResolver } from './resolvers/megapolos.resolver';
 
 export interface Context {
   req: express.Request;

@@ -1,29 +1,42 @@
-/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
-
-import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../../../features/events/eventsObserver';
-import { resolver } from '../../../domain/types';
+import { Query, Ctx, Resolver, Arg } from 'type-graphql';
+import { Context } from '../server';
 import { knex } from '../../../features/db/knex';
 
-export interface SearchResult {
+import { Field, ObjectType, registerEnumType } from 'type-graphql';
+
+enum SearchResultType {
+  REPOSITORY = 'repository',
+  APP = 'app',
+  IMAGE = 'image',
+  CONTAINER = 'container',
+  NODE = 'node',
+  DOMAIN = 'domain',
+  USER = 'user',
+  DBMS = 'dbms',
+  DB = 'db',
+  DB_USER = 'db_user',
+  DB_BACKUP = 'db_backup',
+  DB_SCHEMA = 'db_schema',
+  APP_INSTANCE = 'app_instance',
+  LOG = 'log',
+  VOLUME = 'volume',
+}
+
+registerEnumType(SearchResultType, {
+  name: 'SearchResultType',
+  description: 'Типы результатов поиска в системе',
+});
+
+@ObjectType()
+export class SearchResult {
+  @Field()
   id: string;
+
+  @Field()
   name: string;
-  type:
-    | 'repository'
-    | 'app'
-    | 'image'
-    | 'container'
-    | 'node'
-    | 'domain'
-    | 'user'
-    | 'dbms'
-    | 'db'
-    | 'db_user'
-    | 'db_backup'
-    | 'db_schema'
-    | 'app_instance'
-    | 'log'
-    | 'volume';
+
+  @Field(() => SearchResultType)
+  type: SearchResultType;
 }
 
 class Megapolos {
@@ -62,31 +75,13 @@ class Megapolos {
   }
 }
 
-const megapolosModule = createModule({
-  id: 'megapolos-module',
-  dirname: __dirname,
-  typeDefs: [
-    gql`
-      type Query {
-        globalSearch(query: String!): [SearchResult]
-      }
-      type SearchResult {
-        id: String
-        name: String
-        type: String
-      }
-    `,
-  ],
-  resolvers: {
-    Query: {
-      globalSearch: resolver<{ query: string }, SearchResult[]>(
-        async (parent, args) => {
-          EventsObserver.listener({ type: 'globalSearch', data: args });
-          return new Megapolos().globalSearch(args.query);
-        }
-      ),
-    },
-  },
-});
-
-export default megapolosModule;
+@Resolver()
+export class MegapolosResolver {
+  @Query(() => [SearchResult])
+  async globalSearch(
+    @Ctx() ctx: Context,
+    @Arg('query') query: string
+  ): Promise<SearchResult[]> {
+    return new Megapolos().globalSearch(query);
+  }
+}

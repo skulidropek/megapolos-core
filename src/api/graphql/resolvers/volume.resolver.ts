@@ -1,141 +1,79 @@
-/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
+import { Mutation, Ctx, Resolver, Arg, InputType, Field } from 'type-graphql';
+import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
+import { Volume } from '../../../domain/entities/Volume.entity';
+import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
+import { Context } from '../server';
+import VolumeRepo from '../../../features/new.repository/volume.repository';
+import {
+  generateGraphQLInputType,
+  GenerationType,
+} from '../../../library/graphql_types_generator';
+import { RequiredEntityData } from '@mikro-orm/core';
+import { ContainerRepo } from '../../../features/new.repository/cantainer/container.repository';
 
-import { createModule, gql } from 'graphql-modules';
-import { ContainerVolumeInput, resolver } from '../../../domain/types';
-import EventsObserver from '../../../features/events/eventsObserver';
-import { ContainerVolumeTable, VolumeTable } from '../../../features/db/tables';
-import Volume from '../../../features/repository/Volume';
-import Container from '../../../features/repository/container/Container';
+export const ContainerVolumeInput = generateGraphQLInputType(
+  ContainerVolume,
+  'ContainerVolumeInput',
+  GenerationType.input
+);
 
-const volumeModule = createModule({
-  id: 'volume-module',
-  dirname: __dirname,
-  typeDefs: [
-    gql`
-      input Upload {
-        filename: String!
-        data: String!
-      }
+// Генерируем Input типы
+export const VolumeInput = generateGraphQLInputType(
+  Volume,
+  'VolumeInput',
+  GenerationType.input
+);
 
-      type Volume {
-        id: String
-        name: String
-        type: String
-        outer_path: String
-        node_id: String
-        create_date: DateTime
-        update_date: DateTime
-      }
+export const VolumeUpdateInput = generateGraphQLInputType(
+  Volume,
+  'VolumeUpdateInput',
+  GenerationType.update
+);
 
-      type DeviceBackup {
-        id: String
-        name: String
-        device_id: String
-        container_id: String
-        image_id: String
-        create_date: DateTime
-        update_date: DateTime
-        remove_date: DateTime
-      }
+@InputType()
+export class FileUploadInput {
+  @Field()
+  filename: string;
 
-      input VolumeInput {
-        name: String
-        type: String
-        outer_path: String
-      }
+  @Field()
+  data: string;
+}
 
-      type Query {
-        getVolumes: [Volume]
-        getDeviceBackups(device_name: String): [DeviceBackup]
-      }
+@Resolver()
+export class VolumeResolver extends CreateBaseResolver(
+  'Volume',
+  VolumeRepo,
+  Volume,
+  VolumeInput,
+  VolumeUpdateInput
+) {
+  @Mutation(() => Boolean)
+  async addVolumeToContainer(
+    @Arg('containerId') containerId: string,
+    @Arg('input', () => ContainerVolumeInput)
+    input: RequiredEntityData<ContainerVolume>,
+    @Ctx() ctx: Context
+  ): Promise<ContainerVolume> {
+    return new VolumeRepo(ctx).addToContainer(containerId, input);
+  }
 
-      type Mutation {
-        addVolume(input: VolumeInput): Boolean
-        deleteVolume(id: String): Boolean
-        addVolumeToContainer(
-          container_id: String
-          input: ContainerVolumeInput
-        ): ContainerVolume
-        removeVolumeFromContainer(id: String, container_id: String): Boolean
-        uploadFileToVolume(volume_id: String, file: Upload!): Boolean
-        setDeviceBackupVolume(device_id: String, volume_id: String): Boolean
-        removeDeviceBackupVolume(device_id: String): Boolean
-        downloadDeviceBackup(backup_id: String): String
-        uploadDeviceBackup(
-          device_id: String
-          name: String
-          file: Upload!
-        ): Boolean
-        removeDeviceBackup(id: String): Boolean
-        backupDevice(device_id: String, container_id: String): Boolean
-        restoreDeviceBackup(
-          device_id: String
-          backup_id: String
-          container_id: String
-        ): Boolean
-      }
-    `,
-  ],
-  resolvers: {
-    Query: {
-      getVolumes: resolver<void, VolumeTable[]>(
-        async (parent, args, context) => {
-          return new Volume(context).getAll();
-        }
-      ),
-    },
-    Mutation: {
-      addVolume: resolver<{ input: Partial<VolumeTable> }, boolean>(
-        async (parent, args, context) => {
-          await new Volume(context).create(args.input);
-          EventsObserver.listener({ type: 'addVolume', data: args });
-          return true;
-        }
-      ),
-      deleteVolume: resolver<{ id: string }, boolean>(
-        async (parent, args, context) => {
-          const id = args.id;
-          const volume = new Volume(context, id);
-          await volume.delete();
-          EventsObserver.listener({ type: 'deleteVolume', data: args });
-          return true;
-        }
-      ),
-      addVolumeToContainer: resolver<
-        { container_id: string; input: ContainerVolumeInput },
-        ContainerVolumeTable
-      >(async (parent, args, context) => {
-        const containerVolume = await new Volume(
-          context,
-          args.input.volume
-        ).addToContainer(args.container_id, args.input);
-        EventsObserver.listener({ type: 'addVolumeToContainer', data: args });
-        return containerVolume;
-      }),
-      removeVolumeFromContainer: resolver<
-        { id: string; container_id: string },
-        boolean
-      >(async (parent, args, context) => {
-        await new Container(context, args.container_id).removeVolume(args.id);
-        EventsObserver.listener({
-          type: 'removeVolumeFromContainer',
-          data: args,
-        });
-        return true;
-      }),
-      uploadFileToVolume: resolver<
-        { volume_id: string; file: { filename: string; data: string } },
-        boolean
-      >(async (parent, args, context) => {
-        console.log(args.file.filename, args.file.data.slice(0, 100));
-        new Volume(context, args.volume_id).uploadFile(
-          args.file.filename,
-          args.file.data
-        );
-        return true;
-      }),
-    },
-  },
-});
+  @Mutation(() => Boolean)
+  async removeVolumeFromContainer(
+    @Arg('volumeId') volumeId: string,
+    @Arg('containerId') containerId: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new ContainerRepo(ctx, containerId).removeVolume(volumeId);
+    return true;
+  }
 
-export default volumeModule;
+  @Mutation(() => Boolean)
+  async uploadFileToVolume(
+    @Arg('volumeId') volumeId: string,
+    @Arg('file', () => FileUploadInput) file: FileUploadInput,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new VolumeRepo(ctx, volumeId).uploadFile(file.filename, file.data);
+    return true;
+  }
+}

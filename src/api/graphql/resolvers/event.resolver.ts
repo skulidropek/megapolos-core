@@ -1,63 +1,33 @@
-/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
-
-import { createModule, gql } from 'graphql-modules';
-import { resolver } from '../../../domain/types';
+import { Mutation, Resolver, Arg, ObjectType, Field } from 'type-graphql';
 import EventsObserver from '../../../features/events/eventsObserver';
 import { JSONResolver } from 'graphql-scalars';
 
-interface BuildEventInput {
-  container_id: string;
+@ObjectType()
+export class Event {
+  @Field()
+  type: string;
+
+  @Field(() => JSONResolver)
+  data: any;
 }
 
-const eventModule = createModule({
-  id: 'event-module',
-  dirname: __dirname,
-  typeDefs: [
-    gql`
-      scalar JSON
-
-      input BuildEventInput {
-        container_id: String
-      }
-
-      type Mutation {
-        eventBuildEnded(input: BuildEventInput): Boolean
-      }
-
-      type Event {
-        type: String
-        data: JSON
-      }
-
-      type Subscription {
-        event: Event
-      }
-    `,
-  ],
-  resolvers: {
-    JSON: JSONResolver,
-    Query: {},
-    Mutation: {
-      eventBuildEnded: resolver<{ input: BuildEventInput }, boolean>(
-        async (parent, args) => {
-          EventsObserver.listener({
-            type: 'buildEnded',
-            data: {
-              containerId: args.input.container_id,
-            },
-          });
-          return true;
-        }
-      ),
-    },
-    Subscription: {
-      event: {
-        subscribe() {
-          return EventsObserver.getIterator();
-        },
+@Resolver()
+export class EventResolver {
+  @Mutation(() => Boolean)
+  async eventBuildEnded(
+    @Arg('containerId') containerId: string
+  ): Promise<boolean> {
+    EventsObserver.listener({
+      type: 'buildEnded',
+      data: {
+        containerId,
       },
-    },
-  },
-});
+    });
+    return true;
+  }
 
-export default eventModule;
+  // @Subscription(() => Event)
+  // async event() {
+  //   return EventsObserver.getIterator();
+  // }
+}

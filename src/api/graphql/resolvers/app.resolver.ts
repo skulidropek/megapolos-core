@@ -1,99 +1,48 @@
-/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
-
-import { AppInput, resolver } from '../../../domain/types';
+import { Ctx, FieldResolver, Root, Resolver } from 'type-graphql';
+import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
+import { App } from '../../../domain/entities/App.entity';
+import { Image } from '../../../domain/entities/Image.entity';
+import { Repository } from '../../../domain/entities/Repository.entity';
+import { Context } from '../server';
+import AppRepo from '../../../features/new.repository/app.repository';
 import {
-  AppTable,
-  ImageTable,
-  RepositoryTable,
-} from '../../../features/db/tables';
-import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../../../features/events/eventsObserver';
-import App from '../../../features/repository/App';
+  generateGraphQLInputType,
+  GenerationType,
+} from '../../../library/graphql_types_generator';
 
-const appModule = createModule({
-  id: 'app-module',
-  dirname: __dirname,
-  typeDefs: [
-    gql`
-      type App {
-        id: String
-        name: String
-        owner_user_id: String
-        status: String
-        create_date: DateTime
-        update_date: DateTime
-        images: [Image]
-        repositories: [Repository]
-      }
-      input AppInput {
-        name: String!
-        images: [ImageInput!]
-      }
+export const AppInput = generateGraphQLInputType(
+  App,
+  'AppInput',
+  GenerationType.input
+);
 
-      type Query {
-        getApps: [App]
-        getApp(id: String): App
-      }
+export const AppUpdateInput = generateGraphQLInputType(
+  App,
+  'AppUpdateInput',
+  GenerationType.update
+);
 
-      type Mutation {
-        installApp(input: AppInput!): Boolean
-        uninstallApp(id: String!): Boolean
-        editApp(id: String!, name: String!): Boolean
-      }
-    `,
-  ],
-  resolvers: {
-    Query: {
-      getApps: resolver<void, (AppTable & { images?: ImageTable[] })[]>(
-        async (parent, args, context) => {
-          return new App(context).getAll();
-        }
-      ),
-      getApp: resolver<{ id: string }, AppTable & { images?: ImageTable[] }>(
-        async (parent, args, context) => {
-          return new App(context, args.id).getData();
-        }
-      ),
-    },
-    Mutation: {
-      installApp: resolver<{ input: AppInput }, boolean>(
-        async (parent, args, context) => {
-          await new App(context).installApp(context.user.id, args.input);
-          EventsObserver.listener({ type: 'installApp', data: args });
-          return true;
-        }
-      ),
-      uninstallApp: resolver<{ id: string }, boolean>(
-        async (parent, args, context) => {
-          await new App(context, args.id).delete();
-          EventsObserver.listener({ type: 'uninstallApp', data: args });
-          return true;
-        }
-      ),
-      editApp: resolver<{ id: string; name: string }, boolean>(
-        async (parent, args, context) => {
-          await new App(context, args.id).edit({ name: args.name });
-          EventsObserver.listener({ type: 'editApp', data: args });
-          return true;
-        }
-      ),
-    },
-    App: {
-      images: resolver<AppTable & { images?: ImageTable[] }, ImageTable[]>(
-        async (parent, args, context) => {
-          const app = new App(context, parent.id);
-          return app.getImages();
-        }
-      ),
-      repositories: resolver<
-        AppTable & { images?: ImageTable[] },
-        RepositoryTable[]
-      >(async (parent, args, context) => {
-        const app = new App(context, parent.id);
-        return app.getRepositories();
-      }),
-    },
-  },
-});
+@Resolver()
+export class AppResolver extends CreateBaseResolver(
+  'App',
+  AppRepo,
+  App,
+  AppInput,
+  AppUpdateInput
+) {}
 
-export default appModule;
+@Resolver(() => App)
+export class AppTableResolver extends BaseTableResolver {
+  @FieldResolver(() => [Image])
+  async images(@Root() app: App, @Ctx() ctx: Context): Promise<Image[]> {
+    return await new AppRepo(ctx, app.id).getImages();
+  }
+
+  @FieldResolver(() => [Repository])
+  async repositories(
+    @Root() app: App,
+    @Ctx() ctx: Context
+  ): Promise<Repository[]> {
+    return await new AppRepo(ctx, app.id).getRepositories();
+  }
+}

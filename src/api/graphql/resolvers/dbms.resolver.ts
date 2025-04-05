@@ -1,412 +1,263 @@
-/* License: Apache 2.0. https://www.apache.org/licenses/LICENSE-2.0 */
-
-import { createModule, gql } from 'graphql-modules';
-import EventsObserver from '../../../features/events/eventsObserver';
-import { resolver } from '../../../domain/types';
 import {
-  DbBackupTable,
-  DbSchemaSchema,
-  DbSchemaTable,
-  DbTable,
-  DbUserTable,
-  DbmsTable,
-} from '../../../features/db/tables';
-import BaseDbms from '../../../features/repository/dbms/BaseDbms';
-import Dbms from '../../../features/repository/dbms/Dbms';
-import DbUser from '../../../features/repository/db/DbUser';
-import Db from '../../../features/repository/db/Db';
-import DbBackup from '../../../features/repository/db/DbBackup';
-import DbSchema from '../../../features/repository/db/DbSchema';
+  Query,
+  Mutation,
+  Ctx,
+  FieldResolver,
+  Root,
+  Resolver,
+  Arg,
+  ObjectType,
+  Field,
+  InputType,
+} from 'type-graphql';
+import { BaseTableResolver } from '../base.resolver';
+import { Dbms } from '../../../domain/entities/Dbms.entity';
+import { Db } from '../../../domain/entities/Db.entity';
+import { DbUser } from '../../../domain/entities/DbUser.entity';
+import { DbBackup } from '../../../domain/entities/DbBackup.entity';
+import { DbSchema } from '../../../domain/entities/DbSchema.entity';
+import { Context } from '../server';
+import DbmsRepo from '../../../features/new.repository/dbms/dbms.repository';
+import {
+  generateGraphQLInputType,
+  GenerationType,
+} from '../../../library/graphql_types_generator';
+import BaseDbmsRepo from '../../../features/new.repository/dbms/base.dbms.repository';
+import DbBackupRepo from '../../../features/new.repository/db/db.backup.repository';
+import { RequiredEntityData } from '@mikro-orm/core';
 
-const dbmsModule = createModule({
-  id: 'dbms-module',
-  dirname: __dirname,
-  typeDefs: [
-    gql`
-      type Query {
-        getDbmss: [Dbms]
-        getDbms(id: String!): Dbms
-        getDbs: [Db]
-        getDb(id: String!): Db
-        getDbUsers: [DbUser]
-        getDbUser(id: String!): DbUser
-        getDbBackups: [DbBackup]
-        getDbBackup(id: String!): DbBackup
-        getDbSchemas: [DbSchema]
-        getDbSchema(id: String!): DbSchema
-        compareDbs(dbId1: String!, dbId2: String!): [String]
-        compareSchemas(schema1id: String!, schema2id: String!): [String]
-        compareDbSchema(dbid: String!, schemaid: String!): [String]
-        downloadBackupText(backupId: String!): String
-      }
-      type Mutation {
-        createDbms(dbms: DbmsInput): Dbms
-        removeDbms(id: String!): Boolean
-        editDbms(id: String!, dbms: DbmsInput): Dbms
-        createDb(db: DbInput!, withoutChange: Boolean): Db
-        createDbUser(user: DbUserInput!, withoutChange: Boolean): DbUser
-        addDbUserToDb(
-          userId: String!
-          dbId: String!
-          withoutChange: Boolean
-        ): Boolean
-        restoreDbUsers(dbId: String!): Boolean
-        saveDbSchema(dbId: String!, name: String): DbSchema
-        backupDb(dbId: String!, name: String, withoutData: Boolean): DbBackup
-        restoreDb(dbId: String!, backupId: String!): Boolean
-        cloneDb(
-          fromDbId: String!
-          toDbId: String!
-          fromDbUserId: String
-        ): Boolean
-        massDbQuery(
-          dbmsId: String!
-          dbNames: [String]!
-          query: String!
-        ): [massDbQueryResult]
-        uploadBackupText(type: String!, backupText: String!): DbBackup
-      }
-      type massDbQueryResult {
-        dbName: String
-        result: String
-        error: String
-      }
-      type DbSchemaSchemaField {
-        name: String
-        type: String
-        notNull: Boolean
-        unique: Boolean
-        primaryKey: Boolean
-      }
-      type DbSchemaSchemaForeignKey {
-        name: String
-        field: String
-        foreignTable: String
-        foreignField: String
-      }
-      type DbSchemaSchemaTable {
-        name: String
-        fields: [DbSchemaSchemaField]
-        foreignKeys: [DbSchemaSchemaForeignKey]
-      }
-      type DbSchemaSchema {
-        tables: [DbSchemaSchemaTable]
-      }
-      type DbSchema {
-        id: String
-        name: String
-        schema: DbSchemaSchema
-        create_date: DateTime
-        update_date: DateTime
-      }
-      type Dbms {
-        id: String
-        name: String
-        host: String
-        user: String
-        password: String
-        create_date: DateTime
-        update_date: DateTime
-        remove_date: DateTime
-        dbs: [Db]
-        users: [DbUser]
-        internalDbs: [String]
-        internalUsers: [String]
-        type: String
-      }
-      input DbmsInput {
-        name: String
-        host: String
-        user: String
-        password: String
-        type: String
-      }
-      type Db {
-        id: String
-        name: String
-        dbms_id: String
-        dbms: Dbms
-        create_date: DateTime
-        update_date: DateTime
-        users: [DbUser]
-        schema: DbSchemaSchema
-      }
+@InputType()
+class DbInput {
+  @Field()
+  name: string;
 
-      input DbInput {
-        name: String
-        dbms_id: String
-      }
+  @Field()
+  dbmsId: string;
+}
 
-      type DbBackup {
-        id: String
-        name: String
-        type: String
-        create_date: DateTime
-        update_date: DateTime
-      }
+@InputType()
+class DbUserInput {
+  @Field()
+  name: string;
 
-      type DbUser {
-        id: String
-        name: String
-        password: String
-        dbms_id: String
-        dbms: Dbms
-        create_date: DateTime
-        update_date: DateTime
-        dbs: [Db]
-      }
+  @Field()
+  dbmsId: string;
 
-      input DbUserInput {
-        name: String
-        dbms_id: String
-        password: String
-      }
-    `,
-  ],
-  resolvers: {
-    Query: {
-      getDbmss: resolver<{}, DbmsTable[]>(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'getDbmss', data: args });
-        return new BaseDbms(context).getAll();
-      }),
-      getDbms: resolver<{ id: string }, DbmsTable>(async (parent, args) => {
-        EventsObserver.listener({ type: 'getDbms', data: args });
-        return (await Dbms.getById(args.id)).getData();
-      }),
-      getDbs: resolver<{}, DbTable[]>(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'getDbs', data: args });
-        return new Db(context).getAll();
-      }),
-      getDb: resolver<{ id: string }, DbTable>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getDb', data: args });
-          return new Db(context, args.id).getData();
-        }
-      ),
-      getDbUsers: resolver<{}, DbUserTable[]>(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'getDbUsers', data: args });
-        return new DbUser(context).getAll();
-      }),
-      getDbUser: resolver<{ id: string }, DbUserTable>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getDbUser', data: args });
-          return new DbUser(context, args.id).getData();
-        }
-      ),
-      getDbBackups: resolver<{}, DbBackupTable[]>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getDbBackups', data: args });
-          return new DbBackup(context).getAll();
-        }
-      ),
-      getDbBackup: resolver<{ id: string }, DbBackupTable>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getDbBackup', data: args });
-          return new DbBackup(context, args.id).getData();
-        }
-      ),
-      getDbSchemas: resolver<{}, DbSchemaTable[]>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getDbSchemas', data: args });
-          return new DbSchema(context).getAll();
-        }
-      ),
-      getDbSchema: resolver<{ id: string }, DbSchemaTable>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'getDbSchema', data: args });
-          return new DbSchema(context, args.id).getData();
-        }
-      ),
-      compareDbs: resolver<{ dbId1: string; dbId2: string }, string[]>(
-        async (parent, args) => {
-          EventsObserver.listener({ type: 'compareDbs', data: args });
-          return Dbms.compareDbs(args.dbId1, args.dbId2);
-        }
-      ),
-      compareSchemas: resolver<
-        { schema1id: string; schema2id: string },
-        string[]
-      >(async (parent, args) => {
-        EventsObserver.listener({ type: 'compareSchemas', data: args });
-        return Dbms.compareSchemas(args.schema1id, args.schema2id);
-      }),
-      compareDbSchema: resolver<{ dbid: string; schemaid: string }, string[]>(
-        async (parent, args) => {
-          EventsObserver.listener({ type: 'compareDbSchema', data: args });
-          return Dbms.compareDbSchema(args.dbid, args.schemaid);
-        }
-      ),
-      downloadBackupText: resolver<{ backupId: string }, string>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'downloadBackupText', data: args });
-          const dbBackup = await new DbBackup(context, args.backupId).getData();
-          return (await Dbms.getByType(dbBackup.type)).downloadBackupText(
-            args.backupId
-          );
-        }
-      ),
-    },
-    Mutation: {
-      createDbms: resolver<{ dbms: Partial<DbmsTable> }, DbmsTable>(
-        async (parent, args) => {
-          EventsObserver.listener({ type: 'createDbms', data: args });
-          return (await Dbms.getByType(args.dbms.type)).create(args.dbms);
-        }
-      ),
-      editDbms: resolver<{ id: string; dbms: Partial<DbmsTable> }, DbmsTable>(
-        async (parent, args) => {
-          EventsObserver.listener({ type: 'editDbms', data: args });
-          return (await Dbms.getById(args.id)).edit(args.dbms);
-        }
-      ),
-      removeDbms: resolver<{ id: string }, boolean>(async (parent, args) => {
-        EventsObserver.listener({ type: 'removeDbms', data: args });
-        await (await Dbms.getById(args.id)).delete();
-        return true;
-      }),
-      createDb: resolver<
-        { db: Partial<DbTable>; withoutChange: boolean },
-        DbTable
-      >(async (parent, args) => {
-        EventsObserver.listener({ type: 'createDb', data: args });
-        return (await Dbms.getById(args.db.dbms_id)).createDb(
-          args.db,
-          args.withoutChange
-        );
-      }),
-      createDbUser: resolver<
-        { user: Partial<DbUserTable>; withoutChange: boolean },
-        DbUserTable
-      >(async (parent, args) => {
-        EventsObserver.listener({ type: 'createDbUser', data: args });
-        return (await Dbms.getById(args.user.dbms_id)).createUser(
-          args.user,
-          args.withoutChange
-        );
-      }),
-      addDbUserToDb: resolver<
-        { userId: string; dbId: string; withoutChange: boolean },
-        boolean
-      >(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'addDbUserToDb', data: args });
-        const db = await new Db(context, args.dbId).getData();
-        return (await Dbms.getById(db.dbms_id)).addUserToDb(
-          args.userId,
-          args.dbId,
-          args.withoutChange
-        );
-      }),
-      restoreDbUsers: resolver<{ dbId: string }, boolean>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'restoreDbUsers', data: args });
-          const db = await new Db(context, args.dbId).getData();
-          return (await Dbms.getById(db.dbms_id)).restoreDbPrivileges(db.id);
-        }
-      ),
-      saveDbSchema: resolver<{ dbId: string; name: string }, DbSchemaTable>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'saveDbSchema', data: args });
-          const db = await new Db(context, args.dbId).getData();
-          return (await Dbms.getById(db.dbms_id)).saveSchema(
-            args.dbId,
-            args.name
-          );
-        }
-      ),
-      backupDb: resolver<
-        { dbId: string; name: string; withoutData: boolean },
-        DbBackupTable
-      >(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'backupDb', data: args });
-        const db = await new Db(context, args.dbId).getData();
-        const dbms = await Dbms.getById(db.dbms_id);
-        return dbms.backup(db.id, args.name, args.withoutData);
-      }),
-      restoreDb: resolver<{ dbId: string; backupId: string }, boolean>(
-        async (parent, args, context) => {
-          EventsObserver.listener({ type: 'restoreDb', data: args });
-          const db = await new Db(context, args.dbId).getData();
-          const dbms = await Dbms.getById(db.dbms_id);
-          return dbms.restore(db.id, args.backupId);
-        }
-      ),
-      cloneDb: resolver<
-        { fromDbId: string; toDbId: string; fromDbUserId: string },
-        boolean
-      >(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'cloneDb', data: args });
-        const fromDb = await new Db(context, args.fromDbId).getData();
-        const toDb = await new Db(context, args.toDbId).getData();
-        return (await Dbms.getById(fromDb.dbms_id)).cloneDb(
-          fromDb.id,
-          toDb.id,
-          args.fromDbUserId
-        );
-      }),
-      massDbQuery: resolver<
-        { dbmsId: string; dbNames: string[]; query: string },
-        { dbName: string; result: string; error: string }[]
-      >(async (parent, args) => {
-        EventsObserver.listener({ type: 'massDbQuery', data: args });
-        return (await Dbms.getById(args.dbmsId)).massDbQuery(
-          args.dbNames,
-          args.query
-        );
-      }),
-      uploadBackupText: resolver<
-        { type: string; backupText: string },
-        DbBackupTable
-      >(async (parent, args) => {
-        EventsObserver.listener({ type: 'uploadBackupText', data: args });
-        return (await Dbms.getByType(args.type)).uploadBackupText(
-          args.backupText,
-          args.type
-        );
-      }),
-    },
-    Dbms: {
-      dbs: resolver<DbmsTable, DbTable[]>(async (parent, args) => {
-        EventsObserver.listener({ type: 'Dbms.dbs', data: args });
-        return (await Dbms.getById(parent.id)).getDbs();
-      }),
-      internalDbs: resolver<DbmsTable, string[]>(async (parent, args) => {
-        EventsObserver.listener({ type: 'Dbms.internalDbs', data: args });
-        return (await Dbms.getById(parent.id)).getInternalDbs();
-      }),
-      users: resolver<DbmsTable, DbUserTable[]>(async (parent, args) => {
-        EventsObserver.listener({ type: 'Dbms.users', data: args });
-        return (await Dbms.getById(parent.id)).getUsers();
-      }),
-      internalUsers: resolver<DbmsTable, string[]>(async (parent, args) => {
-        EventsObserver.listener({ type: 'Dbms.internalUsers', data: args });
-        return (await Dbms.getById(parent.id)).getInternalUsers();
-      }),
-    },
-    Db: {
-      dbms: resolver<DbTable, DbmsTable>(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'Db.dbms', data: args });
-        return new Db(context, parent.id).getDbms();
-      }),
-      users: resolver<DbTable, DbUserTable[]>(async (parent, args, context) => {
-        EventsObserver.listener({ type: 'Db.users', data: args });
-        return new Db(context, parent.id).getUsers();
-      }),
-      schema: resolver<DbTable, DbSchemaSchema>(async (parent, args) => {
-        EventsObserver.listener({ type: 'Db.schema', data: args });
-        return (await Dbms.getById(parent.dbms_id)).getSchema(parent.name);
-      }),
-    },
-    DbUser: {
-      dbms: resolver<DbUserTable, DbmsTable>(async (parent, args) => {
-        EventsObserver.listener({ type: 'DbUser.dbms', data: args });
-        return new DbUser(parent.id).getDbms();
-      }),
-      dbs: resolver<DbUserTable, DbTable[]>(async (parent, args) => {
-        EventsObserver.listener({ type: 'DbUser.dbs', data: args });
-        return new DbUser(parent.id).getDbs();
-      }),
-    },
-  },
-});
+  @Field({ nullable: true })
+  password?: string;
+}
 
-export default dbmsModule;
+@ObjectType()
+class MassDbQueryResult {
+  @Field()
+  dbName: string;
+
+  @Field()
+  result: string;
+
+  @Field({ nullable: true })
+  error?: string;
+}
+
+export const DbmsInput = generateGraphQLInputType(
+  Dbms,
+  'DbmsInput',
+  GenerationType.input
+);
+
+export const DbmsUpdateInput = generateGraphQLInputType(
+  Dbms,
+  'DbmsUpdateInput',
+  GenerationType.update
+);
+
+@Resolver()
+export class DbmsResolver {
+  @Query(() => [Dbms])
+  async getDbmss(@Ctx() ctx: Context): Promise<Dbms[]> {
+    return new BaseDbmsRepo(ctx).getAll();
+  }
+
+  @Query(() => Dbms)
+  async getDbms(@Arg('id') id: string): Promise<Dbms> {
+    return (await DbmsRepo.getById(id)).getEntity();
+  }
+
+  @Query(() => [String])
+  async compareDbs(
+    @Arg('dbId1') dbId1: string,
+    @Arg('dbId2') dbId2: string
+  ): Promise<string[]> {
+    return DbmsRepo.compareDbs(dbId1, dbId2);
+  }
+
+  @Query(() => [String])
+  async compareSchemas(
+    @Arg('schema1id') schema1id: string,
+    @Arg('schema2id') schema2id: string
+  ): Promise<string[]> {
+    return DbmsRepo.compareSchemas(schema1id, schema2id);
+  }
+
+  @Query(() => [String])
+  async compareDbSchema(
+    @Arg('dbid') dbid: string,
+    @Arg('schemaid') schemaid: string
+  ): Promise<string[]> {
+    return DbmsRepo.compareDbSchema(dbid, schemaid);
+  }
+
+  @Query(() => String)
+  async downloadBackupText(
+    @Arg('backupId') backupId: string,
+    @Ctx() ctx: Context
+  ): Promise<string> {
+    const dbBackup = await new DbBackupRepo(ctx, backupId).getEntity();
+    return (await DbmsRepo.getByType(dbBackup.type)).downloadBackupText(
+      backupId
+    );
+  }
+
+  @Mutation(() => Dbms)
+  async createDbms(
+    @Arg('input', () => DbmsInput) input: RequiredEntityData<Dbms>
+  ): Promise<Dbms> {
+    return (await DbmsRepo.getByType(input.type)).create(input);
+  }
+
+  @Mutation(() => Boolean)
+  async editDbms(
+    @Arg('id') id: string,
+    @Arg('input', () => DbmsUpdateInput) input: RequiredEntityData<Dbms>
+  ): Promise<boolean> {
+    return (await DbmsRepo.getById(id)).update(input);
+  }
+
+  @Mutation(() => Boolean)
+  async deleteDbms(@Arg('id') id: string): Promise<boolean> {
+    await (await DbmsRepo.getById(id)).delete();
+    return true;
+  }
+
+  @Mutation(() => Db)
+  async createDb(
+    @Arg('input', () => DbInput) input: DbInput,
+    @Arg('withoutChange', { nullable: true }) withoutChange: boolean
+  ): Promise<Db> {
+    return (await DbmsRepo.getById(input.dbmsId)).createDb(
+      input,
+      withoutChange
+    );
+  }
+
+  @Mutation(() => DbUser)
+  async createDbUser(
+    @Arg('input', () => DbUserInput) input: DbUserInput,
+    @Arg('withoutChange', { nullable: true }) withoutChange: boolean
+  ): Promise<DbUser> {
+    return (await DbmsRepo.getById(input.dbmsId)).createUser(
+      input,
+      withoutChange
+    );
+  }
+
+  @Mutation(() => Boolean)
+  async addDbUserToDb(
+    @Arg('userId') userId: string,
+    @Arg('dbId') dbId: string,
+    @Arg('withoutChange', { nullable: true }) withoutChange: boolean
+  ): Promise<boolean> {
+    return (await DbmsRepo.getById(dbId)).addUserToDb(
+      userId,
+      dbId,
+      withoutChange
+    );
+  }
+
+  @Mutation(() => Boolean)
+  async restoreDbUsers(@Arg('dbId') dbId: string): Promise<boolean> {
+    return (await DbmsRepo.getById(dbId)).restoreDbPrivileges(dbId);
+  }
+
+  @Mutation(() => DbSchema)
+  async saveDbSchema(
+    @Arg('dbId') dbId: string,
+    @Arg('name', { nullable: true }) name: string
+  ): Promise<DbSchema> {
+    return (await DbmsRepo.getById(dbId)).saveSchema(dbId, name);
+  }
+
+  @Mutation(() => DbBackup)
+  async backupDb(
+    @Arg('dbId') dbId: string,
+    @Arg('name', { nullable: true }) name: string,
+    @Arg('withoutData', { nullable: true }) withoutData: boolean
+  ): Promise<DbBackup> {
+    return (await DbmsRepo.getById(dbId)).backup(dbId, name, withoutData);
+  }
+
+  @Mutation(() => Boolean)
+  async restoreDb(
+    @Arg('dbId') dbId: string,
+    @Arg('backupId') backupId: string
+  ): Promise<boolean> {
+    return (await DbmsRepo.getById(dbId)).restore(dbId, backupId);
+  }
+
+  @Mutation(() => Boolean)
+  async cloneDb(
+    @Arg('fromDbId') fromDbId: string,
+    @Arg('toDbId') toDbId: string,
+    @Arg('fromDbUserId', { nullable: true }) fromDbUserId: string
+  ): Promise<boolean> {
+    return (await DbmsRepo.getById(fromDbId)).cloneDb(
+      fromDbId,
+      toDbId,
+      fromDbUserId
+    );
+  }
+
+  @Mutation(() => [MassDbQueryResult])
+  async massDbQuery(
+    @Arg('dbmsId') dbmsId: string,
+    @Arg('dbNames', () => [String]) dbNames: string[],
+    @Arg('query') query: string,
+    @Ctx() ctx: Context
+  ): Promise<MassDbQueryResult[]> {
+    return (await DbmsRepo.getById(dbmsId)).massDbQuery(dbNames, query);
+  }
+
+  @Mutation(() => DbBackup)
+  async uploadBackupText(
+    @Arg('type') type: string,
+    @Arg('backupText') backupText: string
+  ): Promise<DbBackup> {
+    return (await DbmsRepo.getByType(type)).uploadBackupText(backupText, type);
+  }
+}
+
+@Resolver(() => Dbms)
+export class DbmsTableResolver extends BaseTableResolver {
+  @FieldResolver(() => [Db])
+  async dbs(@Root() dbms: Dbms): Promise<Db[]> {
+    return (await DbmsRepo.getById(dbms.id)).getDbs();
+  }
+
+  @FieldResolver(() => [String])
+  async internalDbs(
+    @Root() dbms: Dbms,
+    @Ctx() ctx: Context
+  ): Promise<string[]> {
+    return (await DbmsRepo.getById(dbms.id)).getInternalDbs();
+  }
+
+  @FieldResolver(() => [DbUser])
+  async users(@Root() dbms: Dbms): Promise<DbUser[]> {
+    return (await DbmsRepo.getById(dbms.id)).getUsers();
+  }
+
+  @FieldResolver(() => [String])
+  async internalUsers(@Root() dbms: Dbms): Promise<string[]> {
+    return (await DbmsRepo.getById(dbms.id)).getInternalUsers();
+  }
+}
