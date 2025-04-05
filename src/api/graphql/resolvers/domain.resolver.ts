@@ -1,7 +1,7 @@
 import { Resolver } from 'type-graphql';
 import { CreateBaseResolver } from '../base.resolver';
 import { Domain } from '../../../domain/entities/Domain.entity';
-import DomainRepo from '../../../features/new.repository/domain.repository';
+import DomainRepo from '../../../features/repository/domain.repository';
 import {
   generateGraphQLInputType,
   GenerationType,

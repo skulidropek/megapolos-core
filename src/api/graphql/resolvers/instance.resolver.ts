@@ -10,7 +10,7 @@ import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { AppInstance } from '../../../domain/entities/AppInstance.entity';
 import { Container } from '../../../domain/entities/Container.entity';
 import { Context } from '../server';
-import AppInstanceRepo from '../../../features/new.repository/app.instance.repository';
+import AppInstanceRepo from '../../../features/repository/app.instance.repository';
 import {
   generateGraphQLInputType,
   GenerationType,

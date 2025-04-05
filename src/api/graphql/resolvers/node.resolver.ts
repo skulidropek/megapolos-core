@@ -15,7 +15,7 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
-import NodeRepo from '../../../features/new.repository/megapolos.node.repository';
+import NodeRepo from '../../../features/repository/megapolos.node.repository';
 
 export const NodeInput = generateGraphQLInputType(
   Node,

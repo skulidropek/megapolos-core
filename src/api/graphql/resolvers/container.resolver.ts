@@ -15,7 +15,7 @@ import { Image } from '../../../domain/entities/Image.entity';
 import { Domain } from '../../../domain/entities/Domain.entity';
 import { ContainerDb } from '../../../domain/entities/ContainerDb.entity';
 import { Context } from '../server';
-import { ContainerRepo } from '../../../features/new.repository/cantainer/container.repository';
+import { ContainerRepo } from '../../../features/repository/cantainer/container.repository';
 import {
   generateGraphQLInputType,
   GenerationType,

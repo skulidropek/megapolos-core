@@ -4,7 +4,7 @@ import { App } from '../../../domain/entities/App.entity';
 import { Image } from '../../../domain/entities/Image.entity';
 import { Repository } from '../../../domain/entities/Repository.entity';
 import { Context } from '../server';
-import AppRepo from '../../../features/new.repository/app.repository';
+import AppRepo from '../../../features/repository/app.repository';
 import {
   generateGraphQLInputType,
   GenerationType,

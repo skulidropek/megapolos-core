@@ -3,13 +3,13 @@ import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { Volume } from '../../../domain/entities/Volume.entity';
 import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
 import { Context } from '../server';
-import VolumeRepo from '../../../features/new.repository/volume.repository';
+import VolumeRepo from '../../../features/repository/volume.repository';
 import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
 import { RequiredEntityData } from '@mikro-orm/core';
-import { ContainerRepo } from '../../../features/new.repository/cantainer/container.repository';
+import { ContainerRepo } from '../../../features/repository/cantainer/container.repository';
 
 export const ContainerVolumeInput = generateGraphQLInputType(
   ContainerVolume,

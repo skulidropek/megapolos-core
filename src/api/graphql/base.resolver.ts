@@ -2,7 +2,7 @@ import { Resolver, Query, Mutation, Arg, ClassType, Ctx } from 'type-graphql';
 import { Context } from './server';
 import { GraphQLResolveInfo } from 'graphql';
 import { IEntity } from '../../features/db/tables';
-import BaseRepo from '../../features/new.repository/base.repository';
+import BaseRepo from '../../features/repository/base.repository';
 
 export function CreateBaseResolver<
   T extends IEntity,

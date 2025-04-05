@@ -1,6 +1,6 @@
 import BaseProcess, { ProcessStatus } from './BaseProcess';
 import { Client } from 'ssh2';
-import NodeRepo from '../new.repository/megapolos.node.repository';
+import NodeRepo from '../repository/megapolos.node.repository';
 
 class ExternalProcess extends BaseProcess {
   node: NodeRepo;

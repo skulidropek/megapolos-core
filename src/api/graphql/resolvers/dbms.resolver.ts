@@ -17,13 +17,13 @@ import { DbUser } from '../../../domain/entities/DbUser.entity';
 import { DbBackup } from '../../../domain/entities/DbBackup.entity';
 import { DbSchema } from '../../../domain/entities/DbSchema.entity';
 import { Context } from '../server';
-import DbmsRepo from '../../../features/new.repository/dbms/dbms.repository';
+import DbmsRepo from '../../../features/repository/dbms/dbms.repository';
 import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
-import BaseDbmsRepo from '../../../features/new.repository/dbms/base.dbms.repository';
-import DbBackupRepo from '../../../features/new.repository/db/db.backup.repository';
+import BaseDbmsRepo from '../../../features/repository/dbms/base.dbms.repository';
+import DbBackupRepo from '../../../features/repository/db/db.backup.repository';
 import { RequiredEntityData } from '@mikro-orm/core';
 
 @InputType()

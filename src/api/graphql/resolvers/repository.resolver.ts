@@ -17,7 +17,7 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
-import RepositoryRepo from '../../../features/new.repository/repository.repository';
+import RepositoryRepo from '../../../features/repository/repository.repository';
 import { Context } from '../server';
 import { GraphQLResolveInfo } from 'graphql';
 import { App } from '../../../domain/entities/App.entity';

@@ -1,7 +1,7 @@
 import { IEntity } from '../db/tables';
 import { UserAction } from './resources.list';
 import { GroupUserPrivilege } from '../../domain/entities/GroupUserPrivilege.entity';
-import UserRepo from '../new.repository/user/user.repository';
+import UserRepo from '../repository/user/user.repository';
 
 export class RightsChecker {
   static async check(userId: string, action: UserAction): Promise<boolean> {

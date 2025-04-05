@@ -10,7 +10,7 @@ import {
 } from '../../../library/graphql_types_generator';
 import { Context } from '../server';
 import { GroupUserPrivilege } from '../../../domain/entities/GroupUserPrivilege.entity';
-import UserRepo from '../../../features/new.repository/user/user.repository';
+import UserRepo from '../../../features/repository/user/user.repository';
 
 export const UserInput = generateGraphQLInputType(
   User,

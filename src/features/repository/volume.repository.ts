@@ -1,12 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import fsSync from 'fs';
-import { ContainerVolumeInput } from '../../domain/types';
 import BaseRepo from './base.repository';
 import { Volume } from '../../domain/entities/Volume.entity';
 import { makeEm, mem } from '../db/mikro-orm';
 import { ContainerVolume } from '../../domain/entities/ContainerVolume.entity';
 import NodeRepo from './megapolos.node.repository';
-import MegapolosNode from '../repository/Node';
 import { RequiredEntityData } from '@mikro-orm/core';
 
 export default class VolumeRepo extends BaseRepo<Volume> {
@@ -31,7 +29,7 @@ export default class VolumeRepo extends BaseRepo<Volume> {
     const volume = await this.getEntity();
     if (volume.type === 'auto' || volume.type === 'dynamic_auto') {
       const megapolosVolume =
-        MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + this.id;
+        NodeRepo.currentNode.getMegapolosPath() + '/volumes/' + this.id;
       if (fsSync.existsSync(megapolosVolume)) {
         // await fs.rmdir(megapolosVolume, { recursive: true });
       }

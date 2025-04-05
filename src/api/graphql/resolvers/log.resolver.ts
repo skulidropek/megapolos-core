@@ -2,7 +2,7 @@ import { Mutation, Ctx, Resolver, Arg } from 'type-graphql';
 import { CreateBaseResolver } from '../base.resolver';
 import { Log } from '../../../domain/entities/Log.entity';
 import { Context } from '../server';
-import LogRepo from '../../../features/new.repository/log.repository';
+import LogRepo from '../../../features/repository/log.repository';
 import {
   generateGraphQLInputType,
   GenerationType,

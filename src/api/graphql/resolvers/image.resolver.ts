@@ -13,12 +13,12 @@ import { Image } from '../../../domain/entities/Image.entity';
 import { Repository } from '../../../domain/entities/Repository.entity';
 import { Log } from '../../../domain/entities/Log.entity';
 import { Context } from '../server';
-import ImageRepo from '../../../features/new.repository/image.repository';
+import ImageRepo from '../../../features/repository/image.repository';
 import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
-import RepositoryRepo from '../../../features/new.repository/repository.repository';
+import RepositoryRepo from '../../../features/repository/repository.repository';
 import { GraphQLResolveInfo } from 'graphql';
 
 // Генерируем Input типы
