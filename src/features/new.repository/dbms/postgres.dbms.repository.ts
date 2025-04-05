@@ -15,7 +15,7 @@ import DbBackupRepo from '../db/db.backup.repository';
 import UserRepo from '../user/user.repository';
 import { DbBackup } from '../../../domain/entities/DbBackup.entity';
 import LogRepo from '../log.repository';
-import MegapolosNodeRepo from '../megapolos.node.repository';
+import NodeRepo from '../megapolos.node.repository';
 
 export default class PostgresDmbs extends BaseDbmsRepo {
   async getKnex(db: string) {
@@ -247,7 +247,7 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
       objectId: backupData.id,
       objectName: backupData.name,
     });
-    await MegapolosNodeRepo.currentNode.shellCommand(
+    await NodeRepo.currentNode.shellCommand(
       `docker run -i --rm -e PGPASSWORD=${
         data.password
       } postgres pg_dump -c -h ${data.host} -U ${data.user} ${
@@ -284,7 +284,7 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
       objectId: backupData.id,
       objectName: backupData.name,
     });
-    await MegapolosNodeRepo.currentNode.shellCommand(
+    await NodeRepo.currentNode.shellCommand(
       `cat ${file} | docker run --rm -i -e PGPASSWORD=${data.password} postgres psql -h ${data.host} --echo-errors -U ${data.user} ${dbData.name}`,
       new UserRepo(undefined, ''),
       log

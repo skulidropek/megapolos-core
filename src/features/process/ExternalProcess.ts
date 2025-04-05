@@ -1,15 +1,15 @@
 import BaseProcess, { ProcessStatus } from './BaseProcess';
 import { Client } from 'ssh2';
-import MegapolosNodeRepo from '../new.repository/megapolos.node.repository';
+import NodeRepo from '../new.repository/megapolos.node.repository';
 
 class ExternalProcess extends BaseProcess {
-  node: MegapolosNodeRepo;
+  node: NodeRepo;
 
   onoutput: (data: string) => void;
 
   onerror: (data: string) => void;
 
-  constructor(command: string, node: MegapolosNodeRepo) {
+  constructor(command: string, node: NodeRepo) {
     super();
     this.command = command;
     this.node = node;

@@ -5,7 +5,7 @@ import BaseRepo from './base.repository';
 import { Volume } from '../../domain/entities/Volume.entity';
 import { makeEm, mem } from '../db/mikro-orm';
 import { ContainerVolume } from '../../domain/entities/ContainerVolume.entity';
-import MegapolosNodeRepo from './megapolos.node.repository';
+import NodeRepo from './megapolos.node.repository';
 import MegapolosNode from '../repository/Node';
 import { RequiredEntityData } from '@mikro-orm/core';
 
@@ -18,9 +18,7 @@ export default class VolumeRepo extends BaseRepo<Volume> {
     const result = await super.create(input);
     if (input.type === 'auto' || input.type === 'dynamic_auto') {
       const megapolosVolume =
-        MegapolosNodeRepo.currentNode.getMegapolosPath() +
-        '/volumes/' +
-        result.id;
+        NodeRepo.currentNode.getMegapolosPath() + '/volumes/' + result.id;
       if (!fsSync.existsSync(megapolosVolume)) {
         // await fs.mkdir(megapolosVolume);
       }
@@ -59,26 +57,17 @@ export default class VolumeRepo extends BaseRepo<Volume> {
 
   async addToContainer(
     containerId: string,
-    input: ContainerVolumeInput
+    input: RequiredEntityData<ContainerVolume>
   ): Promise<ContainerVolume> {
     let volumeContainerId = uuidv4();
-    if (input.is_dynamic) {
-      // const volumePath = MegapolosNode.currentNode.getMegapolosPath() + '/volumes/' + container.id + '/' + volumeContainerId;
-      // MegapolosNode.currentNode.validatePath(volumePath);
-      // // await fs.mkdir(volumePath);
-      // await exec(`mount --bind ${volume.outer_path} ${volumePath}`);
-    }
-
     return await mem(async (em) => {
       const containerVolume = em.create(ContainerVolume, {
         id: volumeContainerId,
         container: containerId,
         volume: this.id,
         name: input.name,
-        innerPath: input.is_dynamic
-          ? '/megapolos/' + volumeContainerId
-          : input.inner_path,
-        isDynamic: input.is_dynamic ? 1 : 0,
+        innerPath: input.innerPath,
+        isDynamic: 0,
       });
       await em.persistAndFlush(containerVolume);
       return containerVolume;

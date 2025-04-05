@@ -17,7 +17,7 @@ import BaseRepo from '../base.repository';
 import { Container } from '../../../domain/entities/Container.entity';
 import { RequiredEntityData } from '@mikro-orm/core';
 import { resources } from '../../rights/resources.list';
-import MegapolosNodeRepo from '../megapolos.node.repository';
+import NodeRepo from '../megapolos.node.repository';
 import VolumeRepo from '../volume.repository';
 import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
 import ImageRepo from '../image.repository';
@@ -28,6 +28,9 @@ import DomainRepo from '../domain.repository';
 import { Domain } from '../../../domain/entities/Domain.entity';
 import DbRepo from '../db/db.repository';
 import DbUserRepo from '../db/db.user.repository';
+import { ContainerVariable } from '../../../domain/entities/ContainerVariable.entity';
+import { makeEm, mem } from '../../db/mikro-orm';
+import { User } from '../../../domain/entities/User.entity';
 
 export enum ContainerLifeStatus {
   Stopped = 'stopped',
@@ -73,7 +76,7 @@ export class ContainerRepo extends BaseRepo<Container> {
     data: RequiredEntityData<Container> & { nodeId?: string }
   ): Promise<Container> {
     await this.checkActionAccess(resources.container.actions.create);
-    const node = new MegapolosNodeRepo(this.ctx, data.nodeId);
+    const node = new NodeRepo(this.ctx, data.nodeId);
     let outerPort = await node.getPort();
     if (data.outerPort) {
       await node.checkPort(data.outerPort);
@@ -85,7 +88,7 @@ export class ContainerRepo extends BaseRepo<Container> {
 
   async getDockerContainer() {
     const data = await this.getEntity();
-    const node = new MegapolosNodeRepo(this.ctx, data.node.id);
+    const node = new NodeRepo(this.ctx, data.node.id);
     return node.getDockerContainer(this.id);
   }
 
@@ -126,10 +129,7 @@ export class ContainerRepo extends BaseRepo<Container> {
     const entity = await this.getEntity();
     if (data.outerPort) {
       if (data.outerPort !== entity.outerPort) {
-        const node = new MegapolosNodeRepo(
-          this.ctx,
-          data.nodeId || entity.node.id
-        );
+        const node = new NodeRepo(this.ctx, data.nodeId || entity.node.id);
         await node.checkPort(data.outerPort);
       }
     }
@@ -156,9 +156,9 @@ export class ContainerRepo extends BaseRepo<Container> {
       }
     }
     const megapolosVolume =
-      MegapolosNodeRepo.currentNode.getMegapolosPath() + '/volumes/' + this.id;
+      NodeRepo.currentNode.getMegapolosPath() + '/volumes/' + this.id;
     if (fsSync.existsSync(megapolosVolume)) {
-      MegapolosNodeRepo.currentNode.validatePath(megapolosVolume);
+      NodeRepo.currentNode.validatePath(megapolosVolume);
       // await fs.rmdir(megapolosVolume, { recursive: true });
     }
 
@@ -208,12 +208,12 @@ export class ContainerRepo extends BaseRepo<Container> {
     }
     if (volumeContainer.isDynamic) {
       const volumePath =
-        MegapolosNodeRepo.currentNode.getMegapolosPath() +
+        NodeRepo.currentNode.getMegapolosPath() +
         '/volumes/' +
         this.id +
         '/' +
         volumeContainer.id;
-      MegapolosNodeRepo.currentNode.validatePath(volumePath);
+      NodeRepo.currentNode.validatePath(volumePath);
       try {
         // await exec(`umount ${volumePath}`);
       } catch (e) {
@@ -273,17 +273,10 @@ export class ContainerRepo extends BaseRepo<Container> {
     }
   }
 
-  async changeVariables(input: Partial<ContainerVariableTable>[]) {
+  async changeVariables(input: RequiredEntityData<ContainerVariable>[]) {
     await this.checkActionAccess(resources.container.actions.edit);
-    await knex<ContainerVariableTable>('container_variable')
-      .delete()
-      .where('container_id', this.id);
-    for (let i in input) {
-      await knex<ContainerVariableTable>('container_variable').insert({
-        container_id: this.id,
-        ...input[i],
-      });
-    }
+    await makeEm().nativeDelete(ContainerVariable, { container: this.id });
+    await makeEm().insertMany(ContainerVariable, input);
   }
 
   shellCommand(command: string): {
@@ -295,7 +288,7 @@ export class ContainerRepo extends BaseRepo<Container> {
       id: commandId,
       output: (async () => {
         const process = new ContainerProcess(command, this);
-        MegapolosNodeRepo.currentNode.commands[commandId] = process;
+        NodeRepo.currentNode.commands[commandId] = process;
         process.onoutput = (data) => {
           EventsObserver.listener({ type: 'shellCommandOutput', data: data });
         };
@@ -310,9 +303,6 @@ export class ContainerRepo extends BaseRepo<Container> {
           stderr: process.stderr,
         };
 
-        // const result = await exec(command,
-        // // , { uid: parseInt(osUserId) }
-        // );
         return result;
       })(),
     };
@@ -364,9 +354,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   async getDockerLog(): Promise<string> {
     await this.checkActionAccess(resources.container.actions.read);
     const data = await this.getEntity();
-    return new MegapolosNodeRepo(this.ctx, data.node.id).getDockerContainerLog(
-      data.id
-    );
+    return new NodeRepo(this.ctx, data.node.id).getDockerContainerLog(data.id);
   }
 
   async listFiles(

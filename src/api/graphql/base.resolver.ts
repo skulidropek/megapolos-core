@@ -13,7 +13,7 @@ export function CreateBaseResolver<
   Repository: new (ctx: Context, id?: string) => BaseRepo<T>,
   EntityClass: ClassType<T>,
   InputClass: ClassType<I>,
-  UpdateClass: ClassType<P>
+  EditClass: ClassType<P>
 ) {
   @Resolver()
   abstract class BaseResolver {
@@ -38,11 +38,11 @@ export function CreateBaseResolver<
       return new Repository(ctx).create(values as any);
     }
 
-    @Mutation(() => Boolean, { name: `update${className}` })
-    async update(
+    @Mutation(() => Boolean, { name: `edit${className}` })
+    async edit(
       @Ctx() ctx: Context,
       @Arg('id') id: string,
-      @Arg('values', () => UpdateClass) values: P
+      @Arg('values', () => EditClass) values: P
     ): Promise<boolean> {
       return new Repository(ctx, id).update(values as any);
     }

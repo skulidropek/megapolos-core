@@ -5,7 +5,6 @@ import {
   Resolver,
   Mutation,
   Arg,
-  Field,
   FieldResolver,
   Info,
 } from 'type-graphql';

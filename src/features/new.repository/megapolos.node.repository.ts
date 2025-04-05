@@ -78,17 +78,17 @@ async function lookupPromise(domain: string) {
   });
 }
 
-export default class MegapolosNodeRepo extends BaseRepo<Node> {
+export default class NodeRepo extends BaseRepo<Node> {
   get entityClass() {
     return Node;
   }
 
   commands: { [key: string]: BaseProcess } = {};
 
-  static currentNode: MegapolosNodeRepo;
+  static currentNode: NodeRepo;
 
   static createCurrentNode() {
-    MegapolosNodeRepo.currentNode = new MegapolosNodeRepo(undefined);
+    NodeRepo.currentNode = new NodeRepo(undefined);
   }
 
   async updateNode(init?: boolean, withRebuild?: boolean) {
@@ -288,7 +288,7 @@ export default class MegapolosNodeRepo extends BaseRepo<Node> {
     }
     try {
       await this.update({ lifeStatus: 'updating' });
-      await MegapolosNodeRepo.currentNode.shellCommand(
+      await NodeRepo.currentNode.shellCommand(
         command,
         new UserRepo(this.ctx, data.user),
         log

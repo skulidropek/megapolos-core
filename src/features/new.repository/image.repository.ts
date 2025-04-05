@@ -19,7 +19,7 @@ import config from '../../domain/config/config';
 import { Image } from '../../domain/entities/Image.entity';
 import { makeEm } from '../db/mikro-orm';
 import { Log } from '../../domain/entities/Log.entity';
-import MegapolosNodeRepo from './megapolos.node.repository';
+import NodeRepo from './megapolos.node.repository';
 
 export default class ImageRepo extends BaseRepo<Image> {
   get entityClass() {
@@ -56,23 +56,23 @@ export default class ImageRepo extends BaseRepo<Image> {
           tags = `-t ${data.image}`;
         }
 
-        const result = await MegapolosNodeRepo.currentNode.shellCommand(
+        const result = await NodeRepo.currentNode.shellCommand(
           `cd ${path} && docker build ${tags} .`,
           new UserRepo(this.ctx),
           log
         ).output;
         if (!config.devMode) {
-          await MegapolosNodeRepo.currentNode.shellCommand(
+          await NodeRepo.currentNode.shellCommand(
             `docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}:443`,
             new UserRepo(this.ctx, this.ctx.user.id),
             log
           ).output;
-          await MegapolosNodeRepo.currentNode.shellCommand(
+          await NodeRepo.currentNode.shellCommand(
             `docker push ${config.registryHost}:443/${data.image}`,
             new UserRepo(this.ctx, this.ctx.user.id),
             log
           ).output;
-          await MegapolosNodeRepo.currentNode.shellCommand(
+          await NodeRepo.currentNode.shellCommand(
             'docker image prune -f',
             new UserRepo(this.ctx, this.ctx.user.id),
             log
@@ -111,7 +111,7 @@ export default class ImageRepo extends BaseRepo<Image> {
       const container = containers[i];
       if (container.node?.id && !nodes.includes(container.node.id)) {
         nodes.push(container.node.id);
-        await new MegapolosNodeRepo(this.ctx, container.node.id).updateNode();
+        await new NodeRepo(this.ctx, container.node.id).updateNode();
       }
     }
     console.log(nodes);

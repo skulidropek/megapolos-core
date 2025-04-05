@@ -133,6 +133,26 @@ import {
   RepositoryResolver,
   RepositoryTableResolver,
 } from './new.resolvers/repository.resolver';
+import { DomainResolver } from './new.resolvers/domain.resolver';
+import {
+  ImageResolver,
+  ImageTableResolver,
+} from './new.resolvers/image.resolver';
+import {
+  AppInstanceResolver,
+  AppInstanceTableResolver,
+} from './new.resolvers/instance.resolver';
+import { NodeResolver, NodeTableResolver } from './new.resolvers/node.resolver';
+import { VolumeResolver } from './new.resolvers/volume.resolver';
+import { LogResolver } from './new.resolvers/log.resolver';
+import { EventResolver } from './new.resolvers/event.resolver';
+import { AppResolver, AppTableResolver } from './new.resolvers/app.resolver';
+import { DbmsResolver, DbmsTableResolver } from './new.resolvers/dbms.resolver';
+import {
+  ContainerResolver,
+  ContainerTableResolver,
+} from './new.resolvers/container.resolver';
+import { MegapolosResolver } from './new.resolvers/megapolos.resolver';
 
 export interface Context {
   req: express.Request;
@@ -145,9 +165,26 @@ async function bootstrap() {
     resolvers: [
       UserResolver,
       UserTableResolver,
+      AppResolver,
+      AppTableResolver,
       GroupUserPrivilegeTableResolver,
       RepositoryResolver,
       RepositoryTableResolver,
+      DomainResolver,
+      ImageResolver,
+      ImageTableResolver,
+      AppInstanceResolver,
+      AppInstanceTableResolver,
+      LogResolver,
+      NodeResolver,
+      NodeTableResolver,
+      VolumeResolver,
+      EventResolver,
+      DbmsResolver,
+      DbmsTableResolver,
+      ContainerResolver,
+      ContainerTableResolver,
+      MegapolosResolver,
     ],
   });
 

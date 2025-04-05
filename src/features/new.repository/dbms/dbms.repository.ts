@@ -6,7 +6,7 @@ import DbSchemaRepo from '../db/db.schema.repository';
 import BaseDbmsRepo from './base.dbms.repository';
 import PostgresDmbs from './postgres.dbms.repository';
 
-class Dbms {
+class DbmsRepo {
   static async getById(id: string): Promise<BaseDbmsRepo> {
     const dbms: DbmsTable = await knex
       .select()
@@ -137,4 +137,4 @@ class Dbms {
   }
 }
 
-export default Dbms;
+export default DbmsRepo;
