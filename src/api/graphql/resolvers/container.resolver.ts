@@ -31,12 +31,6 @@ class ContainerEnvInput {
   value: string;
 }
 
-export const ContainerDbInput = generateGraphQLInputType(
-  ContainerDb,
-  'ContainerDbInput',
-  GenerationType.input
-);
-
 export const ContainerVariableInput = generateGraphQLInputType(
   ContainerVariable,
   'ContainerVariableInput',
@@ -113,14 +107,12 @@ export class ContainerResolver extends CreateBaseResolver(
 
   @Mutation(() => ContainerDb)
   async addDbToContainer(
-    @Arg('input', () => ContainerDbInput) input: ContainerDb,
+    @Arg('dbId') dbId: string,
+    @Arg('dbUserId') dbUserId: string,
+    @Arg('name') name: string,
     @Ctx() ctx: Context
   ): Promise<ContainerDb> {
-    return new ContainerRepo(ctx).addDb(
-      input.db.id,
-      input.dbUser.id,
-      input.name
-    );
+    return new ContainerRepo(ctx).addDb(dbId, dbUserId, name);
   }
 }
 

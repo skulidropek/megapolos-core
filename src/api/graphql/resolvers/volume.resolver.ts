@@ -1,5 +1,5 @@
 import { Mutation, Ctx, Resolver, Arg, InputType, Field } from 'type-graphql';
-import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
+import { CreateBaseResolver } from '../base.resolver';
 import { Volume } from '../../../domain/entities/Volume.entity';
 import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
 import { Context } from '../server';
@@ -8,14 +8,7 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
-import { RequiredEntityData } from '@mikro-orm/core';
 import { ContainerRepo } from '../../../features/repository/cantainer/container.repository';
-
-export const ContainerVolumeInput = generateGraphQLInputType(
-  ContainerVolume,
-  'ContainerVolumeInput',
-  GenerationType.input
-);
 
 // Генерируем Input типы
 export const VolumeInput = generateGraphQLInputType(
@@ -50,11 +43,11 @@ export class VolumeResolver extends CreateBaseResolver(
   @Mutation(() => Boolean)
   async addVolumeToContainer(
     @Arg('containerId') containerId: string,
-    @Arg('input', () => ContainerVolumeInput)
-    input: RequiredEntityData<ContainerVolume>,
+    @Arg('name') name: string,
+    @Arg('innerPath') innerPath: string,
     @Ctx() ctx: Context
   ): Promise<ContainerVolume> {
-    return new VolumeRepo(ctx).addToContainer(containerId, input);
+    return new VolumeRepo(ctx).addToContainer(containerId, name, innerPath);
   }
 
   @Mutation(() => Boolean)

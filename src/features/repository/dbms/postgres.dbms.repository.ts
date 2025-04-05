@@ -1,12 +1,5 @@
 import Knex from 'knex';
-import {
-  DbBackupTable,
-  DbSchemaSchema,
-  DbSchemaSchemaTable,
-  DbTable,
-  DbUserTable,
-  LogType,
-} from '../../db/tables';
+import { DbTable, DbUserTable, LogType } from '../../db/tables';
 import { readFile, writeFile } from 'fs-extra';
 import BaseDbmsRepo from './base.dbms.repository';
 import DbRepo from '../db/db.repository';
@@ -16,6 +9,10 @@ import UserRepo from '../user/user.repository';
 import { DbBackup } from '../../../domain/entities/DbBackup.entity';
 import LogRepo from '../log.repository';
 import NodeRepo from '../megapolos.node.repository';
+import {
+  DbSchema,
+  DbSchemaTable,
+} from '../../../domain/entities/DbSchema.entity';
 
 export default class PostgresDmbs extends BaseDbmsRepo {
   async getKnex(db: string) {
@@ -126,7 +123,7 @@ JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
 WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND tc.table_schema = 'public'
   */
 
-  async getSchema(db: string): Promise<DbSchemaSchema> {
+  async getSchema(db: string): Promise<DbSchema> {
     const knex = await this.getKnex(db);
     const tables = await knex('information_schema.tables')
       .select('table_name')
@@ -167,11 +164,11 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
   WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND tc.table_schema = 'public'
     `);
 
-    const result: DbSchemaSchema = {
+    const result: DbSchema = {
       tables: [],
     };
     for (let k in tables) {
-      const table: DbSchemaSchemaTable = {
+      const table: DbSchemaTable = {
         name: tables[k].table_name,
         fields: [],
         foreignKeys: [],

@@ -20,6 +20,7 @@ import {
 } from '../../../library/graphql_types_generator';
 import RepositoryRepo from '../../../features/repository/repository.repository';
 import { GraphQLResolveInfo } from 'graphql';
+import { App } from '../../../domain/entities/App.entity';
 
 // Генерируем Input типы
 export const ImageInput = generateGraphQLInputType(
@@ -83,6 +84,11 @@ export class ImageTableResolver extends BaseTableResolver {
     return this.returnOnlyIdIfNeeded(info, image.repository.id, () =>
       new RepositoryRepo(ctx, image.repository.id).getEntity()
     );
+  }
+
+  @FieldResolver(() => App)
+  async app(@Root() image: Image, @Ctx() ctx: Context): Promise<App | null> {
+    return (await new ImageRepo(ctx, image.id).getAppRepo()).getEntity();
   }
 
   @FieldResolver(() => [Log])

@@ -1,7 +1,8 @@
 import { Entity, ManyToOne, type Opt, Property } from '@mikro-orm/core';
 import { User } from './User.entity';
-import { ObjectType, Field } from 'type-graphql';
+import { ObjectType, Field, ID } from 'type-graphql';
 import { BaseEntity } from './Base.entity';
+import { Hint } from '../../library/graphql_types_generator';
 
 @Entity()
 @ObjectType()
@@ -12,6 +13,7 @@ export class App extends BaseEntity {
 
   @ManyToOne({ entity: () => User })
   @Field(() => User)
+  @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })
   ownerUser!: User & Opt;
 
   @Property({ type: 'string', length: -1, nullable: true })

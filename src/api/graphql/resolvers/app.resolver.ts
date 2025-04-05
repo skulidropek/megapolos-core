@@ -9,6 +9,7 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
+import { User } from '../../../domain/entities/User.entity';
 
 export const AppInput = generateGraphQLInputType(
   App,
@@ -44,5 +45,10 @@ export class AppTableResolver extends BaseTableResolver {
     @Ctx() ctx: Context
   ): Promise<Repository[]> {
     return await new AppRepo(ctx, app.id).getRepositories();
+  }
+
+  @FieldResolver(() => User)
+  async user(@Root() app: App, @Ctx() ctx: Context): Promise<User> {
+    return (await new AppRepo(ctx, app.id).getUser()).getEntity();
   }
 }

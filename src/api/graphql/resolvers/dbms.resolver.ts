@@ -15,7 +15,7 @@ import { Dbms } from '../../../domain/entities/Dbms.entity';
 import { Db } from '../../../domain/entities/Db.entity';
 import { DbUser } from '../../../domain/entities/DbUser.entity';
 import { DbBackup } from '../../../domain/entities/DbBackup.entity';
-import { DbSchema } from '../../../domain/entities/DbSchema.entity';
+import { DbSchemaEntity } from '../../../domain/entities/DbSchema.entity';
 import { Context } from '../server';
 import DbmsRepo from '../../../features/repository/dbms/dbms.repository';
 import {
@@ -179,11 +179,11 @@ export class DbmsResolver {
     return (await DbmsRepo.getById(dbId)).restoreDbPrivileges(dbId);
   }
 
-  @Mutation(() => DbSchema)
+  @Mutation(() => DbSchemaEntity)
   async saveDbSchema(
     @Arg('dbId') dbId: string,
     @Arg('name', { nullable: true }) name: string
-  ): Promise<DbSchema> {
+  ): Promise<DbSchemaEntity> {
     return (await DbmsRepo.getById(dbId)).saveSchema(dbId, name);
   }
 

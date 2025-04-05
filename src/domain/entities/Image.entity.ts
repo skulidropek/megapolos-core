@@ -1,5 +1,5 @@
 import { Entity, Enum, ManyToOne, type Opt, Property } from '@mikro-orm/core';
-import { Field, ObjectType } from 'type-graphql';
+import { Field, ObjectType, registerEnumType } from 'type-graphql';
 import { BaseEntity } from './Base.entity';
 import { App } from './App.entity';
 import { Repository } from './Repository.entity';
@@ -11,6 +11,11 @@ export enum ImageStatus {
   Built = 'built',
 }
 
+registerEnumType(ImageStatus, {
+  name: 'ImageStatus',
+  description: 'The status of the image',
+});
+
 @Entity()
 @ObjectType()
 export class Image extends BaseEntity {
@@ -20,6 +25,7 @@ export class Image extends BaseEntity {
 
   @ManyToOne({ entity: () => App, defaultRaw: `gen_random_uuid()` })
   @Field(() => App)
+  @Hint({ skip: true })
   app!: App & Opt;
 
   @Property({ length: -1 })
@@ -46,6 +52,7 @@ export class Image extends BaseEntity {
 
   @ManyToOne({ entity: () => Repository, nullable: true })
   @Field(() => Repository, { nullable: true })
+  @Hint({ skip: true })
   repository?: Repository;
 
   @Property({ length: -1, nullable: true })

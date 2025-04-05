@@ -55,7 +55,8 @@ export default class VolumeRepo extends BaseRepo<Volume> {
 
   async addToContainer(
     containerId: string,
-    input: RequiredEntityData<ContainerVolume>
+    name: string,
+    innerPath: string
   ): Promise<ContainerVolume> {
     let volumeContainerId = uuidv4();
     return await mem(async (em) => {
@@ -63,8 +64,8 @@ export default class VolumeRepo extends BaseRepo<Volume> {
         id: volumeContainerId,
         container: containerId,
         volume: this.id,
-        name: input.name,
-        innerPath: input.innerPath,
+        name,
+        innerPath,
         isDynamic: 0,
       });
       await em.persistAndFlush(containerVolume);

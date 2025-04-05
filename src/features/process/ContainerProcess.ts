@@ -1,11 +1,8 @@
-import User from '../repository/user/User';
 import BaseProcess, { ProcessStatus } from './BaseProcess';
 import { Writable } from 'stream';
 import { ContainerRepo } from '../repository/cantainer/container.repository';
 
 class ContainerProcess extends BaseProcess {
-  user: User;
-
   container: ContainerRepo;
 
   constructor(command: string, container: ContainerRepo) {

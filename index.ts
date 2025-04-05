@@ -2,28 +2,23 @@
 
 import graphqlServer from './src/api/graphql/server';
 import { initMikroOrm } from './src/features/db/mikro-orm';
-import MegapolosNode from './src/features/repository/Node';
-import User from './src/features/repository/user/User';
+import NodeRepo from './src/features/repository/megapolos.node.repository';
+import UserRepo from './src/features/repository/user/user.repository';
 
 if (process.getuid() != 0) {
   console.trace('You must run this app as root');
-  // process.exit(1);
+  process.exit(1);
 }
 
 export const megapolosPath = __dirname;
 
-// exec('mount --make-shared /');
-
 (async () => {
   await initMikroOrm();
-  MegapolosNode.createCurrentNode();
+  NodeRepo.createCurrentNode();
 
-  // await MegapolosNode.currentNode.dockerEvents();
-  // await MegapolosNode.currentNode.restoreContainers();
-
-  await new User(undefined).checkGroupUserLinks();
-  await new User(undefined).createRootUser();
-  const users = await new User(undefined).getUsersWithToken();
+  await new UserRepo(undefined).checkGroupUserLinks();
+  await new UserRepo(undefined).createRootUser();
+  const users = await new UserRepo(undefined).getUsersWithToken();
   console.log(users.map((u) => ({ name: u.name, token: u.token })));
 
   graphqlServer();

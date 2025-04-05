@@ -1,6 +1,5 @@
 import { knex } from '../../db/knex';
 import { DbSchemaSchema, DbmsTable } from '../../db/tables';
-import Db from '../../repository/db/Db';
 import DbRepo from '../db/db.repository';
 import DbSchemaRepo from '../db/db.schema.repository';
 import BaseDbmsRepo from './base.dbms.repository';
@@ -33,7 +32,7 @@ class DbmsRepo {
     const dbms2 = await this.getById(db2.dbms.id);
     const schema1 = await dbms1.getSchema(db1.name);
     const schema2 = await dbms2.getSchema(db2.name);
-    return this.compareSchemaSchemas(schema1, schema2);
+    return this.compareSchemaSchemas(schema1 as any, schema2 as any);
   }
 
   static async compareSchemas(
@@ -42,18 +41,21 @@ class DbmsRepo {
   ): Promise<string[]> {
     const schema1 = await new DbSchemaRepo(undefined, schema1id).getEntity();
     const schema2 = await new DbSchemaRepo(undefined, schema2id).getEntity();
-    return this.compareSchemaSchemas(schema1.schema, schema2.schema);
+    return this.compareSchemaSchemas(
+      JSON.parse(schema1.schema),
+      JSON.parse(schema2.schema)
+    );
   }
 
   static async compareDbSchema(
     dbid: string,
     schemaid: string
   ): Promise<string[]> {
-    const db = await new Db(undefined, dbid).getData();
-    const dbms = await this.getById(db.dbms_id);
+    const db = await new DbRepo(undefined, dbid).getEntity();
+    const dbms = await this.getById(db.dbms.id);
     const schema1 = await dbms.getSchema(db.name);
     const schema2 = await new DbSchemaRepo(undefined, schemaid).getEntity();
-    return this.compareSchemaSchemas(schema1, schema2.schema);
+    return this.compareSchemaSchemas(schema1 as any, schema2.schema as any);
   }
 
   static async compareSchemaSchemas(
