@@ -68,4 +68,11 @@ export class GroupUserPrivilegeTableResolver extends BaseTableResolver {
       groupUser: groupUser.id,
     });
   }
+
+  @FieldResolver(() => [User], { nullable: false })
+  async users(@Root() groupUser: GroupUser): Promise<User[]> {
+    return await makeEm().find(User, {
+      groups: { id: groupUser.id },
+    });
+  }
 }

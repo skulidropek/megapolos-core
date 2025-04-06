@@ -48,7 +48,7 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    await new ImageRepo(ctx, imageId).build();
+    new ImageRepo(ctx, imageId).build();
     return true;
   }
 
@@ -57,9 +57,11 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageIds', () => [String]) imageIds: string[],
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    for (const imageId of imageIds) {
-      await new ImageRepo(ctx, imageId).build();
-    }
+    (async () => {
+      for (const imageId of imageIds) {
+        await new ImageRepo(ctx, imageId).build();
+      }
+    })();
     return true;
   }
 
@@ -68,7 +70,7 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    await new ImageRepo(ctx, imageId).updateNodes();
+    new ImageRepo(ctx, imageId).updateNodes();
     return true;
   }
 }

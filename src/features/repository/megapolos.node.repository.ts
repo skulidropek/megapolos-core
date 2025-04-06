@@ -94,7 +94,7 @@ export default class NodeRepo extends BaseRepo<Node> {
   async updateNode(init?: boolean, withRebuild?: boolean) {
     const data = await this.getEntity();
     if (data.lifeStatus === 'updating') {
-      // throw new Error('Node is updating');
+      throw new Error('Node is updating');
     }
     const result: any = {
       containers: [],

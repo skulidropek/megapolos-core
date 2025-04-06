@@ -4,7 +4,6 @@ import { BaseEntity } from '../../domain/entities/Base.entity';
 import { makeEm } from '../db/mikro-orm';
 import { defaultRights, resources } from '../rights/resources.list';
 import { RightsChecker } from '../rights/RightsChecker';
-import { GroupUserPrivilege } from '../../domain/entities/GroupUserPrivilege.entity';
 
 export default abstract class BaseRepo<Entity extends BaseEntity> {
   private _entity?: Entity;
@@ -55,8 +54,12 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
     await em.persistAndFlush(created);
     this.id = created.id;
 
+    const UserGroupPrivilegeRepo = (
+      await import('./user/user.group.privilege.repository')
+    ).default;
+
     if (!!resources[this.entityName]) {
-      em.create(GroupUserPrivilege, {
+      await new UserGroupPrivilegeRepo(this.ctx).create({
         groupUser: this.ctx.user.groupUser.id,
         objectName: this.entityName,
         objectId: this.id,

@@ -52,9 +52,11 @@ export class NodeResolver extends CreateBaseResolver(
     @Arg('nodeIds', () => [String]) nodeIds: string[],
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    for (const nodeId of nodeIds) {
-      await new NodeRepo(ctx, nodeId).updateNode();
-    }
+    (async () => {
+      for (const nodeId of nodeIds) {
+        await new NodeRepo(ctx, nodeId).updateNode();
+      }
+    })();
     return true;
   }
 
