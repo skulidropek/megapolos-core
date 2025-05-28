@@ -5,21 +5,21 @@ import { knex } from '../../../features/db/knex';
 import { Field, ObjectType, registerEnumType } from 'type-graphql';
 
 enum SearchResultType {
-  REPOSITORY = 'repository',
-  APP = 'app',
-  IMAGE = 'image',
-  CONTAINER = 'container',
-  NODE = 'node',
-  DOMAIN = 'domain',
-  USER = 'user',
-  DBMS = 'dbms',
-  DB = 'db',
-  DB_USER = 'db_user',
-  DB_BACKUP = 'db_backup',
-  DB_SCHEMA = 'db_schema',
-  APP_INSTANCE = 'app_instance',
-  LOG = 'log',
-  VOLUME = 'volume',
+  repository = 'repository',
+  app = 'app',
+  image = 'image',
+  container = 'container',
+  node = 'node',
+  domain = 'domain',
+  user = 'user',
+  dbms = 'dbms',
+  db = 'db',
+  db_user = 'db_user',
+  db_backup = 'db_backup',
+  db_schema = 'db_schema',
+  app_instance = 'app_instance',
+  log = 'log',
+  volume = 'volume',
 }
 
 registerEnumType(SearchResultType, {
