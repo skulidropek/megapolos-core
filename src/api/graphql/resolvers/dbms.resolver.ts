@@ -16,8 +16,8 @@ import { Db } from '../../../domain/entities/Db.entity';
 import { DbUser } from '../../../domain/entities/DbUser.entity';
 import { DbBackup } from '../../../domain/entities/DbBackup.entity';
 import {
+  DbSchemaSchema,
   DbSchema,
-  DbSchemaEntity,
 } from '../../../domain/entities/DbSchema.entity';
 import { Context } from '../server';
 import DbmsRepo from '../../../features/repository/dbms/dbms.repository';
@@ -31,6 +31,7 @@ import { RequiredEntityData } from '@mikro-orm/core';
 import DbUserRepo from '../../../features/repository/db/db.user.repository';
 import DbSchemaRepo from '../../../features/repository/db/db.schema.repository';
 import DbRepo from '../../../features/repository/db/db.repository';
+import { makeEm } from '../../../features/db/mikro-orm';
 
 export const DbInput = generateGraphQLInputType(
   Db,
@@ -101,16 +102,16 @@ export class DbmsResolver {
     return DbmsRepo.compareSchemas(schema1id, schema2id);
   }
 
-  @Query(() => DbSchemaEntity)
+  @Query(() => DbSchema)
   async getDbSchema(
     @Arg('id') id: string,
     @Ctx() ctx: Context
-  ): Promise<DbSchemaEntity> {
+  ): Promise<DbSchema> {
     return new DbSchemaRepo(ctx, id).getEntity();
   }
 
-  @Query(() => [DbSchemaEntity])
-  async getAllDbSchema(@Ctx() ctx: Context): Promise<DbSchemaEntity[]> {
+  @Query(() => [DbSchema])
+  async getAllDbSchema(@Ctx() ctx: Context): Promise<DbSchema[]> {
     return new DbSchemaRepo(ctx).getAll();
   }
 
@@ -217,11 +218,11 @@ export class DbmsResolver {
     return (await DbmsRepo.getById(dbId)).restoreDbPrivileges(dbId);
   }
 
-  @Mutation(() => DbSchemaEntity)
+  @Mutation(() => DbSchema)
   async saveDbSchema(
     @Arg('dbId') dbId: string,
     @Arg('name', { nullable: true }) name: string
-  ): Promise<DbSchemaEntity> {
+  ): Promise<DbSchema> {
     return (await DbmsRepo.getById(dbId)).saveSchema(dbId, name);
   }
 
@@ -302,16 +303,23 @@ export class DbmsTableResolver extends BaseTableResolver {
 
 @Resolver(() => Db)
 export class DbTableResolver extends BaseTableResolver {
-  @FieldResolver(() => DbSchema)
-  async schema(@Root() db: Db): Promise<DbSchema> {
+  @FieldResolver(() => DbSchemaSchema)
+  async schema(@Root() db: Db): Promise<DbSchemaSchema> {
     return (await DbmsRepo.getById(db.dbms.id)).getSchema(db.name);
+  }
+
+  @FieldResolver(() => [Db])
+  async users(@Root() db: Db): Promise<DbUser[]> {
+    return await makeEm().find(DbUser, {
+      dbs: { id: db.id },
+    });
   }
 }
 
-@Resolver(() => DbSchemaEntity)
+@Resolver(() => DbSchema)
 export class DbSchemaTableResolver extends BaseTableResolver {
-  @FieldResolver(() => DbSchema)
-  async schema(@Root() dbSchema: DbSchemaEntity): Promise<DbSchema> {
+  @FieldResolver(() => DbSchemaSchema)
+  async schema(@Root() dbSchema: DbSchema): Promise<DbSchemaSchema> {
     return JSON.parse(dbSchema.schema);
   }
 }

@@ -11,8 +11,8 @@ import { DbUser } from '../../../domain/entities/DbUser.entity';
 import { mem } from '../../db/mikro-orm';
 import { DbBackup } from '../../../domain/entities/DbBackup.entity';
 import {
+  DbSchemaSchema,
   DbSchema,
-  DbSchemaEntity,
 } from '../../../domain/entities/DbSchema.entity';
 
 export default class BaseDbmsRepo extends BaseRepo<Dbms> {
@@ -274,11 +274,11 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async getSchema(db: string): Promise<DbSchema> {
+  async getSchema(db: string): Promise<DbSchemaSchema> {
     throw new Error('Not implemented');
   }
 
-  async saveSchema(dbId: string, name: string): Promise<DbSchemaEntity> {
+  async saveSchema(dbId: string, name: string): Promise<DbSchema> {
     const data = await this.getEntity();
     const db = new DbRepo(this.ctx, dbId);
     const dbData = await db.getEntity();

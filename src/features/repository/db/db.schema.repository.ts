@@ -1,8 +1,8 @@
-import { DbSchemaEntity } from '../../../domain/entities/DbSchema.entity';
+import { DbSchema } from '../../../domain/entities/DbSchema.entity';
 import BaseRepo from '../base.repository';
 
-export default class DbSchemaRepo extends BaseRepo<DbSchemaEntity> {
+export default class DbSchemaRepo extends BaseRepo<DbSchema> {
   get entityClass() {
-    return DbSchemaEntity;
+    return DbSchema;
   }
 }

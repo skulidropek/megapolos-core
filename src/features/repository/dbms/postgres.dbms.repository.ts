@@ -10,7 +10,7 @@ import { DbBackup } from '../../../domain/entities/DbBackup.entity';
 import LogRepo from '../log.repository';
 import NodeRepo from '../megapolos.node.repository';
 import {
-  DbSchema,
+  DbSchemaSchema,
   DbSchemaTable,
 } from '../../../domain/entities/DbSchema.entity';
 
@@ -123,7 +123,7 @@ JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
 WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND tc.table_schema = 'public'
   */
 
-  async getSchema(db: string): Promise<DbSchema> {
+  async getSchema(db: string): Promise<DbSchemaSchema> {
     const knex = await this.getKnex(db);
     const tables = await knex('information_schema.tables')
       .select('table_name')
@@ -164,7 +164,7 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
   WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND tc.table_schema = 'public'
     `);
 
-    const result: DbSchema = {
+    const result: DbSchemaSchema = {
       tables: [],
     };
     for (let k in tables) {

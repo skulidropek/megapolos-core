@@ -4,7 +4,7 @@ import { BaseEntity } from './Base.entity';
 
 @Entity()
 @ObjectType()
-export class DbSchemaEntity extends BaseEntity {
+export class DbSchema extends BaseEntity {
   @Property({ length: -1 })
   @Field()
   name!: string;
@@ -64,7 +64,7 @@ export class DbSchemaTable {
 }
 
 @ObjectType()
-export class DbSchema {
+export class DbSchemaSchema {
   @Field(() => [DbSchemaTable])
   tables!: DbSchemaTable[];
 }
