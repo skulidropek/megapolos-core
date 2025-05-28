@@ -28,6 +28,7 @@ import { ContainerEnvOption } from '../../../domain/entities/ContainerEnvOption.
 import NodeRepo from '../../../features/repository/megapolos.node.repository';
 import { Node } from '../../../domain/entities/Node.entity';
 import ImageRepo from '../../../features/repository/image.repository';
+import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
 
 @ObjectType()
 export class ContainerFileListResult {
@@ -211,11 +212,11 @@ export class ContainerTableResolver extends BaseTableResolver {
   async volumes(
     @Root() container: Container,
     @Ctx() ctx: Context
-  ): Promise<Volume[]> {
+  ): Promise<ContainerVolume[]> {
     const volumes = await new VolumeRepo(ctx).getVolumesOfContainer(
       container.id
     );
-    return volumes.map((v) => v.volume);
+    return volumes;
   }
 
   @FieldResolver(() => String, { nullable: true })

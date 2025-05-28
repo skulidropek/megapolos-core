@@ -27,12 +27,12 @@ export class ContainerVolume {
   container!: Container & Opt;
 
   @ManyToOne({ entity: () => Volume })
-  @Field(() => Volume, { nullable: true })
+  @Field(() => Volume)
   @Hint({ type: () => ID, skipOnUpdate: true })
   volume!: Volume & Opt;
 
   @Property({ length: -1 })
-  @Field({ nullable: true })
+  @Field()
   innerPath!: string;
 
   @Property({ nullable: true })
