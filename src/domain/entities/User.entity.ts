@@ -10,6 +10,7 @@ import { Field, ID, ObjectType } from 'type-graphql';
 import { GroupUser } from './GroupUser.entity';
 import { Hint } from '../../library/graphql_types_generator';
 import { BaseEntity } from './Base.entity';
+import { UserGroupLink } from './UserGroupLink.entity';
 
 @Entity()
 @ObjectType()
@@ -20,10 +21,10 @@ export class User extends BaseEntity {
 
   @ManyToOne({ entity: () => GroupUser })
   @Field(() => GroupUser)
-  @Hint({ type: () => ID, skipOnUpdate: true })
+  @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })
   groupUser!: GroupUser;
 
-  @ManyToMany(() => GroupUser, undefined, { pivotTable: 'user_group_link' })
+  @ManyToMany({ entity: () => GroupUser, pivotEntity: () => UserGroupLink })
   @Field(() => [GroupUser])
   @Hint({ skip: true })
   groups = new Collection<GroupUser>(this);

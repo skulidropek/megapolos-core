@@ -6,8 +6,8 @@ import BaseRepo from '../../features/repository/base.repository';
 
 export function CreateBaseResolver<
   T extends IEntity,
-  I extends object,
-  P extends object
+  I extends { toStruct: () => any },
+  P extends { toStruct: () => any }
 >(
   className: string,
   Repository: new (ctx: Context, id?: string) => BaseRepo<T>,
@@ -27,7 +27,8 @@ export function CreateBaseResolver<
       @Arg('id') id: string,
       @Ctx() ctx: Context
     ): Promise<T | null> {
-      return new Repository(ctx, id).getEntity();
+      const value = await new Repository(ctx, id).getEntity();
+      return value;
     }
 
     @Mutation(() => EntityClass, { name: `create${className}` })
@@ -35,7 +36,7 @@ export function CreateBaseResolver<
       @Ctx() ctx: Context,
       @Arg('values', () => InputClass) values: I
     ): Promise<T> {
-      return new Repository(ctx).create(values as any);
+      return new Repository(ctx).create(values.toStruct());
     }
 
     @Mutation(() => Boolean, { name: `edit${className}` })
@@ -44,7 +45,7 @@ export function CreateBaseResolver<
       @Arg('id') id: string,
       @Arg('values', () => EditClass) values: P
     ): Promise<boolean> {
-      return new Repository(ctx, id).update(values as any);
+      return new Repository(ctx, id).update(values.toStruct());
     }
 
     @Mutation(() => Boolean, { name: `delete${className}` })

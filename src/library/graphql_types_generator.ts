@@ -11,6 +11,7 @@ export interface HintMetadata {
   skipOnInput?: boolean;
   skip?: boolean;
   skipOnUpdate?: boolean;
+  skipOnClearlyInput?: boolean;
 }
 
 export function Hint(metadata: HintMetadata) {
@@ -88,7 +89,8 @@ export function generateGraphQLInputType<T>(
     if (
       hint?.skip ||
       (hint?.skipOnInput && isInput) ||
-      (hint?.skipOnUpdate && isUpdate)
+      (hint?.skipOnUpdate && isUpdate) ||
+      (hint?.skipOnClearlyInput && generationType === GT.input)
     ) {
       return;
     }

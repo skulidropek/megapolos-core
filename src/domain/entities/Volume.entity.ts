@@ -1,7 +1,16 @@
-import { Entity, type Opt, Property } from '@mikro-orm/core';
+import {
+  Collection,
+  Entity,
+  ManyToMany,
+  OneToMany,
+  type Opt,
+  Property,
+} from '@mikro-orm/core';
 import { Field, ObjectType } from 'type-graphql';
 import { BaseEntity } from './Base.entity';
 import { Hint } from '../../library/graphql_types_generator';
+import { Container } from './Container.entity';
+import { ContainerVolume } from './ContainerVolume.entity';
 
 @Entity()
 @ObjectType()
@@ -26,4 +35,11 @@ export class Volume extends BaseEntity {
   @Property({ columnType: 'timestamp(6)', nullable: true })
   @Field({ nullable: true })
   removeDate?: Date;
+
+  @OneToMany({
+    entity: () => ContainerVolume,
+    mappedBy: 'volume',
+  })
+  @Hint({ skip: true })
+  containers = new Collection<ContainerVolume>(this);
 }

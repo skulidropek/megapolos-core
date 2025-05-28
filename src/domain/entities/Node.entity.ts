@@ -24,7 +24,7 @@ export class Node extends BaseEntity {
 
   @Property({ type: 'string', length: -1 })
   @Field(() => String)
-  @Hint({ defaultValue: 'running' })
+  @Hint({ defaultValue: 'running', skip: true })
   lifeStatus: string & Opt = 'running';
 
   @Property({ columnType: 'timestamp(6)', nullable: true })

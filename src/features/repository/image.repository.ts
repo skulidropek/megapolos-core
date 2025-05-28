@@ -8,7 +8,7 @@ import {
   ImageVariableRequirementTable,
   LogType,
 } from '../db/tables';
-import { resources } from '../rights/resources.list';
+import { resources, ResourceType } from '../rights/resources.list';
 import AppRepo from './app.repository';
 import BaseRepo from './base.repository';
 import { ContainerRepo } from './cantainer/container.repository';
@@ -20,10 +20,16 @@ import { Image } from '../../domain/entities/Image.entity';
 import { makeEm } from '../db/mikro-orm';
 import { Log } from '../../domain/entities/Log.entity';
 import NodeRepo from './megapolos.node.repository';
+import { ImageEnvRequirement } from '../../domain/entities/ImageEnvRequirement.entity';
+import { ImageEnvRequirementInput } from '../../api/graphql/resolvers/image.resolver';
 
 export default class ImageRepo extends BaseRepo<Image> {
   get entityClass() {
     return Image;
+  }
+
+  get resourceType(): ResourceType {
+    return ResourceType.Image;
   }
 
   async build() {
@@ -117,15 +123,17 @@ export default class ImageRepo extends BaseRepo<Image> {
     console.log(nodes);
   }
 
-  async changeEnvs(envs: ImageEnvRequirementTable[]): Promise<boolean> {
+  async changeEnvs(
+    envs: (typeof ImageEnvRequirementInput)[]
+  ): Promise<boolean> {
     await this.checkActionAccess(resources.image.actions.edit);
-    await knex('image_env_requirement').where({ image_id: this.id }).delete();
-    for (let i in envs) {
-      const env = envs[i];
-      delete env.id;
-      env.image_id = this.id;
-      await knex('image_env_requirement').insert(env);
-    }
+    const em = makeEm();
+    await em.nativeDelete(ImageEnvRequirement, { image: this.id });
+    await em.insertMany(
+      ImageEnvRequirement,
+      envs.map((env) => ({ ...env, image: this.id }))
+    );
+
     return true;
   }
 
@@ -145,9 +153,17 @@ export default class ImageRepo extends BaseRepo<Image> {
     return true;
   }
 
-  async getEnvs(): Promise<ImageEnvRequirementTable[]> {
+  async getEnvs(): Promise<ImageEnvRequirement[]> {
     await this.checkActionAccess(resources.image.actions.read);
-    return knex('image_env_requirement').where({ image_id: this.id });
+    return (
+      await makeEm().findOneOrFail(
+        Image,
+        {
+          id: this.id,
+        },
+        { populate: ['envs'] }
+      )
+    ).envs.getItems();
   }
 
   async getVariables(): Promise<ImageVariableRequirementTable[]> {

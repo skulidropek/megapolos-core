@@ -8,7 +8,7 @@ import { Hint } from '../../library/graphql_types_generator';
 @Entity()
 @ObjectType()
 export class GroupUserPrivilege extends BaseEntity {
-  @ManyToOne({ entity: () => GroupUser })
+  @ManyToOne({ entity: () => GroupUser, fieldName: 'group_user_id' })
   @Field(() => GroupUser)
   @Hint({ skip: true })
   groupUser!: GroupUser & Opt;

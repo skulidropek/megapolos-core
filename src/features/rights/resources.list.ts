@@ -1,3 +1,5 @@
+import { registerEnumType } from 'type-graphql';
+
 interface UserAction {
   resourceType: string;
   resourceId: string;
@@ -34,4 +36,16 @@ const resources = {
   },
 };
 
-export { defaultRights, resources, UserAction };
+enum ResourceType {
+  Repository = 'repository',
+  Container = 'container',
+  Image = 'image',
+  AppInstance = 'app_instance',
+  App = 'app',
+}
+
+registerEnumType(ResourceType, {
+  name: 'ResourceType',
+});
+
+export { defaultRights, resources, UserAction, ResourceType };

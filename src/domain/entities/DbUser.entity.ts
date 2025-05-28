@@ -5,7 +5,7 @@ import {
   ManyToOne,
   Property,
 } from '@mikro-orm/core';
-import { Field, ObjectType } from 'type-graphql';
+import { Field, ID, ObjectType } from 'type-graphql';
 import { Dbms } from './Dbms.entity';
 import { BaseEntity } from './Base.entity';
 import { Db } from './Db.entity';
@@ -20,7 +20,7 @@ export class DbUser extends BaseEntity {
 
   @ManyToOne({ entity: () => Dbms })
   @Field(() => Dbms)
-  @Hint({ skip: true })
+  @Hint({ type: () => ID })
   dbms!: Dbms;
 
   @Property({ length: -1, nullable: true })
@@ -28,5 +28,6 @@ export class DbUser extends BaseEntity {
   password?: string;
 
   @ManyToMany({ entity: () => Db, pivotTable: 'db_db_user' })
+  @Hint({ skip: true })
   dbs = new Collection<Db>(this);
 }

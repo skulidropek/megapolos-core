@@ -30,7 +30,7 @@ export class AppInstance extends BaseEntity {
 
   @ManyToOne({ entity: () => App })
   @Field(() => App)
-  @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })
+  @Hint({ type: () => ID })
   app!: App;
 
   @ManyToOne({ entity: () => InstanceType, nullable: true })

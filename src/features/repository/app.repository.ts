@@ -10,10 +10,15 @@ import { makeEm } from '../db/mikro-orm';
 import { AppInstance } from '../../domain/entities/AppInstance.entity';
 import AppInstanceRepo from './app.instance.repository';
 import { Repository } from '../../domain/entities/Repository.entity';
+import { ResourceType } from '../rights/resources.list';
 
 export default class AppRepo extends BaseRepo<App> {
   get entityClass() {
     return App;
+  }
+
+  get resourceType(): ResourceType {
+    return ResourceType.App;
   }
 
   async installApp(userId: string, input: AppInput): Promise<App> {

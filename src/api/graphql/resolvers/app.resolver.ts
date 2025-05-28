@@ -1,4 +1,11 @@
-import { Ctx, FieldResolver, Root, Resolver } from 'type-graphql';
+import {
+  Ctx,
+  FieldResolver,
+  Root,
+  Resolver,
+  Mutation,
+  Arg,
+} from 'type-graphql';
 import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { App } from '../../../domain/entities/App.entity';
 import { Image } from '../../../domain/entities/Image.entity';
@@ -30,7 +37,16 @@ export class AppResolver extends CreateBaseResolver(
   App,
   AppInput,
   AppUpdateInput
-) {}
+) {
+  @Mutation(() => Boolean)
+  async installApp(
+    @Arg('input', () => AppInput) input: any,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new AppRepo(ctx).installApp(ctx.user.id, input);
+    return true;
+  }
+}
 
 @Resolver(() => App)
 export class AppTableResolver extends BaseTableResolver {

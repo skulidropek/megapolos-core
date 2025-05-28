@@ -1,7 +1,7 @@
 import { Entity, ManyToOne, Property } from '@mikro-orm/core';
 import { App } from './App.entity';
 import { BaseEntity } from './Base.entity';
-import { ObjectType, Field } from 'type-graphql';
+import { ObjectType, Field, ID } from 'type-graphql';
 import { Hint } from '../../library/graphql_types_generator';
 
 @Entity()
@@ -33,7 +33,7 @@ export class Repository extends BaseEntity {
 
   @ManyToOne({ entity: () => App, nullable: true })
   @Field(() => App, { nullable: true })
-  @Hint({ skip: true })
+  @Hint({ type: () => ID })
   app?: App;
 
   @Property({ length: -1, nullable: true })
@@ -43,9 +43,6 @@ export class Repository extends BaseEntity {
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
   title?: string;
-
-  @Field(() => [String])
-  branches: string[] = [];
 }
 
 @ObjectType()

@@ -14,7 +14,7 @@ export class DbSchemaEntity extends BaseEntity {
   type?: string;
 
   @Property({ type: 'json', columnType: 'json', nullable: true })
-  @Field(() => String, { nullable: true })
+  // @Field(() => String, { nullable: true })
   schema?: string;
 }
 

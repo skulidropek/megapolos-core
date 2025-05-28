@@ -52,7 +52,7 @@ export class RepositoryResolver extends CreateBaseResolver(
   }
 
   @Query(() => String)
-  async showFile(
+  async showRepositoryFile(
     @Ctx() ctx: Context,
     @Arg('id') id: string,
     @Arg('branch') branch: string,
@@ -62,7 +62,7 @@ export class RepositoryResolver extends CreateBaseResolver(
   }
 
   @Query(() => RepositoryFiles)
-  async listFiles(
+  async listRepositoryFiles(
     @Ctx() ctx: Context,
     @Arg('id') id: string,
     @Arg('branch') branch: string,
@@ -72,7 +72,10 @@ export class RepositoryResolver extends CreateBaseResolver(
   }
 
   @Mutation(() => Boolean)
-  async fetch(@Ctx() ctx: Context, @Arg('id') id: string): Promise<boolean> {
+  async fetchRepository(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string
+  ): Promise<boolean> {
     await new RepositoryRepo(ctx, id).fetch();
     return true;
   }

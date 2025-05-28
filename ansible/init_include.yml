@@ -23,6 +23,7 @@
       - docker
       - passlib
       - urllib3
+      - ansible
 - name: Install collection community.docker
   community.general.ansible_galaxy_install:
     type: collection

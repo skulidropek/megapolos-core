@@ -15,7 +15,10 @@ import { Dbms } from '../../../domain/entities/Dbms.entity';
 import { Db } from '../../../domain/entities/Db.entity';
 import { DbUser } from '../../../domain/entities/DbUser.entity';
 import { DbBackup } from '../../../domain/entities/DbBackup.entity';
-import { DbSchemaEntity } from '../../../domain/entities/DbSchema.entity';
+import {
+  DbSchema,
+  DbSchemaEntity,
+} from '../../../domain/entities/DbSchema.entity';
 import { Context } from '../server';
 import DbmsRepo from '../../../features/repository/dbms/dbms.repository';
 import {
@@ -25,27 +28,21 @@ import {
 import BaseDbmsRepo from '../../../features/repository/dbms/base.dbms.repository';
 import DbBackupRepo from '../../../features/repository/db/db.backup.repository';
 import { RequiredEntityData } from '@mikro-orm/core';
+import DbUserRepo from '../../../features/repository/db/db.user.repository';
+import DbSchemaRepo from '../../../features/repository/db/db.schema.repository';
+import DbRepo from '../../../features/repository/db/db.repository';
 
-@InputType()
-class DbInput {
-  @Field()
-  name: string;
+export const DbInput = generateGraphQLInputType(
+  Db,
+  'DbInput',
+  GenerationType.input
+);
 
-  @Field()
-  dbmsId: string;
-}
-
-@InputType()
-class DbUserInput {
-  @Field()
-  name: string;
-
-  @Field()
-  dbmsId: string;
-
-  @Field({ nullable: true })
-  password?: string;
-}
+export const DbUserInput = generateGraphQLInputType(
+  DbUser,
+  'DbUserInput',
+  GenerationType.input
+);
 
 @ObjectType()
 class MassDbQueryResult {
@@ -83,6 +80,11 @@ export class DbmsResolver {
     return (await DbmsRepo.getById(id)).getEntity();
   }
 
+  @Query(() => [DbUser])
+  async getDbUser(@Arg('id') id: string, @Ctx() ctx: Context): Promise<DbUser> {
+    return new DbUserRepo(ctx, id).getEntity();
+  }
+
   @Query(() => [String])
   async compareDbs(
     @Arg('dbId1') dbId1: string,
@@ -97,6 +99,19 @@ export class DbmsResolver {
     @Arg('schema2id') schema2id: string
   ): Promise<string[]> {
     return DbmsRepo.compareSchemas(schema1id, schema2id);
+  }
+
+  @Query(() => DbSchemaEntity)
+  async getDbSchema(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<DbSchemaEntity> {
+    return new DbSchemaRepo(ctx, id).getEntity();
+  }
+
+  @Query(() => [DbSchemaEntity])
+  async getAllDbSchema(@Ctx() ctx: Context): Promise<DbSchemaEntity[]> {
+    return new DbSchemaRepo(ctx).getAll();
   }
 
   @Query(() => [String])
@@ -118,11 +133,34 @@ export class DbmsResolver {
     );
   }
 
+  @Query(() => Db)
+  async getDb(@Arg('id') id: string, @Ctx() ctx: Context): Promise<Db> {
+    return new DbRepo(ctx, id).getEntity();
+  }
+
+  @Query(() => [Db])
+  async getAllDb(@Ctx() ctx: Context): Promise<Db[]> {
+    return new DbRepo(ctx).getAll();
+  }
+
+  @Query(() => DbBackup)
+  async getDbBackup(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<DbBackup> {
+    return new DbBackupRepo(ctx, id).getEntity();
+  }
+
+  @Query(() => [DbBackup])
+  async getDbBackups(@Ctx() ctx: Context): Promise<DbBackup[]> {
+    return new DbBackupRepo(ctx).getAll();
+  }
+
   @Mutation(() => Dbms)
   async createDbms(
-    @Arg('input', () => DbmsInput) input: RequiredEntityData<Dbms>
+    @Arg('values', () => DbmsInput) values: RequiredEntityData<Dbms>
   ): Promise<Dbms> {
-    return (await DbmsRepo.getByType(input.type)).create(input);
+    return (await DbmsRepo.getByType(values.type)).create(values);
   }
 
   @Mutation(() => Boolean)
@@ -141,22 +179,22 @@ export class DbmsResolver {
 
   @Mutation(() => Db)
   async createDb(
-    @Arg('input', () => DbInput) input: DbInput,
+    @Arg('values', () => DbInput) values: any,
     @Arg('withoutChange', { nullable: true }) withoutChange: boolean
   ): Promise<Db> {
-    return (await DbmsRepo.getById(input.dbmsId)).createDb(
-      input,
+    return (await DbmsRepo.getById(values.dbms)).createDb(
+      values,
       withoutChange
     );
   }
 
   @Mutation(() => DbUser)
   async createDbUser(
-    @Arg('input', () => DbUserInput) input: DbUserInput,
+    @Arg('values', () => DbUserInput) values: any,
     @Arg('withoutChange', { nullable: true }) withoutChange: boolean
   ): Promise<DbUser> {
-    return (await DbmsRepo.getById(input.dbmsId)).createUser(
-      input,
+    return (await DbmsRepo.getById(values.dbms)).createUser(
+      values,
       withoutChange
     );
   }
@@ -259,5 +297,21 @@ export class DbmsTableResolver extends BaseTableResolver {
   @FieldResolver(() => [String])
   async internalUsers(@Root() dbms: Dbms): Promise<string[]> {
     return (await DbmsRepo.getById(dbms.id)).getInternalUsers();
+  }
+}
+
+@Resolver(() => Db)
+export class DbTableResolver extends BaseTableResolver {
+  @FieldResolver(() => DbSchema)
+  async schema(@Root() db: Db): Promise<DbSchema> {
+    return (await DbmsRepo.getById(db.dbms.id)).getSchema(db.name);
+  }
+}
+
+@Resolver(() => DbSchemaEntity)
+export class DbSchemaTableResolver extends BaseTableResolver {
+  @FieldResolver(() => DbSchema)
+  async schema(@Root() dbSchema: DbSchemaEntity): Promise<DbSchema> {
+    return JSON.parse(dbSchema.schema);
   }
 }

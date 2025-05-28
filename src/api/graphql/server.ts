@@ -141,7 +141,7 @@ import {
 } from './resolvers/instance.resolver';
 import { NodeResolver, NodeTableResolver } from './resolvers/node.resolver';
 import { VolumeResolver } from './resolvers/volume.resolver';
-import { LogResolver } from './resolvers/log.resolver';
+import { LogResolver, LogTableResolver } from './resolvers/log.resolver';
 import { EventResolver } from './resolvers/event.resolver';
 import { AppResolver, AppTableResolver } from './resolvers/app.resolver';
 import { DbmsResolver, DbmsTableResolver } from './resolvers/dbms.resolver';
@@ -150,6 +150,21 @@ import {
   ContainerTableResolver,
 } from './resolvers/container.resolver';
 import { MegapolosResolver } from './resolvers/megapolos.resolver';
+import { JwtPayload } from 'jsonwebtoken';
+import config from '../../domain/config/config';
+import jwt from 'jsonwebtoken';
+import UserRepo from '../../features/repository/user/user.repository';
+import {
+  GroupUserPrivilegeResolver,
+  GroupUserResolver,
+  GroupUserTableResolver,
+} from './resolvers/user.group.resolver';
+import {
+  DbUserResolver,
+  DbUserTableResolver,
+} from './resolvers/db.user.resolver';
+import { DbTableResolver } from './resolvers/dbms.resolver';
+import { DbSchemaTableResolver } from './resolvers/dbms.resolver';
 
 export interface Context {
   req: express.Request;
@@ -182,6 +197,14 @@ async function bootstrap() {
       ContainerResolver,
       ContainerTableResolver,
       MegapolosResolver,
+      GroupUserResolver,
+      GroupUserTableResolver,
+      GroupUserPrivilegeResolver,
+      DbUserResolver,
+      DbUserTableResolver,
+      LogTableResolver,
+      DbTableResolver,
+      DbSchemaTableResolver,
     ],
   });
 
@@ -195,15 +218,48 @@ async function bootstrap() {
 
   app.use(express.json());
   app.use(
-    '/graphql',
+    '/',
     cors(),
     expressMiddleware(server, {
-      context: async ({ req, res }) => ({
-        req,
-        res,
-      }),
+      // context: async ({ req, res }) => {
+      //   return { req, res, user: null };
+      // },
+      context: async ({ req, res }): Promise<Context> => {
+        // Проверяем, является ли запрос introspection-запросом
+        const isIntrospection =
+          req.body.operationName === 'IntrospectionQuery' ||
+          req.body.query?.includes('__schema');
+
+        if (config.publicSchema && isIntrospection) {
+          return { req, res, user: undefined }; // Пропускаем авторизацию для introspection
+        }
+
+        const token = req.headers.token || '';
+        let decoded: JwtPayload & { id: string };
+        try {
+          decoded = jwt.verify(token as string, config.secret) as JwtPayload & {
+            id: string;
+          };
+        } catch (err) {
+          if (config.allowUnauthorized) {
+            return { req, res, user: undefined };
+          } else {
+            throw new Error('Unauthorized');
+          }
+        }
+
+        const user = new UserRepo(undefined, decoded.id);
+        const userData = await user.getEntity();
+
+        if (!userData) {
+          throw new Error('Unauthorized');
+        } else {
+          return { user: userData, req, res };
+        }
+      },
     })
   );
+
   app.listen(5100, () => {
     console.log('Server is running on port 5100');
   });

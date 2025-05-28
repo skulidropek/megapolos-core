@@ -1,5 +1,5 @@
 import EventsObserver from '../events/eventsObserver';
-import { resources } from '../rights/resources.list';
+import { resources, ResourceType } from '../rights/resources.list';
 import BaseRepo from './base.repository';
 import { AppInstance } from '../../domain/entities/AppInstance.entity';
 import UserRepo from './user/user.repository';
@@ -25,6 +25,10 @@ export interface AppInstanceResult extends AppInstance {
 export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   get entityClass() {
     return AppInstance;
+  }
+
+  get resourceType(): ResourceType {
+    return ResourceType.AppInstance;
   }
 
   async create(
@@ -67,9 +71,10 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     return new UserRepo(this.ctx, data.user.id);
   }
 
-  async getDataWithContainers(): Promise<AppInstanceResult> {
+  async getDataWithContainers(): Promise<AppInstance> {
     await this.checkActionAccess(resources.app_instance.actions.read);
-    const appInstance: AppInstanceResult = await this.getEntity();
+    const appInstance: AppInstance & { containers?: Container[] } =
+      await this.getEntity();
     appInstance.containers = await Promise.all(
       (
         await this.getContainers()

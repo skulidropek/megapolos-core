@@ -157,7 +157,7 @@ export default class NodeRepo extends BaseRepo<Node> {
 
       for (let j in envs) {
         let env = envs[j];
-        env.container_env_value = env.container_env_value.replace(
+        env.containerEnvValue = env.containerEnvValue.replace(
           /\{[a-zA-Z0-9_.]+\}/,
           (match) => {
             const path = match.substring(1, match.length - 1);
@@ -169,8 +169,8 @@ export default class NodeRepo extends BaseRepo<Node> {
           }
         );
         containerResult.envs.push({
-          name: env.container_env_name,
-          value: env.container_env_value,
+          name: env.containerEnvName,
+          value: env.containerEnvValue,
         });
       }
       console.log(envs);

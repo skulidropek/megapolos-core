@@ -1,5 +1,4 @@
 import {
-  Query,
   Mutation,
   Ctx,
   FieldResolver,
@@ -21,6 +20,7 @@ import {
 import RepositoryRepo from '../../../features/repository/repository.repository';
 import { GraphQLResolveInfo } from 'graphql';
 import { App } from '../../../domain/entities/App.entity';
+import { ImageEnvRequirement } from '../../../domain/entities/ImageEnvRequirement.entity';
 
 // Генерируем Input типы
 export const ImageInput = generateGraphQLInputType(
@@ -33,6 +33,12 @@ export const ImageUpdateInput = generateGraphQLInputType(
   Image,
   'ImageUpdateInput',
   GenerationType.update
+);
+
+export const ImageEnvRequirementInput = generateGraphQLInputType(
+  ImageEnvRequirement,
+  'ImageEnvRequirementInput',
+  GenerationType.input
 );
 
 @Resolver()
@@ -73,6 +79,17 @@ export class ImageResolver extends CreateBaseResolver(
     new ImageRepo(ctx, imageId).updateNodes();
     return true;
   }
+
+  @Mutation(() => Boolean)
+  async changeImageEnvs(
+    @Arg('imageId') imageId: string,
+    @Arg('envs', () => [ImageEnvRequirementInput])
+    envs: (typeof ImageEnvRequirementInput)[],
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new ImageRepo(ctx, imageId).changeEnvs(envs);
+    return true;
+  }
 }
 
 @Resolver(() => Image)
@@ -96,5 +113,13 @@ export class ImageTableResolver extends BaseTableResolver {
   @FieldResolver(() => [Log])
   async lastBuildLog(@Root() image: Image, @Ctx() ctx: Context): Promise<Log> {
     return new ImageRepo(ctx, image.id).getLastBuildLog();
+  }
+
+  @FieldResolver(() => [ImageEnvRequirement])
+  async envs(
+    @Root() image: Image,
+    @Ctx() ctx: Context
+  ): Promise<ImageEnvRequirement[]> {
+    return new ImageRepo(ctx, image.id).getEnvs();
   }
 }

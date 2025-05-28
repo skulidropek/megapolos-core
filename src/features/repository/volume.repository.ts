@@ -83,7 +83,11 @@ export default class VolumeRepo extends BaseRepo<Volume> {
 
   async getVolumesOfContainer(containerId: string): Promise<ContainerVolume[]> {
     return await mem(async (em) => {
-      return await em.find(ContainerVolume, { container: containerId });
+      return await em.find(
+        ContainerVolume,
+        { container: containerId },
+        { populate: ['volume'] }
+      );
     });
   }
 }

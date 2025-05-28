@@ -5,5 +5,7 @@
     "registryUser": "",
     "registryPassword": "",
     "debug": false,
-    "devMode": false
+    "devMode": false,
+    "publicSchema": false,
+    "allowUnauthorized": false
 }

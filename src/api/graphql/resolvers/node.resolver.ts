@@ -40,10 +40,13 @@ export class NodeResolver extends CreateBaseResolver(
   @Query(() => Node)
   @Mutation(() => Boolean)
   async updateNode(
+    @Ctx() ctx: Context,
     @Arg('id') id: string,
-    @Ctx() ctx: Context
+    @Arg('init', () => Boolean, { nullable: true }) init?: boolean,
+    @Arg('withRebuild', () => Boolean, { nullable: true })
+    withRebuild?: boolean
   ): Promise<boolean> {
-    await new NodeRepo(ctx, id).updateNode();
+    await new NodeRepo(ctx, id).updateNode(init, withRebuild);
     return true;
   }
 

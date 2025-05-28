@@ -1,4 +1,11 @@
-import { Mutation, Ctx, Resolver, Arg } from 'type-graphql';
+import {
+  Mutation,
+  Ctx,
+  Resolver,
+  Arg,
+  FieldResolver,
+  Root,
+} from 'type-graphql';
 import { CreateBaseResolver } from '../base.resolver';
 import { Log } from '../../../domain/entities/Log.entity';
 import { Context } from '../server';
@@ -32,5 +39,13 @@ export class LogResolver extends CreateBaseResolver(
   async closeLog(@Arg('id') id: string, @Ctx() ctx: Context): Promise<boolean> {
     await new LogRepo(ctx, id).close();
     return true;
+  }
+}
+
+@Resolver(() => Log)
+export class LogTableResolver {
+  @FieldResolver(() => String)
+  async text(@Root() log: Log, @Ctx() ctx: Context): Promise<string> {
+    return new LogRepo(ctx, log.id).getText();
   }
 }

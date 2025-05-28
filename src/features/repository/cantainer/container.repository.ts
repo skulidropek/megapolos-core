@@ -4,11 +4,8 @@ import docker from '../../docker/coreDocker';
 import { knex } from '../../db/knex';
 import EventsObserver from '../../events/eventsObserver';
 import {
-  ContainerDbTable,
   ContainerEnvOptionTable,
   ContainerVariableTable,
-  ContainerVolumeTable,
-  DomainTable,
 } from '../../db/tables';
 import ContainerProcess from '../../process/ContainerProcess';
 import { InstanceRuntimeVariables } from '../app.instance.repository';
@@ -16,7 +13,7 @@ import { Device } from '../../../domain/entities/Device.entity';
 import BaseRepo from '../base.repository';
 import { Container } from '../../../domain/entities/Container.entity';
 import { RequiredEntityData } from '@mikro-orm/core';
-import { resources } from '../../rights/resources.list';
+import { resources, ResourceType } from '../../rights/resources.list';
 import NodeRepo from '../megapolos.node.repository';
 import VolumeRepo from '../volume.repository';
 import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
@@ -31,6 +28,7 @@ import DbUserRepo from '../db/db.user.repository';
 import { ContainerVariable } from '../../../domain/entities/ContainerVariable.entity';
 import { makeEm, mem } from '../../db/mikro-orm';
 import { User } from '../../../domain/entities/User.entity';
+import { ContainerEnvOption } from '../../../domain/entities/ContainerEnvOption.entity';
 
 export enum ContainerLifeStatus {
   Stopped = 'stopped',
@@ -70,6 +68,10 @@ export type ContainerResult = Container & {
 export class ContainerRepo extends BaseRepo<Container> {
   get entityClass() {
     return Container;
+  }
+
+  get resourceType(): ResourceType {
+    return ResourceType.Container;
   }
 
   async create(
@@ -228,17 +230,13 @@ export class ContainerRepo extends BaseRepo<Container> {
     await new VolumeRepo(this.ctx).removeFromContainer(containerVolumeId);
   }
 
-  async getDataWithDetails(): Promise<ContainerResult> {
-    const container: ContainerResult = await this.getEntity();
-    const volumes = await new VolumeRepo(this.ctx).getVolumesOfContainer(
-      container.id
-    );
-    container.volumes = volumes;
-    const envs = await this.getContainerEnvOptions();
-    container.envs = envs.map((env) => ({
-      key: env.container_env_name,
-      value: env.container_env_value,
-    }));
+  async getDataWithDetails(): Promise<Container> {
+    const container: Container & { dockerStatus?: string } =
+      await makeEm().findOne(
+        Container,
+        { id: this.id },
+        { populate: ['volumes', 'envs'] }
+      );
     if (container.dockerRuntimeId) {
       try {
         const dockerStatus = (
@@ -251,6 +249,19 @@ export class ContainerRepo extends BaseRepo<Container> {
     }
 
     return container;
+  }
+
+  async getDockerStatus(): Promise<string> {
+    const container = await this.getEntity();
+    try {
+      if (!container.dockerRuntimeId) {
+        return null;
+      }
+      return (await docker.getContainer(container.dockerRuntimeId).inspect())
+        .State.Status;
+    } catch (e) {
+      return 'not exist';
+    }
   }
 
   async changeEnvs(
@@ -322,8 +333,17 @@ export class ContainerRepo extends BaseRepo<Container> {
     await this.update({ dockerRuntimeId: id });
   }
 
-  async getEnvs(): Promise<ContainerEnvOptionTable[]> {
-    return this.getContainerEnvOptions();
+  async getEnvs(): Promise<ContainerEnvOption[]> {
+    await this.checkActionAccess(resources.container.actions.read);
+    return (
+      await makeEm().findOneOrFail(
+        Container,
+        {
+          id: this.id,
+        },
+        { populate: ['envs'] }
+      )
+    ).envs.getItems();
   }
 
   async getVariables(): Promise<ContainerVariableTable[]> {
@@ -383,13 +403,6 @@ export class ContainerRepo extends BaseRepo<Container> {
     await this.checkActionAccess(resources.container.actions.read);
     const output = await this.shellCommand(`cat ${path}`).output;
     return output.stdout;
-  }
-
-  async getContainerEnvOptions(): Promise<ContainerEnvOptionTable[]> {
-    await this.checkActionAccess(resources.container.actions.read);
-    return knex<ContainerEnvOptionTable>('container_env_option')
-      .select('container_env_option.*')
-      .where('container_env_option.container_id', this.id);
   }
 
   async addContainerEnvOption(input: Partial<ContainerEnvOptionTable>) {

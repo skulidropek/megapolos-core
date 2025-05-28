@@ -36,6 +36,11 @@ export class UserResolver extends CreateBaseResolver(
   async activeUsers(@Ctx() ctx: Context): Promise<User[]> {
     return new UserRepo(ctx).getByFields({ userStatus: 'enable' });
   }
+
+  @Query(() => User)
+  async getMe(@Ctx() ctx: Context): Promise<User> {
+    return ctx.user;
+  }
 }
 
 @Resolver(() => User)
@@ -55,6 +60,11 @@ export class UserTableResolver extends BaseTableResolver {
     return await makeEm().find(GroupUser, {
       users: { id: user.id },
     });
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  async token(@Ctx() ctx: Context): Promise<string | null> {
+    return ctx.req.headers.token as string;
   }
 }
 

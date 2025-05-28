@@ -26,12 +26,11 @@ export class GroupUser extends BaseEntity {
   @Field({ nullable: true })
   disableDate?: Date;
 
-  @ManyToMany(() => User, undefined, { pivotTable: 'user_group_link' })
+  @ManyToMany({ entity: () => User, mappedBy: (o) => o.groups })
   @Field(() => [User])
   @Hint({ skip: true })
   users = new Collection<User>(this);
 
-  // one to many privileges
   @OneToMany(() => GroupUserPrivilege, (privilege) => privilege.groupUser)
   @Field(() => [GroupUserPrivilege])
   @Hint({ skip: true })

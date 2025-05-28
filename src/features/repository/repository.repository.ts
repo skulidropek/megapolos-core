@@ -5,12 +5,16 @@ import {
   Repository,
   RepositoryFiles,
 } from '../../domain/entities/Repository.entity';
-import { resources } from '../rights/resources.list';
+import { resources, ResourceType } from '../rights/resources.list';
 import { megapolosPath } from '../../..';
 
 export default class RepositoryRepo extends BaseRepo<Repository> {
   get entityClass() {
     return Repository;
+  }
+
+  get resourceType(): ResourceType {
+    return ResourceType.Repository;
   }
 
   async create(data: Partial<Repository>): Promise<Repository> {
@@ -43,6 +47,7 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   async fetch(): Promise<void> {
     await this.checkActionAccess(resources.repository.actions.fetch);
     const path = await this._getPath();
+    console.log('fetch', path);
     await simpleGit(path).fetch();
     await this.update({ lastFetchDate: new Date() });
   }

@@ -8,7 +8,6 @@ import { GroupUserPrivilege } from '../../../domain/entities/GroupUserPrivilege.
 import UserGroupRepo from './user.group.repository';
 import { GroupUser } from '../../../domain/entities/GroupUser.entity';
 import UserGroupPrivilegeRepo from './user.group.privilege.repository';
-import { UserTable } from '../../db/tables';
 import config from '../../../domain/config/config';
 
 export default class UserRepo extends BaseRepo<User> {
@@ -20,6 +19,11 @@ export default class UserRepo extends BaseRepo<User> {
 
   // OVERRIDE
   async create(entity: RequiredEntityData<User>): Promise<User> {
+    const groupUser = await new UserGroupRepo(this.ctx).create({
+      name: entity.name,
+    });
+    entity.groupUser = groupUser.id;
+
     const created = await super.create(entity);
     const em = makeEm();
     const userGroupLink = em.create(UserGroupLink, {
@@ -76,7 +80,9 @@ export default class UserRepo extends BaseRepo<User> {
     }
 
     if (toInsert.length) {
-      await makeEm().insertMany(UserGroupLink, toInsert);
+      const em = makeEm();
+      await em.insertMany(UserGroupLink, toInsert);
+      await em.flush();
     }
   }
 

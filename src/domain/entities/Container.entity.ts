@@ -1,4 +1,12 @@
-import { Entity, ManyToOne, type Opt, Property } from '@mikro-orm/core';
+import {
+  Collection,
+  Entity,
+  ManyToMany,
+  OneToMany,
+  ManyToOne,
+  type Opt,
+  Property,
+} from '@mikro-orm/core';
 import { Field, ID, ObjectType } from 'type-graphql';
 import { AppInstance } from './AppInstance.entity';
 import { Domain } from './Domain.entity';
@@ -6,6 +14,8 @@ import { Image } from './Image.entity';
 import { Node } from './Node.entity';
 import { BaseEntity } from './Base.entity';
 import { Hint } from '../../library/graphql_types_generator';
+import { ContainerVolume } from './ContainerVolume.entity';
+import { ContainerEnvOption } from './ContainerEnvOption.entity';
 
 @ObjectType()
 @Entity()
@@ -16,12 +26,12 @@ export class Container extends BaseEntity {
 
   @Field(() => Image)
   @ManyToOne({ entity: () => Image })
-  @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })
+  @Hint({ type: () => ID, skipOnClearlyInput: true })
   image!: Image;
 
   @Field(() => Node)
   @ManyToOne({ entity: () => Node })
-  @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })
+  @Hint({ type: () => ID, skipOnClearlyInput: true })
   node!: Node;
 
   @Field({ nullable: true })
@@ -30,11 +40,12 @@ export class Container extends BaseEntity {
 
   @Field(() => AppInstance)
   @ManyToOne({ entity: () => AppInstance })
-  @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })
+  @Hint({ type: () => ID })
   appInstance!: AppInstance;
 
   @Field(() => String)
   @Property({ type: 'string', length: -1 })
+  @Hint({ skipOnInput: true })
   lifeStatus: string & Opt = 'stopped';
 
   @Field({ nullable: true })
@@ -47,6 +58,22 @@ export class Container extends BaseEntity {
 
   @Field(() => Domain, { nullable: true })
   @ManyToOne({ entity: () => Domain, nullable: true })
-  @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })
+  @Hint({ type: () => ID })
   domain?: Domain;
+
+  @Field(() => [ContainerVolume])
+  @OneToMany({
+    entity: () => ContainerVolume,
+    mappedBy: 'container',
+  })
+  @Hint({ skip: true })
+  volumes = new Collection<ContainerVolume>(this);
+
+  @Field(() => [ContainerEnvOption])
+  @OneToMany({
+    entity: () => ContainerEnvOption,
+    mappedBy: 'container',
+  })
+  @Hint({ skip: true })
+  envs = new Collection<ContainerEnvOption>(this);
 }

@@ -2,7 +2,11 @@ import { EntityData, FilterQuery, RequiredEntityData } from '@mikro-orm/core';
 import { Context } from '../../api/graphql/server';
 import { BaseEntity } from '../../domain/entities/Base.entity';
 import { makeEm } from '../db/mikro-orm';
-import { defaultRights, resources } from '../rights/resources.list';
+import {
+  defaultRights,
+  resources,
+  ResourceType,
+} from '../rights/resources.list';
 import { RightsChecker } from '../rights/RightsChecker';
 
 export default abstract class BaseRepo<Entity extends BaseEntity> {
@@ -15,6 +19,10 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   ) {}
 
   abstract get entityClass(): typeof BaseEntity;
+
+  get resourceType(): ResourceType | undefined {
+    return undefined;
+  }
 
   get entityName(): string {
     return this.entityClass.name;
@@ -91,12 +99,12 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   }
 
   // RIGHTS CHECKERS
-  async haveActionAccess(action: string) {
+  async haveActionAccess(action: string): Promise<boolean> {
     if (!this.checkRights) {
       return true;
     }
 
-    if (!resources[this.entityClass.name]) {
+    if (!this.resourceType || !resources[this.resourceType]) {
       return true;
     }
 
