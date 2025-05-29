@@ -122,7 +122,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   }
 
   async filterEntitiesByAccess(entities: Entity[]): Promise<Entity[]> {
-    if (!resources[this.entityName]) {
+    if (!resources[this.entityName.toLowerCase()]) {
       return entities;
     }
 
