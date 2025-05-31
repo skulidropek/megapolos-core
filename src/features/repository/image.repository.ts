@@ -34,6 +34,7 @@ export default class ImageRepo extends BaseRepo<Image> {
 
   async build() {
     await this.checkActionAccess(resources.image.actions.build);
+    this.ctx = this.ctx.cloneNoRightsCheck();
     const data = await this.getEntity();
     if (!data.repository?.id) {
       return;

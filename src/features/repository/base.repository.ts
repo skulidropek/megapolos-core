@@ -100,6 +100,9 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
 
   // RIGHTS CHECKERS
   async haveActionAccess(action: string): Promise<boolean> {
+    if (this.ctx?.noRightsCheck) {
+      return true;
+    }
     if (!this.checkRights) {
       return true;
     }
@@ -122,7 +125,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   }
 
   async filterEntitiesByAccess(entities: Entity[]): Promise<Entity[]> {
-    if (!resources[this.entityName.toLowerCase()]) {
+    if (this.ctx?.noRightsCheck || !resources[this.entityName.toLowerCase()]) {
       return entities;
     }
 
