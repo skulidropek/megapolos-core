@@ -1,9 +1,12 @@
 {
-    "secret": "",
-    "connectionString": "",
-    "registryHost": "",
-    "registryUser": "",
-    "registryPassword": "",
-    "debug": false,
-    "devMode": false
+    "secret": "",           // секретный ключ шифрования ключей, любая строка
+    "connectionString": "", // строка подключения к БД, формат вида `postgres://postgres:pgdata@localhost:5432/megapolos`
+    "registryHost": "",     // хост реестра образов
+    "registryUser": "",     // пользователь реестра образов
+    "registryPassword": "", // пароль реестра образов
+    "debug": false,         // больше информации в логах, когда истинно
+    "devMode": false,       // запуск всех контейнеров на локалхосте, когда истинно
+    "publicSchema": false,  // публиковать graphql схему, когда истинно
+    "allowUnauthorized": false, // ??? - предстоит выяснить
+    "noRoot": false             // возможен запуск без рута, когда истинно
 }
