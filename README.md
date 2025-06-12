@@ -10,6 +10,8 @@ https://t.me/megapolos
 ## Как запустить
 Запуск возможен только на linux, для windows возможен запуск через wsl. Если запуск внутри wsl, то нужно установить всю среду (node, nodemon) через wsl, чтобы не запустить случайно через windows. Используемая база данных - postgres.
 
+Временно запускать стоит на [ветке `next`](https://gitlab.com/megapolos/megapolos-core/-/tree/next?ref_type=heads), а не `main`.
+
 **Порядок установки megapolos-core:**
 - Соберите базу данных из newpostgresql.sql в папке install.
 - Создайте config.json по примеру config.sample.json в папке config, в secret впишите токен ключ для генерации токенов и connectionString для соединения с базой данных
