@@ -4,3 +4,4 @@ rqlite
 config/config.json
 /.vscode
 dist
+temp
