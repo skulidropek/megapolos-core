@@ -572,3 +572,9 @@ export interface ContainerDbTable extends IEntity {
   db_user_id: string;
   name: string;
 }
+
+export interface TestCase {
+  name: string;
+  title: string;
+  description: string;
+}
