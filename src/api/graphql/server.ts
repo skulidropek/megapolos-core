@@ -166,10 +166,32 @@ import {
 import { DbTableResolver } from './resolvers/dbms.resolver';
 import { DbSchemaTableResolver } from './resolvers/dbms.resolver';
 
-export interface Context {
+export class Context {
+  constructor(data: {
+    req: express.Request;
+    res: express.Response;
+    user?: User;
+    noRightsCheck?: boolean;
+  }) {
+    this.req = data.req;
+    this.res = data.res;
+    this.user = data.user;
+    this.noRightsCheck = data.noRightsCheck || false;
+  }
+
   req: express.Request;
   res: express.Response;
   user?: User;
+  noRightsCheck?: boolean;
+  cloneNoRightsCheck() {
+    const ctx = new Context({
+      req: this.req,
+      res: this.res,
+      user: this.user,
+      noRightsCheck: true,
+    });
+    return ctx;
+  }
 }
 
 async function bootstrap() {
@@ -231,7 +253,7 @@ async function bootstrap() {
           req.body.query?.includes('__schema');
 
         if (config.publicSchema && isIntrospection) {
-          return { req, res, user: undefined }; // Пропускаем авторизацию для introspection
+          return new Context({ req, res, user: undefined }); // Пропускаем авторизацию для introspection
         }
 
         const token = req.headers.token || '';
@@ -242,7 +264,7 @@ async function bootstrap() {
           };
         } catch (err) {
           if (config.allowUnauthorized) {
-            return { req, res, user: undefined };
+            return new Context({ req, res, user: undefined });
           } else {
             throw new Error('Unauthorized');
           }
@@ -254,7 +276,7 @@ async function bootstrap() {
         if (!userData) {
           throw new Error('Unauthorized');
         } else {
-          return { user: userData, req, res };
+          return new Context({ user: userData, req, res });
         }
       },
     })
