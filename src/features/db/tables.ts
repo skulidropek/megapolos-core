@@ -573,7 +573,7 @@ export interface ContainerDbTable extends IEntity {
   name: string;
 }
 
-export interface TestCase {
+export interface TestCaseTable {
   name: string;
   title: string;
   description: string;
