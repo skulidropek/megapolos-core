@@ -9,9 +9,9 @@ export class TestCase extends BaseEntity {
   @Field()
   name!: string;
 
-  @Property({ length: -1, nullable: true })
-  @Field({ nullable: true })
-  title?: string;
+  @Property({ length: -1 })
+  @Field()
+  title!: string;
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
