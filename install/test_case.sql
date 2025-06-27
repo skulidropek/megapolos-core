@@ -12,8 +12,3 @@ CREATE TABLE IF NOT EXISTS public.test_case
     update_date timestamp without time zone,
     CONSTRAINT test_case_pkey PRIMARY KEY (id)
 )
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.test_case
-    OWNER to postgres;
