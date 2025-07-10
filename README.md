@@ -12,6 +12,14 @@ https://t.me/megapolos
 
 Временно запускать стоит на ветке `next`, а не `main`.
 
+### Системные требования
+
+- Ubuntu 20.04
+- nodejs 18
+- postgres 16.1
+- docker
+- ansible
+
 ### Порядок установки megapolos-core
 
 - Соберите базу данных из newpostgresql.sql в папке install.
