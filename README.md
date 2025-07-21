@@ -10,19 +10,35 @@ https://t.me/megapolos
 ## Как запустить
 Запуск возможен только на linux, для windows возможен запуск через wsl. Если запуск внутри wsl, то нужно установить всю среду (node, nodemon) через wsl, чтобы не запустить случайно через windows. Используемая база данных - postgres.
 
-**Порядок установки megapolos-core:**
+Временно запускать стоит на ветке `next`, а не `main`.
+
+### Системные требования
+
+- Ubuntu 20.04
+- nodejs 18
+- postgres 16.1
+- docker
+- ansible
+
+### Порядок установки megapolos-core
+
 - Соберите базу данных из newpostgresql.sql в папке install.
-- Создайте config.json по примеру config.sample.json в папке config, в secret впишите токен ключ для генерации токенов и connectionString для соединения с базой данных
-- Если вы хотите чтобы Мегаполос работал на локалхостер, в конфигурации devMode: true
+- Создайте config.json по примеру `config.sample.json` в папке config, в secret впишите токен ключ для генерации токенов и connectionString для соединения с базой данных
+- Если вы хотите чтобы Мегаполос работал на локалхосте, в конфигурации `devMode: true`.
+- Также для разработки удобно запускать без рута. Для этого укажите в конфигурации `noRoot: true`.
 - Установите все зависимости командой *npm i*.
 - Запускайте только от лица root.
 
-**Установка megapolos-gui:**
-- Создайте config.json по примеру config.sample.json. Core использует настройки порта такие, как и указано в config.sample.json.
-- Установите все зависимости командой *npm i*.
+### Установка megapolos-gui
 
-**Запуск:**
-- Запустите megapolos-core командой *sudo nodemon index.js*.
+- Создайте config.json по примеру config.sample.json. Core использует настройки порта такие, как и указано в config.sample.json.
+- Установите все зависимости командой *npm i*. (при ошибке используйте `npm install --force`)
+
+### Запуск
+
+- Запустите megapolos-core командой `sudo nodemon index.ts`.
+  (если указали `noRoot: true`, то без `sudo`)
+- Если будет жаловаться на отсутствие команды `nodemon`, нужно выполнить `sudo npm i -g nodemon ts-node` вместе с [инструкциями](https://stackoverflow.com/a/40078875).
 - После запуска скопируйте токен из консоли. 
-- Запустите megapolos-gui командой *npm start*.
+- Запустите megapolos-gui командой `npm start`.
 - Вставьте полученный токен в открывшееся в браузере окошко. 
