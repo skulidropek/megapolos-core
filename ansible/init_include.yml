@@ -36,7 +36,7 @@
   community.docker.docker_container:
     name: nginx
     image: nginx
-    restart: always
+    restart: yes
     ports:
       - "80:80"
       - "443:443"
