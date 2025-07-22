@@ -55,18 +55,34 @@ export class Image extends BaseEntity {
   @Hint({ defaultValue: '', skip: true })
   tags: string & Opt = '';
 
+  @Property()
+  @Field()
+  buildNumber!: number;
+
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
-  commitId?: string;
+  version!: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  versionComment!: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  commitId!: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  branch!: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  appVersionId!: string;
 
   @ManyToOne({ entity: () => Repository, nullable: true })
   @Field(() => Repository, { nullable: true })
   @Hint({ type: () => ID })
   repository?: Repository;
-
-  @Property({ length: -1, nullable: true })
-  @Field({ nullable: true })
-  branch?: string;
 
   @Enum({ items: () => ImageStatus })
   @Field(() => ImageStatus)

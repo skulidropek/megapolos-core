@@ -11,4 +11,8 @@ export class InstanceType {
   @Property({ length: -1, unique: 'instance_type_name_key' })
   @Field()
   name!: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  appVersionId!: string;
 }
