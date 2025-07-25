@@ -19,11 +19,12 @@ export default class UserRepo extends BaseRepo<User> {
 
   // OVERRIDE
   async create(entity: RequiredEntityData<User>): Promise<User> {
-    const groupUser = await new UserGroupRepo(this.ctx).create({
-      name: entity.name,
-    });
-    entity.groupUser = groupUser.id;
-
+    TODO: 'Дублирует создания группы';
+    // const groupUser = await new UserGroupRepo(this.ctx).create({
+    //   name: entity.name,
+    // });
+    // console.log('GROUPUSER', groupUser);
+    // entity.groupUser = groupUser.id;
     const created = await super.create(entity);
     const em = makeEm();
     const userGroupLink = em.create(UserGroupLink, {
