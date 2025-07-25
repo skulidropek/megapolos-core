@@ -47,8 +47,8 @@ export class VolumeResolver extends CreateBaseResolver(
     @Arg('name') name: string,
     @Arg('innerPath') innerPath: string,
     @Ctx() ctx: Context
-  ): Promise<ContainerVolume> {
-    return new VolumeRepo(ctx, volumeId).addToContainer(
+  ): Promise<boolean> {
+    return !!new VolumeRepo(ctx, volumeId).addToContainer(
       containerId,
       name,
       innerPath
