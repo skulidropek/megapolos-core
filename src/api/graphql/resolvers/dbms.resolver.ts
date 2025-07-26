@@ -32,16 +32,11 @@ import DbUserRepo from '../../../features/repository/db/db.user.repository';
 import DbSchemaRepo from '../../../features/repository/db/db.schema.repository';
 import DbRepo from '../../../features/repository/db/db.repository';
 import { makeEm } from '../../../features/db/mikro-orm';
+import { DbUserInput } from './db.user.resolver';
 
 export const DbInput = generateGraphQLInputType(
   Db,
   'DbInput',
-  GenerationType.input
-);
-
-export const DbUserInput = generateGraphQLInputType(
-  DbUser,
-  'DbUserInput',
   GenerationType.input
 );
 
@@ -206,7 +201,7 @@ export class DbmsResolver {
     @Arg('dbId') dbId: string,
     @Arg('withoutChange', { nullable: true }) withoutChange: boolean
   ): Promise<boolean> {
-    return (await DbmsRepo.getById(dbId)).addUserToDb(
+    return (await DbmsRepo.getByDbId(dbId)).addUserToDb(
       userId,
       dbId,
       withoutChange
@@ -215,7 +210,7 @@ export class DbmsResolver {
 
   @Mutation(() => Boolean)
   async restoreDbUsers(@Arg('dbId') dbId: string): Promise<boolean> {
-    return (await DbmsRepo.getById(dbId)).restoreDbPrivileges(dbId);
+    return (await DbmsRepo.getByDbId(dbId)).restoreDbPrivileges(dbId);
   }
 
   @Mutation(() => DbSchema)
@@ -223,7 +218,7 @@ export class DbmsResolver {
     @Arg('dbId') dbId: string,
     @Arg('name', { nullable: true }) name: string
   ): Promise<DbSchema> {
-    return (await DbmsRepo.getById(dbId)).saveSchema(dbId, name);
+    return (await DbmsRepo.getByDbId(dbId)).saveSchema(dbId, name);
   }
 
   @Mutation(() => DbBackup)
@@ -232,7 +227,7 @@ export class DbmsResolver {
     @Arg('name', { nullable: true }) name: string,
     @Arg('withoutData', { nullable: true }) withoutData: boolean
   ): Promise<DbBackup> {
-    return (await DbmsRepo.getById(dbId)).backup(dbId, name, withoutData);
+    return (await DbmsRepo.getByDbId(dbId)).backup(dbId, name, withoutData);
   }
 
   @Mutation(() => Boolean)
@@ -240,7 +235,7 @@ export class DbmsResolver {
     @Arg('dbId') dbId: string,
     @Arg('backupId') backupId: string
   ): Promise<boolean> {
-    return (await DbmsRepo.getById(dbId)).restore(dbId, backupId);
+    return (await DbmsRepo.getByDbId(dbId)).restore(dbId, backupId);
   }
 
   @Mutation(() => Boolean)
@@ -249,7 +244,7 @@ export class DbmsResolver {
     @Arg('toDbId') toDbId: string,
     @Arg('fromDbUserId', { nullable: true }) fromDbUserId: string
   ): Promise<boolean> {
-    return (await DbmsRepo.getById(fromDbId)).cloneDb(
+    return (await DbmsRepo.getByDbId(fromDbId)).cloneDb(
       fromDbId,
       toDbId,
       fromDbUserId
