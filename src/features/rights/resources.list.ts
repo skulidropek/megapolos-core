@@ -30,6 +30,10 @@ const resources = {
     type: 'app_instance',
     actions: { ...defaultRights, build: 'build', manage: 'manage' },
   },
+  app_version: {
+    type: 'app_version',
+    actions: { ...defaultRights },
+  },
   app: {
     type: 'app',
     actions: { ...defaultRights },
@@ -41,6 +45,7 @@ enum ResourceType {
   Container = 'container',
   Image = 'image',
   AppInstance = 'app_instance',
+  AppVersion = 'app_version',
   App = 'app',
 }
 
