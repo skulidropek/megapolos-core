@@ -7,15 +7,16 @@ import PostgresDmbs from './postgres.dbms.repository';
 
 class DbmsRepo {
   static async getById(id: string): Promise<BaseDbmsRepo> {
-    const dbms: DbmsTable = await knex
-      .select()
-      .from('dbms')
-      .where('id', id)
-      .first();
+    const dbms = await new BaseDbmsRepo(undefined, id).getEntity();
     if (dbms?.type === 'postgres') {
       return new PostgresDmbs(undefined, dbms.id);
     }
     throw new Error('Dbms type not found');
+  }
+
+  static async getByDbId(id: string): Promise<BaseDbmsRepo> {
+    const db = await new DbRepo(undefined, id).getEntity();
+    return DbmsRepo.getById(db.dbms.id);
   }
 
   static async getByType(type: string): Promise<BaseDbmsRepo> {

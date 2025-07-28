@@ -51,8 +51,8 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
     withoutChange: boolean = false
   ): Promise<boolean> {
     await mem(async (em) => {
-      const db = em.getReference(Db, dbId);
-      const dbUser = em.getReference(DbUser, userId);
+      const db = await em.findOne(Db, dbId);
+      const dbUser = await em.findOne(DbUser, userId);
       db.users.add(dbUser);
       await em.flush();
     });

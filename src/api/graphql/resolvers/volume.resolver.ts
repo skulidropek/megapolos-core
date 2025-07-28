@@ -42,12 +42,17 @@ export class VolumeResolver extends CreateBaseResolver(
 ) {
   @Mutation(() => Boolean)
   async addVolumeToContainer(
+    @Arg('volumeId') volumeId: string,
     @Arg('containerId') containerId: string,
     @Arg('name') name: string,
     @Arg('innerPath') innerPath: string,
     @Ctx() ctx: Context
-  ): Promise<ContainerVolume> {
-    return new VolumeRepo(ctx).addToContainer(containerId, name, innerPath);
+  ): Promise<boolean> {
+    return !!new VolumeRepo(ctx, volumeId).addToContainer(
+      containerId,
+      name,
+      innerPath
+    );
   }
 
   @Mutation(() => Boolean)

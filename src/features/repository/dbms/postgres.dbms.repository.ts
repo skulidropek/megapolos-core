@@ -44,7 +44,7 @@ export default class PostgresDmbs extends BaseDbmsRepo {
       [db.name]
     );
     if (!exists.rows.length) {
-      await knex.raw('CREATE DATABASE ?', [db.name]);
+      await knex.raw(`CREATE DATABASE ${db.name}`);
     }
     return true;
   }
@@ -63,34 +63,29 @@ export default class PostgresDmbs extends BaseDbmsRepo {
     if (!exists.rows.length) {
       await (
         await this.getKnex('postgres')
-      ).raw('CREATE USER ? LOGIN PASSWORD ?', [user.name, user.password]);
+      ).raw(`CREATE USER ${user.name} LOGIN PASSWORD '${user.password}'`);
     } else {
       await (
         await this.getKnex('postgres')
-      ).raw('ALTER USER ? WITH PASSWORD ?', [user.name, user.password]);
+      ).raw(`ALTER USER ${user.name} WITH PASSWORD '${user.password}'`);
     }
     return true;
   }
 
   async addUserToDbChange(userName: string, dbName: string): Promise<boolean> {
     const knex = await this.getKnex(dbName);
-    await knex.raw('GRANT ALL PRIVILEGES ON DATABASE ? TO ?', [
-      dbName,
-      userName,
-    ]);
-    await knex.raw('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ?', [
-      userName,
-    ]);
-    await knex.raw('GRANT ALL PRIVILEGES ON SCHEMA public TO ?', [userName]);
+    await knex.raw(`GRANT ALL PRIVILEGES ON DATABASE ${dbName} TO ${userName}`);
+    await knex.raw(
+      `GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${userName}`
+    );
+    await knex.raw(`GRANT ALL PRIVILEGES ON SCHEMA public TO ${userName}`);
     await knex.raw(
       `ALTER DEFAULT PRIVILEGES IN SCHEMA public
-        GRANT ALL PRIVILEGES ON TABLES TO ?`,
-      [userName]
+        GRANT ALL PRIVILEGES ON TABLES TO ${userName}`
     );
     await knex.raw(
       `ALTER DEFAULT PRIVILEGES IN SCHEMA public
-        GRANT ALL PRIVILEGES ON SEQUENCES TO ?`,
-      [userName]
+        GRANT ALL PRIVILEGES ON SEQUENCES TO ${userName}`
     );
     return true;
   }
