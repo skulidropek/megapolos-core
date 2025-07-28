@@ -32,11 +32,13 @@ export default class ImageRepo extends BaseRepo<Image> {
     return ResourceType.Image;
   }
 
-  async build() {
+  // TODO: Promise<void> - needed?
+  async build(): Promise<void> {
     await this.checkActionAccess(resources.image.actions.build);
     this.ctx = this.ctx.cloneNoRightsCheck();
     const data = await this.getEntity();
     if (!data.repository?.id) {
+      // TODO: is it OK to just return? logging? throwing?
       return;
     }
     const path = megapolosPath + '/data/' + uuidv4();
@@ -100,6 +102,42 @@ export default class ImageRepo extends BaseRepo<Image> {
           await fse.remove(path);
         }
       }
+    }
+  }
+
+  async deleteDockerImage(): Promise<void> {
+    await this.checkActionAccess(resources.image.actions.remove);
+    const data = await this.getEntity();
+    if (!data.image) {
+      // TODO: decide what to do here. logging? throwing?
+      throw new Error(
+        'Image name is empty when trying to delete Docker image!'
+      );
+    }
+
+    const log = new LogRepo(this.ctx);
+    await log.create({
+      name: 'Delete docker image ' + data.name,
+      objectId: this.id,
+      objectName: data.name,
+      type: LogType.ImageDelete,
+    });
+
+    try {
+      // TODO: '-f' flag - needed?
+      const result = await NodeRepo.currentNode.shellCommand(
+        `docker rmi -f ${data.image}`,
+        new UserRepo(this.ctx, this.ctx.user.id),
+        log
+      ).output;
+
+      await this.update({ status: ImageStatus.NotExist });
+
+      console.log(result);
+    } catch (error) {
+      console.error('Delete docker image error:', error);
+      // TODO: rethrowing?
+      throw error;
     }
   }
 

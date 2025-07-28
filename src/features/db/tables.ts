@@ -500,6 +500,7 @@ export interface ArtifactTable {
 
 export enum LogType {
   ImageBuild = 'image_build',
+  ImageDelete = 'image_delete',
   NodeUpdate = 'node_update',
   NodeInit = 'node_init',
   NodeInstallRegistry = 'node_install_registry',
