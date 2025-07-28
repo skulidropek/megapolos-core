@@ -126,6 +126,44 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     return result;
   }
 
+  // TODO - make change...Version static?
+  async changeInstanceVersion(
+    instanceId: string,
+    appVersionId: string
+  ): Promise<boolean> {
+    await this.checkActionAccess(resources.app_instance.actions.edit);
+
+    const repo = new AppInstanceRepo(this.ctx, instanceId);
+    const entity = await repo.getEntity();
+
+    if (!entity) {
+      // TODO: decide what to do here. logging? throwing?
+      throw new Error(`AppInstance with id ${instanceId} not found!`);
+    }
+    const result = await repo.update({ appVersionId });
+    return result;
+  }
+
+  async changeInstancesVersion(
+    instancesIds: string[],
+    appVersionId: string
+  ): Promise<boolean> {
+    await this.checkActionAccess(resources.app_instance.actions.edit);
+
+    for (const id of instancesIds) {
+      const repo = new AppInstanceRepo(this.ctx, id);
+      const entity = await repo.getEntity();
+      if (!entity) {
+        // TODO: decide what to do here. logging? throwing?
+        console.warn(`AppInstance with id ${id} not found, skipped!`);
+        continue;
+      }
+      await repo.update({ appVersionId });
+    }
+
+    return true;
+  }
+
   async delete(): Promise<boolean> {
     await this.checkActionAccess(resources.app_instance.actions.remove);
     const data = await this.getEntity();

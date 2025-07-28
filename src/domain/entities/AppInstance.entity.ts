@@ -33,6 +33,10 @@ export class AppInstance extends BaseEntity {
   @Hint({ type: () => ID })
   app!: App;
 
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  appVersionId!: string;
+
   @ManyToOne({ entity: () => InstanceType, nullable: true })
   @Field(() => InstanceType, { nullable: true })
   @Hint({ type: () => ID })
