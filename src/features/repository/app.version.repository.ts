@@ -2,6 +2,7 @@ import EventsObserver from '../events/eventsObserver';
 import { resources, ResourceType } from '../rights/resources.list';
 import BaseRepo from './base.repository';
 import { AppVersion } from '../../domain/entities/AppVersion.entity';
+import { Image } from 'dockerode';
 
 export default class AppVersionRepo extends BaseRepo<AppVersion> {
   get entityClass() {
@@ -14,7 +15,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
 
   async createAppVersion(
     app_id: string,
-    image_ids: string[]
+    images_data: AppVersionInput[],
   ): Promise<AppVersion> {
     await this.checkActionAccess(resources.app_version.actions.create);
 
