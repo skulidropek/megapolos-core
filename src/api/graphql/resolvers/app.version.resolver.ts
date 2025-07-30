@@ -27,19 +27,35 @@ class AppVersionInput {
   image_data: string;
 }
 
+@InputType()
+class AppVersionUpdateInput {
+  @Field()
+  app_id!: string;
+
+  @Field()
+  build_number!: number;
+
+  @Field()
+  version!: string;
+
+  @Field({ nullable: true })
+  version_comment?: string;
+}
+
 @Resolver()
 export class AppVersionResolver extends CreateBaseResolver(
   'AppVersion',
   AppVersionRepo,
   AppVersion,
-  AppVersionInput
+  AppVersionInput,
+  AppVersionUpdateInput
 ) {
-  @Mutation(() => Boolean)
+  @Mutation(() => AppVersion)
   async createAppVersion(
-    @Arg('id') id: string,
+    @Arg('data') data: AppVersionInput,
     @Ctx() ctx: Context
-  ): Promise<boolean> {
-    await new AppVersionRepo(ctx, id).createAppVersion();
-    return true;
+  ): Promise<AppVersion> {
+    const repo = new AppVersionRepo(ctx);
+    return repo.create(data);
   }
 }
