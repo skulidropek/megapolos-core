@@ -4,6 +4,7 @@ import {
   Enum,
   ManyToOne,
   OneToMany,
+  ManyToMany,
   type Opt,
   Property,
 } from '@mikro-orm/core';
@@ -13,6 +14,7 @@ import { App } from './App.entity';
 import { Repository } from './Repository.entity';
 import { Hint } from '../../library/graphql_types_generator';
 import { ImageEnvRequirement } from './ImageEnvRequirement.entity';
+import { AppVersion } from './AppVersion.entity';
 
 export enum ImageStatus {
   NotExist = 'not_exist',
@@ -97,4 +99,7 @@ export class Image extends BaseEntity {
   @Field(() => [ImageEnvRequirement])
   @Hint({ skip: true })
   envs = new Collection<ImageEnvRequirement>(this);
+
+  @ManyToMany(() => AppVersion, (appVersion) => appVersion.images)
+  appVersions = new Collection<AppVersion>(this);
 }
