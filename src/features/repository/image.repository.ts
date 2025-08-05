@@ -35,6 +35,7 @@ export default class ImageRepo extends BaseRepo<Image> {
     return ResourceType.Image;
   }
 
+  // TODO: rewrite via dockerode
   async build() {
     await this.checkActionAccess(resources.image.actions.build);
     this.ctx = this.ctx.cloneNoRightsCheck();
