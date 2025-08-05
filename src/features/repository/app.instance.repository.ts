@@ -11,6 +11,7 @@ import {
 } from './cantainer/container.repository';
 import { RequiredEntityData } from '@mikro-orm/core';
 import { Container } from '../../domain/entities/Container.entity';
+import { makeEm } from '../db/mikro-orm';
 
 export interface InstanceRuntimeVariables {
   containers: {
@@ -126,39 +127,31 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     return result;
   }
 
-  // TODO - make change...Version static?
   async changeInstanceVersion(
     instanceId: string,
     appVersionId: string
   ): Promise<boolean> {
     await this.checkActionAccess(resources.app_instance.actions.edit);
 
-    const repo = new AppInstanceRepo(this.ctx, instanceId);
-    const entity = await repo.getEntity();
-
-    if (!entity) {
-      // TODO: decide what to do here. logging? throwing?
+    let em = makeEm();
+    let instanceToUpdate: AppInstance = await em.findOne(AppInstance, {
+      id: instanceId,
+    });
+    if (!instanceToUpdate) {
       throw new Error(`AppInstance with id ${instanceId} not found!`);
     }
-    const result = await repo.update({ appVersionId });
-    return result;
+    instanceToUpdate.appVersionId = appVersionId;
+    await em.persistAndFlush(instanceToUpdate);
+
+    return true;
   }
 
   async changeInstancesVersion(
     instancesIds: string[],
     appVersionId: string
   ): Promise<boolean> {
-    await this.checkActionAccess(resources.app_instance.actions.edit);
-
     for (const id of instancesIds) {
-      const repo = new AppInstanceRepo(this.ctx, id);
-      const entity = await repo.getEntity();
-      if (!entity) {
-        // TODO: decide what to do here. logging? throwing?
-        console.warn(`AppInstance with id ${id} not found, skipped!`);
-        continue;
-      }
-      await repo.update({ appVersionId });
+      await this.changeInstanceVersion(id, appVersionId);
     }
 
     return true;
