@@ -22,8 +22,11 @@ import { Log } from '../../domain/entities/Log.entity';
 import NodeRepo from './megapolos.node.repository';
 import { ImageEnvRequirement } from '../../domain/entities/ImageEnvRequirement.entity';
 import { ImageEnvRequirementInput } from '../../api/graphql/resolvers/image.resolver';
+import Docker from 'dockerode';
 
 export default class ImageRepo extends BaseRepo<Image> {
+  private docker = new Docker();
+
   get entityClass() {
     return Image;
   }
@@ -128,17 +131,12 @@ export default class ImageRepo extends BaseRepo<Image> {
     });
 
     try {
-      const result = await NodeRepo.currentNode.shellCommand(
-        `docker rmi -f ${data.image}`,
-        new UserRepo(this.ctx, this.ctx.user.id),
-        log
-      ).output;
-
+      const image = this.docker.getImage(data.image);
+      await image.remove();
+      console.log(`Docker image ${data.image} deleted successfully.`);
       await this.update({ status: ImageStatus.NotExist });
-
-      console.log(result);
     } catch (error) {
-      console.error('Delete docker image error:', error);
+      console.error('Failed to delete Docker image:', error);
       throw error;
     }
   }
