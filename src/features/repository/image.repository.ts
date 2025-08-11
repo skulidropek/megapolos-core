@@ -114,6 +114,7 @@ export default class ImageRepo extends BaseRepo<Image> {
     }
   }
 
+  // TODO -> dockerCore
   async deleteDockerImage(): Promise<void> {
     await this.checkActionAccess(resources.image.actions.remove);
     const data = await this.getEntity();
