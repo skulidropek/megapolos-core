@@ -16,7 +16,7 @@ export class AppVersion extends BaseEntity {
 
   @Property({ length: -1 })
   @Field()
-  version!: string;
+  version?: string;
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })

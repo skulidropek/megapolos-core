@@ -63,11 +63,11 @@ export class Image extends BaseEntity {
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
-  version!: string;
+  version?: string;
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
-  versionComment!: string;
+  versionComment?: string;
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
@@ -76,10 +76,6 @@ export class Image extends BaseEntity {
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
   branch!: string;
-
-  @Property({ length: -1, nullable: true })
-  @Field({ nullable: true })
-  appVersionId!: string;
 
   @ManyToOne({ entity: () => Repository, nullable: true })
   @Field(() => Repository, { nullable: true })
