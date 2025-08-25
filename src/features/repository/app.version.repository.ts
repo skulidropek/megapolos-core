@@ -26,8 +26,6 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
   ): Promise<AppVersion> {
     await this.checkActionAccess(resources.app_version.actions.create);
 
-    const em = makeEm();
-
     const appVersion = await super.create({
       app_id: appVersionData.app_id,
       build_number: appVersionData.build_number,
@@ -41,7 +39,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     for (const input of images_data) {
       if (input.image_id) {
         // Existing image case
-        const image = await em.findOne(Image, { id: input.image_id });
+        const image = await new ImageRepo(this.ctx, input.image_id).getEntity();
         if (!image) {
           throw new Error(`Image with id ${input.image_id} not found`);
         }
@@ -49,10 +47,11 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
       } else if (input.image_data) {
         // New image case
         const image = await new ImageRepo(this.ctx).create(input.image_data);
-        await em.persistAndFlush(image);
         imageIds.push(image.id);
       }
     }
+
+    const em = makeEm();
 
     for (const imageId of imageIds) {
       const image = await em.findOne(Image, { id: imageId });
