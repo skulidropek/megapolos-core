@@ -14,6 +14,10 @@ export class AppVersion extends BaseEntity {
   @Field()
   build_number!: number;
 
+  // TODO - suspicious inconsistence of 'version?' vs '@Field()' -
+  // the field is obligatory in graphQL ('nullable: true' is not set)
+  // but not in typescript ('?' symbol)
+  // (such inconsistence is present in many places)
   @Property({ length: -1 })
   @Field()
   version?: string;
