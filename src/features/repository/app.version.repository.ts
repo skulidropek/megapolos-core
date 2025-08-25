@@ -39,21 +39,16 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     const imageIds: string[] = [];
 
     for (const input of images_data) {
-      let image: Image;
-
-      if ('image_id' in input) {
-        // Update AppVersion with existing image
-        const appVersion = await em.findOne(AppVersion, { id: this.id });
+      if (input.image_id) {
+        // Existing image case
         const image = await em.findOne(Image, { id: input.image_id });
         if (!image) {
           throw new Error(`Image with id ${input.image_id} not found`);
         }
         imageIds.push(input.image_id);
-      } else if ('image_data' in input) {
-        // Create new image and add it to AppVersion
-        const image = new Image();
-        image.id = input.image_id;
-        let imageRepo = new ImageRepo(this.ctx).create(input.image_data);
+      } else if (input.image_data) {
+        // New image case
+        const image = await new ImageRepo(this.ctx).create(input.image_data);
         await em.persistAndFlush(image);
         imageIds.push(image.id);
       }
