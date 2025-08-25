@@ -50,7 +50,6 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
     dbId: string,
     withoutChange: boolean = false
   ): Promise<boolean> {
-    // TODO: this for many to many
     await mem(async (em) => {
       const db = await em.findOne(Db, dbId);
       const dbUser = await em.findOne(DbUser, userId);
