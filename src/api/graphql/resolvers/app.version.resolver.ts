@@ -19,17 +19,8 @@ import {
   GenerationType,
 } from '../../../library/graphql_types_generator';
 
-export @InputType()
-class AppVersionInput {
-  @Field()
-  image_id: string;
-
-  @Field({ nullable: true })
-  image_data: Image;
-}
-
-export @InputType()
-class AppVersionUpdateInput {
+@InputType()
+export class AppVersionInput {
   @Field()
   app_id!: string;
 
@@ -37,10 +28,48 @@ class AppVersionUpdateInput {
   build_number!: number;
 
   @Field()
-  version!: string;
+  version?: string;
 
   @Field({ nullable: true })
   version_comment?: string;
+
+  toStruct() {
+    return {
+      app_id: this.app_id,
+      build_number: this.build_number,
+      version: this.version,
+      version_comment: this.version_comment,
+    };
+  }
+}
+
+@InputType()
+export class AppVersionImageInput {
+  @Field()
+  image_id?: string;
+
+  @Field({ nullable: true })
+  image_data?: Image;
+}
+
+@InputType()
+export class AppVersionUpdateInput {
+  @Field()
+  build_number!: number;
+
+  @Field()
+  version?: string;
+
+  @Field({ nullable: true })
+  version_comment?: string;
+
+  toStruct() {
+    return {
+      build_number: this.build_number,
+      version: this.version,
+      version_comment: this.version_comment,
+    };
+  }
 }
 
 @Resolver()
@@ -53,10 +82,11 @@ export class AppVersionResolver extends CreateBaseResolver(
 ) {
   @Mutation(() => AppVersion)
   async createAppVersion(
-    @Arg('data') data: AppVersionInput,
+    @Arg('app_version_data') app_version_data: AppVersionInput,
+    @Arg('images') images: AppVersionImageInput[],
     @Ctx() ctx: Context
   ): Promise<AppVersion> {
     const repo = new AppVersionRepo(ctx);
-    return repo.create(data);
+    return repo.createAppVersion(app_version_data, images);
   }
 }
