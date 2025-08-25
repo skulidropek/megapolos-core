@@ -4,6 +4,8 @@ import BaseRepo from './base.repository';
 import { AppInstance } from '../../domain/entities/AppInstance.entity';
 import UserRepo from './user/user.repository';
 import UserGroupRepo from './user/user.group.repository';
+import ImageRepo from './image.repository';
+import { Image } from '../../domain/entities/Image.entity';
 import {
   ContainerRepo,
   ContainerResult,
@@ -12,6 +14,7 @@ import {
 import { RequiredEntityData } from '@mikro-orm/core';
 import { Container } from '../../domain/entities/Container.entity';
 import { makeEm } from '../db/mikro-orm';
+import AppVersionRepo from './app.version.repository';
 
 export interface InstanceRuntimeVariables {
   containers: {
@@ -127,21 +130,22 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     return result;
   }
 
-  async changeInstanceVersion(
-    instanceId: string,
-    appVersionId: string
-  ): Promise<boolean> {
+  async changeInstanceVersion(appVersionId: string): Promise<boolean> {
     await this.checkActionAccess(resources.app_instance.actions.edit);
 
-    let em = makeEm();
-    let instanceToUpdate: AppInstance = await em.findOne(AppInstance, {
-      id: instanceId,
-    });
-    if (!instanceToUpdate) {
-      throw new Error(`AppInstance with id ${instanceId} not found!`);
+    let ar = new AppVersionRepo(this.ctx, appVersionId);
+    await ar.checkActionAccess(resources.app_version.actions.read);
+
+    await this.update({ appVersionId: appVersionId });
+
+    const containers = await this.getContainers();
+    for (const container of containers) {
+      let cr = new ContainerRepo(this.ctx, container.id);
+      let img = await cr.getImage();
+      let gitRepo = (await img.getEntity()).repository;
+      let imgNew = await makeEm().findOneOrFail(Image, { repository: gitRepo });
+      await cr.update({ image: imgNew });
     }
-    instanceToUpdate.appVersionId = appVersionId;
-    await em.persistAndFlush(instanceToUpdate);
 
     return true;
   }
@@ -151,7 +155,9 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     appVersionId: string
   ): Promise<boolean> {
     for (const id of instancesIds) {
-      await this.changeInstanceVersion(id, appVersionId);
+      await new AppInstanceRepo(this.ctx, id).changeInstanceVersion(
+        appVersionId
+      );
     }
 
     return true;
