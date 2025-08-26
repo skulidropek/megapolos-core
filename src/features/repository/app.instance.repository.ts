@@ -140,10 +140,13 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
 
     const containers = await this.getContainers();
     for (const container of containers) {
+      //TODO - fix logic
       let cr = new ContainerRepo(this.ctx, container.id);
       let img = await cr.getImage();
       let gitRepo = (await img.getEntity()).repository;
-      let imgNew = await makeEm().findOneOrFail(Image, { repository: gitRepo });
+      let imgNew = await new ImageRepo(this.ctx).getByFields({
+        repository: gitRepo,
+      })[0];
       await cr.update({ image: imgNew });
     }
 
