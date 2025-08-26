@@ -154,19 +154,18 @@ export class ContainerResolver extends CreateBaseResolver(
     @Arg('containerId') containerId: string,
     @Arg('dbId') dbId: string,
     @Arg('dbUserId') dbUserId: string,
-    @Arg('name') name: string,
+    @Arg('role') role: string,
     @Ctx() ctx: Context
   ): Promise<ContainerDb> {
-    return new ContainerRepo(ctx, containerId).addDb(dbId, dbUserId, name);
+    return new ContainerRepo(ctx, containerId).addDb(dbId, dbUserId, role);
   }
 
   @Mutation(() => Boolean)
   async removeDbFromContainer(
-    @Arg('containerId') containerId: string,
-    @Arg('dbId') dbId: string,
+    @Arg('containerDbId') containerDbId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    return new ContainerRepo(ctx, containerId).removeDb(dbId);
+    return new ContainerRepo(ctx).removeDbByContainerDbId(containerDbId);
   }
 }
 
