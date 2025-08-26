@@ -40,5 +40,5 @@ https://t.me/megapolos
   (если указали `noRoot: true`, то без `sudo`)
 - Если будет жаловаться на отсутствие команды `nodemon`, нужно выполнить `sudo npm i -g nodemon ts-node` вместе с [инструкциями](https://stackoverflow.com/a/40078875).
 - После запуска скопируйте токен из консоли. 
-- Запустите megapolos-gui командой `npm start`.
+- Запустите megapolos-gui командой `npm run dev`.
 - Вставьте полученный токен в открывшееся в браузере окошко. 
