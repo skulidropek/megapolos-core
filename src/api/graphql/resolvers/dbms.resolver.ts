@@ -33,6 +33,7 @@ import DbSchemaRepo from '../../../features/repository/db/db.schema.repository';
 import DbRepo from '../../../features/repository/db/db.repository';
 import { makeEm } from '../../../features/db/mikro-orm';
 import { DbUserInput } from './db.user.resolver';
+import { ContainerDb } from '../../../domain/entities/ContainerDb.entity';
 
 export const DbInput = generateGraphQLInputType(
   Db,
@@ -298,7 +299,7 @@ export class DbTableResolver extends BaseTableResolver {
     return (await DbmsRepo.getById(db.dbms.id)).getSchema(db.name);
   }
 
-  @FieldResolver(() => [Db])
+  @FieldResolver(() => [DbUser])
   async users(@Root() db: Db): Promise<DbUser[]> {
     return await makeEm().find(DbUser, {
       dbs: { id: db.id },
@@ -309,6 +310,13 @@ export class DbTableResolver extends BaseTableResolver {
   async dbms(@Root() db: Db): Promise<Dbms> {
     return await makeEm().findOneOrFail(Dbms, {
       id: db.dbms.id,
+    });
+  }
+
+  @FieldResolver(() => [ContainerDb])
+  async containers(@Root() db: Db): Promise<ContainerDb[]> {
+    return await makeEm().find(ContainerDb, {
+      db: { id: db.id },
     });
   }
 }
