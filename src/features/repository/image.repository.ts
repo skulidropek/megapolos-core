@@ -35,7 +35,7 @@ export default class ImageRepo extends BaseRepo<Image> {
     return ResourceType.Image;
   }
 
-  // TODO: rewrite via dockerode
+  // TODO: rewrite via dockerode (dockerCore)
   async build() {
     await this.checkActionAccess(resources.image.actions.build);
     this.ctx = this.ctx.cloneNoRightsCheck();
@@ -124,21 +124,24 @@ export default class ImageRepo extends BaseRepo<Image> {
       );
     }
 
-    const log = new LogRepo(this.ctx);
-    await log.create({
+    const logRepo = new LogRepo(this.ctx);
+    const deletionLog = await logRepo.create({
       name: 'Delete docker image ' + data.name,
       objectId: this.id,
       objectName: data.name,
       type: LogType.ImageDelete,
     });
 
+    logRepo.id = deletionLog.id;
+
     try {
       const image = this.docker.getImage(data.image);
       await image.remove();
-      console.log(`Docker image ${data.image} deleted successfully.`);
+      await logRepo.append(`Docker image ${data.image} deleted successfully.`);
       await this.update({ status: ImageStatus.NotExist });
     } catch (error) {
-      console.error('Failed to delete Docker image:', error);
+      //TODO - format error
+      await logRepo.append(`Failed to delete Docker image: ${error}`);
       throw error;
     }
   }
