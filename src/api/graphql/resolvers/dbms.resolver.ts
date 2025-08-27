@@ -76,11 +76,6 @@ export class DbmsResolver {
     return (await DbmsRepo.getById(id)).getEntity();
   }
 
-  @Query(() => [DbUser])
-  async getDbUser(@Arg('id') id: string, @Ctx() ctx: Context): Promise<DbUser> {
-    return new DbUserRepo(ctx, id).getEntity();
-  }
-
   @Query(() => [String])
   async compareDbs(
     @Arg('dbId1') dbId1: string,
