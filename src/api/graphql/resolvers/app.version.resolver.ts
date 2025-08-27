@@ -50,7 +50,7 @@ export class AppVersionResolver extends CreateBaseResolver(
 ) {
   @Mutation(() => AppVersion)
   async createAppVersion(
-    @Arg('app_version_data') app_version_data: AppVersionInput,
+    @Arg('app_version_data') app_version_data: AppVersion,
     @Arg('images') images: AppVersionImageInput[],
     @Ctx() ctx: Context
   ): Promise<AppVersion> {

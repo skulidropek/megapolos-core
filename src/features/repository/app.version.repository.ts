@@ -21,7 +21,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
   }
 
   async createAppVersion(
-    appVersionData: AppVersionInput,
+    appVersionData: AppVersion,
     images_data: AppVersionImageInput[]
   ): Promise<AppVersion> {
     await this.checkActionAccess(resources.app_version.actions.create);
