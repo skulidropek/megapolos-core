@@ -133,21 +133,25 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   async changeInstanceVersion(appVersionId: string): Promise<boolean> {
     await this.checkActionAccess(resources.app_instance.actions.edit);
 
-    let ar = new AppVersionRepo(this.ctx, appVersionId);
-    await ar.checkActionAccess(resources.app_version.actions.read);
+    const newAppVersionRepo = new AppVersionRepo(this.ctx, appVersionId);
+    await newAppVersionRepo.checkActionAccess(
+      resources.app_version.actions.read
+    );
 
     await this.update({ appVersionId: appVersionId });
 
     const containers = await this.getContainers();
+    const newVersionImages = (await newAppVersionRepo.getEntity()).images;
     for (const container of containers) {
-      //TODO - fix logic
-      let cr = new ContainerRepo(this.ctx, container.id);
-      let img = await cr.getImage();
-      let gitRepo = (await img.getEntity()).repository;
-      let imgNew = await new ImageRepo(this.ctx).getByFields({
-        repository: gitRepo,
-      })[0];
-      await cr.update({ image: imgNew });
+      const cr = new ContainerRepo(this.ctx, container.id);
+      const containerImage = await cr.getImage();
+      const containerGitRepo = (await containerImage.getEntity()).repository;
+      const img = newVersionImages.find(
+        (image) => image.repository === containerGitRepo
+      );
+      if (img) {
+        await cr.update({ image: img });
+      }
     }
 
     return true;
