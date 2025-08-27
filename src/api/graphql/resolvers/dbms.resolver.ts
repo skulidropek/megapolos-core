@@ -309,6 +309,13 @@ export class DbTableResolver extends BaseTableResolver {
       dbs: { id: db.id },
     });
   }
+
+  @FieldResolver(() => Dbms, { nullable: false })
+  async dbms(@Root() db: Db): Promise<Dbms> {
+    return await makeEm().findOneOrFail(Dbms, {
+      id: db.dbms.id,
+    });
+  }
 }
 
 @Resolver(() => DbSchema)
