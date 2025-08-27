@@ -19,29 +19,11 @@ import {
   GenerationType,
 } from '../../../library/graphql_types_generator';
 
-@InputType()
-export class AppVersionInput {
-  @Field()
-  app_id!: string;
-
-  @Field()
-  build_number!: number;
-
-  @Field()
-  version?: string;
-
-  @Field({ nullable: true })
-  version_comment?: string;
-
-  toStruct() {
-    return {
-      app_id: this.app_id,
-      build_number: this.build_number,
-      version: this.version,
-      version_comment: this.version_comment,
-    };
-  }
-}
+export const AppVersionInput = generateGraphQLInputType(
+  AppVersion,
+  'AppVersionInput',
+  GenerationType.input
+);
 
 @InputType()
 export class AppVersionImageInput {
@@ -52,25 +34,11 @@ export class AppVersionImageInput {
   image_data?: Image;
 }
 
-@InputType()
-export class AppVersionUpdateInput {
-  @Field()
-  build_number!: number;
-
-  @Field()
-  version?: string;
-
-  @Field({ nullable: true })
-  version_comment?: string;
-
-  toStruct() {
-    return {
-      build_number: this.build_number,
-      version: this.version,
-      version_comment: this.version_comment,
-    };
-  }
-}
+export const AppVersionUpdateInput = generateGraphQLInputType(
+  AppVersion,
+  'AppVersionUpdateInput',
+  GenerationType.update
+);
 
 @Resolver()
 export class AppVersionResolver extends CreateBaseResolver(
