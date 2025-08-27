@@ -22,11 +22,9 @@ import { Log } from '../../domain/entities/Log.entity';
 import NodeRepo from './megapolos.node.repository';
 import { ImageEnvRequirement } from '../../domain/entities/ImageEnvRequirement.entity';
 import { ImageEnvRequirementInput } from '../../api/graphql/resolvers/image.resolver';
-import Docker from 'dockerode';
+import docker from '../docker/coreDocker';
 
 export default class ImageRepo extends BaseRepo<Image> {
-  private docker = new Docker();
-
   get entityClass() {
     return Image;
   }
@@ -114,7 +112,6 @@ export default class ImageRepo extends BaseRepo<Image> {
     }
   }
 
-  // TODO -> dockerCore
   async deleteDockerImage(): Promise<void> {
     await this.checkActionAccess(resources.image.actions.remove);
     const data = await this.getEntity();
@@ -135,7 +132,7 @@ export default class ImageRepo extends BaseRepo<Image> {
     logRepo.id = deletionLog.id;
 
     try {
-      const image = this.docker.getImage(data.image);
+      const image = docker.getImage(data.image);
       await image.remove();
       await logRepo.append(`Docker image ${data.image} deleted successfully.`);
       await this.update({ status: ImageStatus.NotExist });
