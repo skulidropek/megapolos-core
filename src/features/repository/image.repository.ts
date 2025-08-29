@@ -137,8 +137,8 @@ export default class ImageRepo extends BaseRepo<Image> {
       await logRepo.append(`Docker image ${data.image} deleted successfully.`);
       await this.update({ status: ImageStatus.NotExist });
     } catch (error) {
-      //TODO - format error
-      await logRepo.append(`Failed to delete Docker image: ${error}`);
+      await logRepo.append(`Failed to delete Docker image`);
+      await logRepo.close();
       throw error;
     }
   }
