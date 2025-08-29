@@ -21,6 +21,8 @@ import RepositoryRepo from '../../../features/repository/repository.repository';
 import { GraphQLResolveInfo } from 'graphql';
 import { App } from '../../../domain/entities/App.entity';
 import { ImageEnvRequirement } from '../../../domain/entities/ImageEnvRequirement.entity';
+import { Container } from '../../../domain/entities/Container.entity';
+import { makeEm } from '../../../features/db/mikro-orm';
 
 // Генерируем Input типы
 export const ImageInput = generateGraphQLInputType(
@@ -121,5 +123,15 @@ export class ImageTableResolver extends BaseTableResolver {
     @Ctx() ctx: Context
   ): Promise<ImageEnvRequirement[]> {
     return new ImageRepo(ctx, image.id).getEnvs();
+  }
+
+  @FieldResolver(() => [Container])
+  async containers(
+    @Root() image: Image,
+    @Ctx() ctx: Context
+  ): Promise<Container[]> {
+    return await makeEm().find(Container, {
+      image: { id: image.id },
+    });
   }
 }
