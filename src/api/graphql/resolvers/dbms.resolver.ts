@@ -53,6 +53,30 @@ class MassDbQueryResult {
   error?: string;
 }
 
+@ObjectType()
+class MassDbQueryControlledResult {
+  @Field(() => Db, { nullable: true })
+  db?: Db;
+
+  @Field(() => DbUser, { nullable: true })
+  dbUser?: DbUser;
+
+  @Field()
+  result: string;
+
+  @Field({ nullable: true })
+  error?: string;
+}
+
+@InputType()
+class MassDbQueryControlledConnectionInput {
+  @Field()
+  dbId!: string;
+
+  @Field({ nullable: true })
+  dbUserId?: string;
+}
+
 export const DbmsInput = generateGraphQLInputType(
   Dbms,
   'DbmsInput',
@@ -255,6 +279,16 @@ export class DbmsResolver {
     @Ctx() ctx: Context
   ): Promise<MassDbQueryResult[]> {
     return (await DbmsRepo.getById(dbmsId)).massDbQuery(dbNames, query);
+  }
+
+  @Mutation(() => [MassDbQueryControlledResult])
+  async massDbQueryControlled(
+    @Arg('query') query: string,
+    @Arg('connections', () => [MassDbQueryControlledConnectionInput])
+    connections: MassDbQueryControlledConnectionInput[],
+    @Ctx() ctx: Context
+  ): Promise<MassDbQueryControlledResult[]> {
+    return await DbmsRepo.мassDbQuery(query, connections);
   }
 
   @Mutation(() => DbBackup)

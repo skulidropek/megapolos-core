@@ -13,6 +13,9 @@ import {
   DbSchemaSchema,
   DbSchemaTable,
 } from '../../../domain/entities/DbSchema.entity';
+import { Db } from '../../../domain/entities/Db.entity';
+import { DbUser } from '../../../domain/entities/DbUser.entity';
+import DbUserRepo from '../db/db.user.repository';
 
 export default class PostgresDmbs extends BaseDbmsRepo {
   async getKnex(db: string) {
@@ -329,6 +332,74 @@ END$$;
       results.push(result);
     }
     return results;
+  }
+
+  async queryChange(
+    query: string,
+    dbId: string,
+    dbUserId?: string
+  ): Promise<{
+    db: Db;
+    dbUser: DbUser;
+    result: string;
+    error?: string;
+  }> {
+    const dbRepo = new DbRepo(undefined, dbId);
+    const db = await dbRepo.getEntity();
+
+    const result: { db: Db; dbUser: DbUser; result: string; error: string } = {
+      db,
+      dbUser: null,
+      result: '',
+      error: undefined,
+    };
+
+    if (!dbUserId) {
+      const knex = await this.getKnex(db.name);
+      try {
+        result.result = JSON.stringify(await knex.raw(query));
+      } catch (err) {
+        result.error = err.message;
+      }
+    } else {
+      const dbUser = await new DbUserRepo(undefined, dbUserId).getEntity();
+      result.dbUser = dbUser;
+
+      if (db.dbms.id !== dbUser?.dbms.id) {
+        result.error = 'Db and DbUser belong to different DBMS';
+        return result;
+      }
+
+      db.dbms = await dbRepo.getDbms();
+
+      let knexInstance: Knex.Knex | null = null;
+      try {
+        knexInstance = Knex({
+          client: 'pg',
+          connection: {
+            user: dbUser.name,
+            host: db.dbms.host,
+            password: dbUser.password,
+            database: db.name,
+          },
+          pool: {
+            min: 0,
+            max: 1,
+            acquireTimeoutMillis: 60000,
+            idleTimeoutMillis: 600000,
+          },
+        });
+
+        result.result = JSON.stringify(await knexInstance.raw(query));
+      } catch (err) {
+        result.error = err.message;
+      } finally {
+        if (knexInstance) {
+          await knexInstance.destroy();
+        }
+      }
+    }
+    return result;
   }
 
   async downloadBackupTextProcess(
