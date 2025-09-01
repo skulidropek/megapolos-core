@@ -6,10 +6,10 @@
     compose_file: /opt/megapolos_swarm_compose.yml
     data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
   tasks:
-  - ansible.builtin.pip:
-      name: 
-        - jsondiff
-      state: present
+  # - ansible.builtin.pip:
+  #     name: 
+  #       - jsondiff
+  #     state: present
   - name: volume directories
     ansible.builtin.file:
       path: "{{ item }}"

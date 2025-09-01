@@ -8,49 +8,49 @@
   tasks:
   - name: init
     import_tasks: init_include.yml
-  - name: Install ansible
-    ansible.builtin.apt:
-      name: ansible
-      state: present
+  # - name: Install ansible
+  #   ansible.builtin.apt:
+  #     name: ansible
+  #     state: present
   
-  - name: Update apt cache
-    apt:
-      update_cache: yes
+  # - name: Update apt cache
+  #   apt:
+  #     update_cache: yes
 
-  - name: Install Node.js dependencies
-    apt:
-      name: "{{ item }}"
-      state: present
-    loop:
-      - curl
-      - software-properties-common
+  # - name: Install Node.js dependencies
+  #   apt:
+  #     name: "{{ item }}"
+  #     state: present
+  #   loop:
+  #     - curl
+  #     - software-properties-common
       
-  - name: Install the gpg key for nodejs LTS
-    apt_key:
-      url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
-      state: present
+  # - name: Install the gpg key for nodejs LTS
+  #   apt_key:
+  #     url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+  #     state: present
       
-  - name: Add NodeSource repository
-    apt_repository:
-      repo: "deb https://deb.nodesource.com/node_18.x {{ ansible_distribution_release }} main"
-      state: present
-      update_cache: yes
-      filename: nodesource
+  # - name: Add NodeSource repository
+  #   apt_repository:
+  #     repo: "deb https://deb.nodesource.com/node_18.x {{ ansible_distribution_release }} main"
+  #     state: present
+  #     update_cache: yes
+  #     filename: nodesource
 
-  - name: Install Node.js
-    apt:
-      name: nodejs
-      state: present
+  # - name: Install Node.js
+  #   apt:
+  #     name: nodejs
+  #     state: present
 
-  - name: Install build-essential
-    apt:
-      name: build-essential
-      state: present
+  # - name: Install build-essential
+  #   apt:
+  #     name: build-essential
+  #     state: present
 
-  - name: Install "pm2" node.js package globally.
-    community.general.npm:
-      name: pm2
-      global: true
+  # - name: Install "pm2" node.js package globally.
+  #   community.general.npm:
+  #     name: pm2
+  #     global: true
 
   - name: Copy docker nginx conf
     template:

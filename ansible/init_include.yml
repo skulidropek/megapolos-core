@@ -23,6 +23,7 @@
       - docker
       - passlib
       - urllib3
+      - ansible
 - name: Install collection community.docker
   community.general.ansible_galaxy_install:
     type: collection
@@ -35,6 +36,7 @@
   community.docker.docker_container:
     name: nginx
     image: nginx
+    restart: yes
     ports:
       - "80:80"
       - "443:443"
