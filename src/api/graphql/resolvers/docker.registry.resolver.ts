@@ -16,6 +16,8 @@ import {
 import { DockerRegistry } from '../../../domain/entities/DockerRegistry.entity';
 import DockerRegistryRepo from '../../../features/repository/docker.registry.repository';
 import { Context } from '../server';
+import { Container } from '../../../domain/entities/Container.entity';
+import { ContainerRepo } from '../../../features/repository/cantainer/container.repository';
 
 export const DockerRegistryInput = generateGraphQLInputType(
   DockerRegistry,
@@ -46,6 +48,21 @@ export class DockerRegistryResolver extends CreateBaseResolver(
     return true;
   }
 }
-
+console.log('test1');
 @Resolver(() => DockerRegistry)
-export class DockerRegistryTableResolver extends BaseTableResolver {}
+export class DockerRegistryTableResolver extends BaseTableResolver {
+  @FieldResolver(() => Container, { nullable: true })
+  async container(
+    @Root() dockerRegistry: DockerRegistry,
+    @Ctx() ctx: Context
+  ): Promise<Container | null> {
+    if (dockerRegistry.container) {
+      return await new ContainerRepo(
+        ctx,
+        dockerRegistry.container.id
+      ).getEntity();
+    }
+
+    return null;
+  }
+}

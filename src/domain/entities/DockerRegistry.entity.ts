@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, Opt, Property } from '@mikro-orm/core';
 import { Container } from './Container.entity';
 import { Field, ID, ObjectType } from 'type-graphql';
 import { Hint } from '../../library/graphql_types_generator';
@@ -23,8 +23,8 @@ export class DockerRegistry extends BaseEntity {
   @Field({ nullable: true })
   password?: string;
 
-  @ManyToOne({ entity: () => Container, nullable: true })
   @Field(() => Container, { nullable: true })
+  @ManyToOne({ entity: () => Container, nullable: true })
   @Hint({ type: () => ID })
   container?: Container;
 
