@@ -18,6 +18,7 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
+import { ImageInput } from './image.resolver';
 
 export const AppVersionInput = generateGraphQLInputType(
   AppVersion,
@@ -30,8 +31,8 @@ export class AppVersionImageInput {
   @Field()
   image_id?: string;
 
-  @Field({ nullable: true })
-  image_data?: Image;
+  @Field(() => ImageInput)
+  image_data?: typeof ImageInput;
 }
 
 export const AppVersionUpdateInput = generateGraphQLInputType(
@@ -50,8 +51,9 @@ export class AppVersionResolver extends CreateBaseResolver(
 ) {
   @Mutation(() => AppVersion)
   async createAppVersion(
-    @Arg('app_version_data') app_version_data: AppVersion,
-    @Arg('images') images: AppVersionImageInput[],
+    @Arg('app_version_data', () => AppVersionInput)
+    app_version_data: typeof AppVersionInput,
+    @Arg('images', () => [AppVersionImageInput]) images: AppVersionImageInput[],
     @Ctx() ctx: Context
   ): Promise<AppVersion> {
     const repo = new AppVersionRepo(ctx);

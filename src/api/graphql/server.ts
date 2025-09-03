@@ -165,6 +165,7 @@ import {
 } from './resolvers/db.user.resolver';
 import { DbTableResolver } from './resolvers/dbms.resolver';
 import { DbSchemaTableResolver } from './resolvers/dbms.resolver';
+import { AppVersionResolver } from './resolvers/app.version.resolver';
 
 export class Context {
   constructor(data: {
@@ -200,6 +201,7 @@ async function bootstrap() {
       UserResolver,
       UserTableResolver,
       AppResolver,
+      AppVersionResolver,
       AppTableResolver,
       GroupUserPrivilegeTableResolver,
       RepositoryResolver,

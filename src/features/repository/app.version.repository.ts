@@ -10,6 +10,7 @@ import {
 import { App } from '../../domain/entities/App.entity';
 import { Image } from '../../domain/entities/Image.entity';
 import ImageRepo from './image.repository';
+import { RequiredEntityData } from '@mikro-orm/core';
 
 export default class AppVersionRepo extends BaseRepo<AppVersion> {
   get entityClass() {
@@ -21,7 +22,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
   }
 
   async createAppVersion(
-    appVersionData: AppVersion,
+    appVersionData: RequiredEntityData<AppVersion>,
     images_data: AppVersionImageInput[]
   ): Promise<AppVersion> {
     await this.checkActionAccess(resources.app_version.actions.create);
