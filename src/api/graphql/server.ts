@@ -165,6 +165,7 @@ import {
 } from './resolvers/db.user.resolver';
 import { DbTableResolver } from './resolvers/dbms.resolver';
 import { DbSchemaTableResolver } from './resolvers/dbms.resolver';
+import { DockerRegistryResolver } from './resolvers/docker.registry.resolver';
 
 export class Context {
   constructor(data: {
@@ -205,6 +206,7 @@ async function bootstrap() {
       RepositoryResolver,
       RepositoryTableResolver,
       DomainResolver,
+      DockerRegistryResolver,
       ImageResolver,
       ImageTableResolver,
       AppInstanceResolver,
