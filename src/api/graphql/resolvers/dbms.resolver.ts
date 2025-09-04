@@ -31,9 +31,9 @@ import { RequiredEntityData } from '@mikro-orm/core';
 import DbUserRepo from '../../../features/repository/db/db.user.repository';
 import DbSchemaRepo from '../../../features/repository/db/db.schema.repository';
 import DbRepo from '../../../features/repository/db/db.repository';
-import { makeEm } from '../../../features/db/mikro-orm';
 import { DbUserInput } from './db.user.resolver';
 import { ContainerDb } from '../../../domain/entities/ContainerDb.entity';
+import ContainerDbRepo from '../../../features/repository/cantainer/container.db.repository';
 
 export const DbInput = generateGraphQLInputType(
   Db,
@@ -334,22 +334,23 @@ export class DbTableResolver extends BaseTableResolver {
   }
 
   @FieldResolver(() => [DbUser])
-  async users(@Root() db: Db): Promise<DbUser[]> {
-    return await makeEm().find(DbUser, {
+  async users(@Root() db: Db, @Ctx() ctx: Context): Promise<DbUser[]> {
+    return new DbUserRepo(ctx).getByFields({
       dbs: { id: db.id },
     });
   }
 
   @FieldResolver(() => Dbms, { nullable: false })
-  async dbms(@Root() db: Db): Promise<Dbms> {
-    return await makeEm().findOneOrFail(Dbms, {
-      id: db.dbms.id,
-    });
+  async dbms(@Root() db: Db, @Ctx() ctx: Context): Promise<Dbms> {
+    return new BaseDbmsRepo(ctx, db.dbms.id).getEntity();
   }
 
   @FieldResolver(() => [ContainerDb])
-  async containers(@Root() db: Db): Promise<ContainerDb[]> {
-    return await makeEm().find(ContainerDb, {
+  async containers(
+    @Root() db: Db,
+    @Ctx() ctx: Context
+  ): Promise<ContainerDb[]> {
+    return new ContainerDbRepo(ctx).getByFields({
       db: { id: db.id },
     });
   }
