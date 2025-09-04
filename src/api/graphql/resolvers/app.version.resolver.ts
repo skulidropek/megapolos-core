@@ -19,6 +19,7 @@ import {
   GenerationType,
 } from '../../../library/graphql_types_generator';
 import { ImageInput } from './image.resolver';
+import { makeEm } from '../../../features/db/mikro-orm';
 
 export const AppVersionInput = generateGraphQLInputType(
   AppVersion,
@@ -58,5 +59,14 @@ export class AppVersionResolver extends CreateBaseResolver(
   ): Promise<AppVersion> {
     const repo = new AppVersionRepo(ctx);
     return repo.createAppVersion(app_version_data, images);
+  }
+}
+
+@Resolver(() => AppVersion)
+export class AppVersionTableResolver extends BaseTableResolver {
+  @FieldResolver(() => [Image])
+  async images(@Root() appVersion: AppVersion): Promise<Image[]> {
+    const em = makeEm();
+    return await em.find(Image, { appVersions: { id: appVersion.id } });
   }
 }
