@@ -29,8 +29,8 @@ import NodeRepo from '../../../features/repository/megapolos.node.repository';
 import { Node } from '../../../domain/entities/Node.entity';
 import ImageRepo from '../../../features/repository/image.repository';
 import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
-import { makeEm } from '../../../features/db/mikro-orm';
 import { AppInstance } from '../../../domain/entities/AppInstance.entity';
+import AppInstanceRepo from '../../../features/repository/app.instance.repository';
 
 @ObjectType()
 export class ContainerFileListResult {
@@ -243,9 +243,10 @@ export class ContainerTableResolver extends BaseTableResolver {
   }
 
   @FieldResolver(() => AppInstance, { nullable: false })
-  async appInstance(@Root() container: Container): Promise<AppInstance> {
-    return await makeEm().findOneOrFail(AppInstance, {
-      id: container.appInstance.id,
-    });
+  async appInstance(
+    @Root() container: Container,
+    @Ctx() ctx: Context
+  ): Promise<AppInstance> {
+    return await new AppInstanceRepo(ctx, container.appInstance.id).getEntity();
   }
 }
