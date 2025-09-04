@@ -247,6 +247,6 @@ export class ContainerTableResolver extends BaseTableResolver {
     @Root() container: Container,
     @Ctx() ctx: Context
   ): Promise<AppInstance> {
-    return await new AppInstanceRepo(ctx, container.appInstance.id).getEntity();
+    return new AppInstanceRepo(ctx, container.appInstance.id).getEntity();
   }
 }
