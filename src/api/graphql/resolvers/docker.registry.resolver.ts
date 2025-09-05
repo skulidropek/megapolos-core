@@ -48,7 +48,7 @@ export class DockerRegistryResolver extends CreateBaseResolver(
     return true;
   }
 }
-console.log('test1');
+
 @Resolver(() => DockerRegistry)
 export class DockerRegistryTableResolver extends BaseTableResolver {
   @FieldResolver(() => Container, { nullable: true })
