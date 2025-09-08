@@ -45,6 +45,16 @@ export class GroupUserResolver extends CreateBaseResolver(
   GroupUserInput,
   GroupUserUpdateInput
 ) {
+  @Query(() => [GroupUserPrivilege])
+  async getGroupUserPrivilegesByObjectId(
+    @Arg('objectId') objectId: string,
+    @Ctx() ctx: Context
+  ): Promise<GroupUserPrivilege[]> {
+    return await new UserGroupPrivilegeRepo(ctx).getPrivilegesByObjectId(
+      objectId
+    );
+  }
+
   @Query(() => [String])
   async getAllPossibleActions(
     @Arg('objectName', () => ResourceType) objectName: ResourceType
