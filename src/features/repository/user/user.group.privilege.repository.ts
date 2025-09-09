@@ -102,7 +102,7 @@ export default class UserGroupPrivilegeRepo extends BaseRepo<GroupUserPrivilege>
       makeEm().nativeDelete(GroupUserPrivilege, { id });
 
     if (privilege.action == '*') {
-      if (!(await new UserRepo(this.ctx).amIRootUser())) {
+      if (!(await new UserRepo(this.ctx, this.ctx.user.id).amIRootUser())) {
         this._throwAccessDenied();
       } else {
         await deletePrivilege();
