@@ -63,8 +63,8 @@ export class UserTableResolver extends BaseTableResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  async token(@Ctx() ctx: Context): Promise<string | null> {
-    return ctx.req.headers.token as string;
+  async token(@Ctx() ctx: Context, @Root() user: User): Promise<string | null> {
+    return new UserRepo(ctx, user.id).createToken();
   }
 }
 
