@@ -11,6 +11,7 @@ const defaultRights = {
   remove: 'remove',
   edit: 'edit',
   read: 'read',
+  view_log: 'view_log',
 };
 
 const resources = {
@@ -34,6 +35,10 @@ const resources = {
     type: 'app',
     actions: { ...defaultRights },
   },
+  node: {
+    type: 'node',
+    actions: { ...defaultRights },
+  },
 };
 
 enum ResourceType {
@@ -42,6 +47,7 @@ enum ResourceType {
   Image = 'image',
   AppInstance = 'app_instance',
   App = 'app',
+  Node = 'node',
 }
 
 registerEnumType(ResourceType, {
