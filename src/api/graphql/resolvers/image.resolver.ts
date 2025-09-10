@@ -21,6 +21,7 @@ import RepositoryRepo from '../../../features/repository/repository.repository';
 import { GraphQLResolveInfo } from 'graphql';
 import { App } from '../../../domain/entities/App.entity';
 import { ImageEnvRequirement } from '../../../domain/entities/ImageEnvRequirement.entity';
+import { resources } from '../../../features/rights/resources.list';
 
 // Генерируем Input типы
 export const ImageInput = generateGraphQLInputType(
@@ -54,7 +55,10 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    new ImageRepo(ctx, imageId).build();
+    var imageRepo = new ImageRepo(ctx, imageId);
+    await imageRepo.checkActionAccess(resources.image.actions.build);
+
+    void imageRepo.build(); //!!! fire-and-forget execution
     return true;
   }
 
@@ -63,11 +67,13 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageIds', () => [String]) imageIds: string[],
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    (async () => {
-      for (const imageId of imageIds) {
-        await new ImageRepo(ctx, imageId).build();
-      }
-    })();
+    for (const imageId of imageIds) {
+      var imageRepo = new ImageRepo(ctx, imageId);
+      await imageRepo.checkActionAccess(resources.image.actions.build);
+
+      void imageRepo.build(); //!!! fire-and-forget execution
+    }
+
     return true;
   }
 
@@ -76,7 +82,10 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    new ImageRepo(ctx, imageId).updateNodes();
+    var imageRepo = new ImageRepo(ctx, imageId);
+    await imageRepo.checkActionAccess(resources.image.actions.update_nodes);
+
+    void imageRepo.updateNodes(); //!!! fire-and-forget execution
     return true;
   }
 
