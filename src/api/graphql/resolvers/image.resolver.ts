@@ -70,10 +70,13 @@ export class ImageResolver extends CreateBaseResolver(
     for (const imageId of imageIds) {
       var imageRepo = new ImageRepo(ctx, imageId);
       await imageRepo.checkActionAccess(resources.image.actions.build);
-
-      void imageRepo.build(); //!!! fire-and-forget execution
     }
 
+    (async () => {
+      for (const imageId of imageIds) {
+        await new ImageRepo(ctx, imageId).build();
+      }
+    })(); //!!! fire-and-forget execution
     return true;
   }
 
