@@ -54,7 +54,7 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    new ImageRepo(ctx, imageId).build();
+    await new ImageRepo(ctx, imageId).build();
     return true;
   }
 
