@@ -7,7 +7,6 @@ import {
   AppVersionInput,
   AppVersionImageInput,
 } from '../../api/graphql/resolvers/app.version.resolver';
-import { App } from '../../domain/entities/App.entity';
 import { Image } from '../../domain/entities/Image.entity';
 import ImageRepo from './image.repository';
 import { RequiredEntityData } from '@mikro-orm/core';
