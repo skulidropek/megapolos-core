@@ -17,6 +17,8 @@ import {
   GenerationType,
 } from '../../../library/graphql_types_generator';
 import { User } from '../../../domain/entities/User.entity';
+import { AppVersion } from '../../../domain/entities/AppVersion.entity';
+import { makeEm } from '../../../features/db/mikro-orm';
 
 export const AppInput = generateGraphQLInputType(
   App,
@@ -66,5 +68,11 @@ export class AppTableResolver extends BaseTableResolver {
   @FieldResolver(() => User)
   async user(@Root() app: App, @Ctx() ctx: Context): Promise<User> {
     return (await new AppRepo(ctx, app.id).getUser()).getEntity();
+  }
+
+  @FieldResolver(() => [AppVersion])
+  async versions(@Root() app: App, @Ctx() ctx: Context): Promise<AppVersion[]> {
+    const em = makeEm();
+    return await em.find(AppVersion, { app: { id: app.id } });
   }
 }

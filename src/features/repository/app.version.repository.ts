@@ -28,7 +28,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     await this.checkActionAccess(resources.app_version.actions.create);
 
     const appVersion = await super.create({
-      app_id: appVersionData.app_id,
+      application_id: appVersionData.application_id,
       build_number: appVersionData.build_number,
       version: appVersionData.version,
       version_comment: appVersionData.version_comment,
