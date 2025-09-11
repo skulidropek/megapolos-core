@@ -55,6 +55,7 @@ export default class ImageRepo extends BaseRepo<Image> {
           name: 'Build image ' + data.name,
           objectId: this.id,
           objectName: data.name,
+          objectType: ResourceType.Image,
           type: LogType.ImageBuild,
         });
 

@@ -61,9 +61,9 @@ export default class LogRepo extends BaseRepo<Log> {
       };
     }
 
-    if (log.objectId && log.objectName && resources[log.objectName]) {
+    if (log.objectId && log.objectType && resources[log.objectType]) {
       return {
-        resourceType: log.objectName,
+        resourceType: log.objectType,
         resourceId: log.objectId,
         action: defaultRights.view_log,
       };
