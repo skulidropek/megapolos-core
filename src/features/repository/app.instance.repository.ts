@@ -36,7 +36,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isDevice = false
   ): Promise<AppInstance> {
-    await this.checkActionAccess(resources.app_instance.actions.create);
+    await this.checkActionAccess(resources.AppInstance.actions.create);
     const userGroup = (
       await new UserGroupRepo(this.ctx).getByFields({ name: 'root' })
     )[0];
@@ -66,13 +66,13 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async getUserRepo(): Promise<UserRepo> {
-    await this.checkActionAccess(resources.app_instance.actions.read);
+    await this.checkActionAccess(resources.AppInstance.actions.read);
     const data = await this.getEntity();
     return new UserRepo(this.ctx, data.user.id);
   }
 
   async getDataWithContainers(): Promise<AppInstance> {
-    await this.checkActionAccess(resources.app_instance.actions.read);
+    await this.checkActionAccess(resources.AppInstance.actions.read);
     const appInstance: AppInstance & { containers?: Container[] } =
       await this.getEntity();
     appInstance.containers = await Promise.all(
@@ -86,7 +86,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async start() {
-    await this.checkActionAccess(resources.app_instance.actions.manage);
+    await this.checkActionAccess(resources.AppInstance.actions.manage);
     const containers = (await this.getContainers()).map(
       (container) => new ContainerRepo(this.ctx, container.id)
     );
@@ -104,7 +104,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async stop() {
-    await this.checkActionAccess(resources.app_instance.actions.manage);
+    await this.checkActionAccess(resources.AppInstance.actions.manage);
     const containers = (await this.getContainers()).map(
       (container) => new ContainerRepo(this.ctx, container.id)
     );
@@ -119,7 +119,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async update(data: RequiredEntityData<AppInstance>): Promise<boolean> {
-    await this.checkActionAccess(resources.app_instance.actions.edit);
+    await this.checkActionAccess(resources.AppInstance.actions.edit);
     const result = await super.update(data);
 
     EventsObserver.listener({ type: 'editAppInstance', data: { id: this.id } });
@@ -127,7 +127,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async delete(): Promise<boolean> {
-    await this.checkActionAccess(resources.app_instance.actions.remove);
+    await this.checkActionAccess(resources.AppInstance.actions.remove);
     const data = await this.getEntity();
 
     const containers = (await this.getContainers()).map(
@@ -150,14 +150,14 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async getContainers(): Promise<Container[]> {
-    await this.checkActionAccess(resources.app_instance.actions.read);
+    await this.checkActionAccess(resources.AppInstance.actions.read);
     return new ContainerRepo(this.ctx).getByFields({
       appInstance: this.id,
     });
   }
 
   async build() {
-    await this.checkActionAccess(resources.app_instance.actions.build);
+    await this.checkActionAccess(resources.AppInstance.actions.build);
     const containers = (await this.getContainers()).map(
       (container) => new ContainerRepo(this.ctx, container.id)
     );
@@ -174,7 +174,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async getRuntimeVariables(): Promise<InstanceRuntimeVariables> {
-    await this.checkActionAccess(resources.app_instance.actions.read);
+    await this.checkActionAccess(resources.AppInstance.actions.read);
     const containers = await this.getContainers();
     const result: InstanceRuntimeVariables = { containers: {} };
     for (const i in containers) {

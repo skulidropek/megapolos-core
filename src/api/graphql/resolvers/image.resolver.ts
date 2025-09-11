@@ -56,7 +56,7 @@ export class ImageResolver extends CreateBaseResolver(
     @Ctx() ctx: Context
   ): Promise<boolean> {
     var imageRepo = new ImageRepo(ctx, imageId);
-    await imageRepo.checkActionAccess(resources.image.actions.build);
+    await imageRepo.checkActionAccess(resources.Image.actions.build);
 
     void imageRepo.build(); //!!! fire-and-forget execution
     return true;
@@ -69,7 +69,7 @@ export class ImageResolver extends CreateBaseResolver(
   ): Promise<boolean> {
     for (const imageId of imageIds) {
       var imageRepo = new ImageRepo(ctx, imageId);
-      await imageRepo.checkActionAccess(resources.image.actions.build);
+      await imageRepo.checkActionAccess(resources.Image.actions.build);
     }
 
     (async () => {
@@ -86,7 +86,7 @@ export class ImageResolver extends CreateBaseResolver(
     @Ctx() ctx: Context
   ): Promise<boolean> {
     var imageRepo = new ImageRepo(ctx, imageId);
-    await imageRepo.checkActionAccess(resources.image.actions.update_nodes);
+    await imageRepo.checkActionAccess(resources.Image.actions.update_nodes);
 
     void imageRepo.updateNodes(); //!!! fire-and-forget execution
     return true;
