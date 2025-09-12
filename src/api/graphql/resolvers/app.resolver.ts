@@ -71,7 +71,10 @@ export class AppTableResolver extends BaseTableResolver {
   }
 
   @FieldResolver(() => [AppVersion])
-  async versions(@Root() app: App, @Ctx() ctx: Context): Promise<AppVersion[]> {
+  async appVersions(
+    @Root() app: App,
+    @Ctx() ctx: Context
+  ): Promise<AppVersion[]> {
     const em = makeEm();
     return await em.find(AppVersion, { app: { id: app.id } });
   }

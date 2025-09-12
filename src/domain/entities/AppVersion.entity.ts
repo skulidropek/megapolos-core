@@ -14,10 +14,6 @@ import { Hint } from '../../library/graphql_types_generator';
 @Entity()
 @ObjectType()
 export class AppVersion extends BaseEntity {
-  @Property({ length: -1 })
-  @Field()
-  application_id!: string;
-
   @ManyToOne({ entity: () => App })
   @Field(() => App)
   @Hint({ type: () => ID, skipOnUpdate: true })

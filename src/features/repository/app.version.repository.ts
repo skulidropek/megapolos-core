@@ -10,6 +10,8 @@ import {
 import { Image } from '../../domain/entities/Image.entity';
 import ImageRepo from './image.repository';
 import { RequiredEntityData } from '@mikro-orm/core';
+import { App } from '../../domain/entities/App.entity';
+import AppRepo from './app.repository';
 
 export default class AppVersionRepo extends BaseRepo<AppVersion> {
   get entityClass() {
@@ -25,9 +27,13 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     images_data: AppVersionImageInput[]
   ): Promise<AppVersion> {
     await this.checkActionAccess(resources.app_version.actions.create);
-
+    const application = await new AppRepo(
+      this.ctx,
+      //'d10127f1-60b4-481c-b990-9845a08c8b5e'
+      appVersionData.app as string
+    ).getEntity();
     const appVersion = await super.create({
-      application_id: appVersionData.application_id,
+      app: application,
       build_number: appVersionData.build_number,
       version: appVersionData.version,
       version_comment: appVersionData.version_comment,

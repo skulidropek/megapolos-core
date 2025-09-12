@@ -28,7 +28,7 @@ export class App extends BaseEntity {
   @Field({ nullable: true })
   status?: string = 'stoppd';
 
-  @OneToMany({ entity: () => AppVersion, mappedBy: 'app' })
+  @OneToMany(() => AppVersion, (appVersion) => appVersion.app)
   @Field(() => [AppVersion])
   @Hint({ skip: true })
   appVersions = new Collection<AppVersion>(this);
