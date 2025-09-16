@@ -165,6 +165,7 @@ import {
 } from './resolvers/db.user.resolver';
 import { DbTableResolver } from './resolvers/dbms.resolver';
 import { DbSchemaTableResolver } from './resolvers/dbms.resolver';
+import { ContainerDbTableResolver } from './resolvers/container.db.resolver';
 import { TestCaseResolver } from './resolvers/testCase.resolver';
 
 export class Context {
@@ -219,6 +220,7 @@ async function bootstrap() {
       DbmsTableResolver,
       ContainerResolver,
       ContainerTableResolver,
+      ContainerDbTableResolver,
       MegapolosResolver,
       GroupUserResolver,
       GroupUserTableResolver,
@@ -228,7 +230,7 @@ async function bootstrap() {
       LogTableResolver,
       DbTableResolver,
       DbSchemaTableResolver,
-      TestCaseResolver
+      TestCaseResolver,
     ],
   });
 

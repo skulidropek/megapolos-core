@@ -26,5 +26,5 @@ export class ContainerDb extends BaseEntity {
 
   @Field()
   @Property({ length: -1 })
-  name!: string;
+  role!: string;
 }
