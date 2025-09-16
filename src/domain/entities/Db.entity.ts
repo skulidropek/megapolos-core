@@ -10,6 +10,7 @@ import { DbUser } from './DbUser.entity';
 import { Dbms } from './Dbms.entity';
 import { BaseEntity } from './Base.entity';
 import { Hint } from '../../library/graphql_types_generator';
+import { DbDbUser } from './DbDbUser.entity';
 
 @Entity()
 @ObjectType()
@@ -28,7 +29,7 @@ export class Db extends BaseEntity {
   @Hint({ skip: true })
   isCore?: boolean = false;
 
-  @ManyToMany({ entity: () => DbUser, pivotTable: 'db_db_user' })
+  @ManyToMany({ entity: () => DbUser, pivotEntity: () => DbDbUser })
   @Field(() => [DbUser])
   @Hint({ skip: true })
   users = new Collection<DbUser>(this);

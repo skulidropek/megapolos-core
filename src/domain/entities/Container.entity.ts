@@ -26,12 +26,12 @@ export class Container extends BaseEntity {
 
   @Field(() => Image)
   @ManyToOne({ entity: () => Image })
-  @Hint({ type: () => ID, skipOnClearlyInput: true })
+  @Hint({ type: () => ID })
   image!: Image;
 
   @Field(() => Node)
   @ManyToOne({ entity: () => Node })
-  @Hint({ type: () => ID, skipOnClearlyInput: true })
+  @Hint({ type: () => ID })
   node!: Node;
 
   @Field({ nullable: true })

@@ -75,10 +75,10 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async create(
-    data: RequiredEntityData<Container> & { nodeId?: string }
+    data: RequiredEntityData<Container> & { node?: string }
   ): Promise<Container> {
     await this.checkActionAccess(resources.container.actions.create);
-    const node = new NodeRepo(this.ctx, data.nodeId);
+    const node = new NodeRepo(this.ctx, data.node);
     let outerPort = await node.getPort();
     if (data.outerPort) {
       await node.checkPort(data.outerPort);
