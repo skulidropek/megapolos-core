@@ -9,10 +9,14 @@ export default class DockerRegistryRepo extends BaseRepo<DockerRegistry> {
   }
 
   async setAsDefault(): Promise<boolean> {
-    const thisDocReg = await this.getEntity();
-
     await makeEm().nativeUpdate(DockerRegistry, {}, { isDefault: false });
     await this.update({ isDefault: true });
+
+    return true;
+  }
+
+  async setAsNonDefault(): Promise<boolean> {
+    await this.update({ isDefault: false });
 
     return true;
   }

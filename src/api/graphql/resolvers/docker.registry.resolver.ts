@@ -47,6 +47,15 @@ export class DockerRegistryResolver extends CreateBaseResolver(
     await new DockerRegistryRepo(ctx, id).setAsDefault();
     return true;
   }
+
+  @Mutation(() => Boolean)
+  async setDockerRegistryAsNonDefault(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new DockerRegistryRepo(ctx, id).setAsNonDefault();
+    return true;
+  }
 }
 
 @Resolver(() => DockerRegistry)
