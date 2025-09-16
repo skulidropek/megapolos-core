@@ -169,6 +169,8 @@ import {
   DockerRegistryResolver,
   DockerRegistryTableResolver,
 } from './resolvers/docker.registry.resolver';
+import { ContainerDbTableResolver } from './resolvers/container.db.resolver';
+import { TestCaseResolver } from './resolvers/testCase.resolver';
 
 export class Context {
   constructor(data: {
@@ -224,6 +226,7 @@ async function bootstrap() {
       DbmsTableResolver,
       ContainerResolver,
       ContainerTableResolver,
+      ContainerDbTableResolver,
       MegapolosResolver,
       GroupUserResolver,
       GroupUserTableResolver,
@@ -233,6 +236,7 @@ async function bootstrap() {
       LogTableResolver,
       DbTableResolver,
       DbSchemaTableResolver,
+      TestCaseResolver,
     ],
   });
 

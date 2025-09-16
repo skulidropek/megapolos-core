@@ -226,6 +226,33 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
     return [];
   }
 
+  async query(
+    query: string,
+    dbId: string,
+    dbUserId?: string
+  ): Promise<{
+    db: Db;
+    dbUser: DbUser;
+    result: string;
+    error?: string;
+  }> {
+    return this.queryChange(query, dbId, dbUserId);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async queryChange(
+    query: string,
+    dbId: string,
+    dbUserId?: string
+  ): Promise<{
+    db: Db;
+    dbUser: DbUser;
+    result: string;
+    error?: string;
+  }> {
+    throw new Error('Not implemented');
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async restoreProcess(
     db: DbRepo,

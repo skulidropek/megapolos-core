@@ -462,7 +462,7 @@ export class ContainerRepo extends BaseRepo<Container> {
       const dbmsData = await db.getDbms();
       const dbUser = new DbUserRepo(this.ctx, dbContainer.dbUser.id);
       const dbUserData = await dbUser.getEntity();
-      result.dbs[dbContainer.name] = {
+      result.dbs[dbContainer.role] = {
         db: dbData.name,
         host: dbmsData.host,
         user: dbUserData.name,
@@ -480,20 +480,20 @@ export class ContainerRepo extends BaseRepo<Container> {
   async addDb(
     dbId: string,
     dbUserId: string,
-    name: string
+    role: string
   ): Promise<ContainerDb> {
     await this.checkActionAccess(resources.container.actions.edit);
     return new ContainerDbRepo(this.ctx).create({
       container: this.id,
       db: dbId,
       dbUser: dbUserId,
-      name,
+      role,
     });
   }
 
-  async removeDb(id: string): Promise<boolean> {
+  async removeDbByContainerDbId(containerDbId: string): Promise<boolean> {
     await this.checkActionAccess(resources.container.actions.edit);
-    return new ContainerDbRepo(this.ctx).delete();
+    return new ContainerDbRepo(this.ctx, containerDbId).delete();
   }
 
   async _updateLifeStatus(status: string): Promise<void> {
