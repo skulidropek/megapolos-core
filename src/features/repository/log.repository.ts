@@ -52,7 +52,7 @@ export default class LogRepo extends BaseRepo<Log> {
     return true;
   }
 
-  private _logEntityToLogViewAction(log): UserAction | null {
+  private _logEntityToLogViewAction(log: Log): UserAction | null {
     if (log.nodeId) {
       return {
         resourceType: ResourceType.Node,
