@@ -22,7 +22,7 @@ export default class DbUserRepo extends BaseRepo<DbUser> {
       await mem(async (em) =>
         em.findOne(DbUser, { id: this.id }, { populate: ['ownedDbs'] })
       )
-    ).dbs.getItems();
+    ).ownedDbs.getItems();
   }
 
   async getDbms(): Promise<Dbms> {
