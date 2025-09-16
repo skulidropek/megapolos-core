@@ -22,6 +22,7 @@ import { Log } from '../../domain/entities/Log.entity';
 import NodeRepo from './megapolos.node.repository';
 import { ImageEnvRequirement } from '../../domain/entities/ImageEnvRequirement.entity';
 import { ImageEnvRequirementInput } from '../../api/graphql/resolvers/image.resolver';
+import DockerRegistryRepo from './docker.registry.repository';
 
 export default class ImageRepo extends BaseRepo<Image> {
   get entityClass() {
@@ -58,8 +59,10 @@ export default class ImageRepo extends BaseRepo<Image> {
           objectType: ResourceType.Image,
           type: LogType.ImageBuild,
         });
+        const defaultDockerRegistry =
+          await new DockerRegistryRepo().getDefault();
 
-        let tags = `-t ${data.image} -t ${config.registryHost}:443/${data.image}`;
+        let tags = `-t ${data.image} -t ${defaultDockerRegistry.host}:443/${data.image}`;
         if (config.devMode) {
           tags = `-t ${data.image}`;
         }
@@ -71,12 +74,12 @@ export default class ImageRepo extends BaseRepo<Image> {
         ).output;
         if (!config.devMode) {
           await NodeRepo.currentNode.shellCommand(
-            `docker login -u '${config.registryUser}' -p '${config.registryPassword}' ${config.registryHost}:443`,
+            `docker login -u '${defaultDockerRegistry.user}' -p '${defaultDockerRegistry.password}' ${defaultDockerRegistry.host}:443`,
             new UserRepo(this.ctx, this.ctx.user.id),
             log
           ).output;
           await NodeRepo.currentNode.shellCommand(
-            `docker push ${config.registryHost}:443/${data.image}`,
+            `docker push ${defaultDockerRegistry.host}:443/${data.image}`,
             new UserRepo(this.ctx, this.ctx.user.id),
             log
           ).output;

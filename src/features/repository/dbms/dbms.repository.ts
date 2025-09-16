@@ -1,7 +1,10 @@
+import { Db } from '../../../domain/entities/Db.entity';
+import { DbUser } from '../../../domain/entities/DbUser.entity';
 import { knex } from '../../db/knex';
 import { DbSchemaSchema, DbmsTable } from '../../db/tables';
 import DbRepo from '../db/db.repository';
 import DbSchemaRepo from '../db/db.schema.repository';
+import DbUserRepo from '../db/db.user.repository';
 import BaseDbmsRepo from './base.dbms.repository';
 import PostgresDmbs from './postgres.dbms.repository';
 
@@ -137,6 +140,35 @@ class DbmsRepo {
       }
     });
     return result;
+  }
+
+  static async мassDbQuery(
+    query: string,
+    connections: { dbId: string; dbUserId?: string }[]
+  ): Promise<
+    {
+      db: Db;
+      dbUser: DbUser;
+      result: string;
+      error?: string;
+    }[]
+  > {
+    return Promise.all(
+      connections.map(async ({ dbId, dbUserId }) => {
+        const db = await new DbRepo(undefined, dbId).getEntity();
+        if (db == null) {
+          return {
+            db: null,
+            dbUser: null,
+            result: '',
+            error: `Non exist DB with Id: "${dbId}"`,
+          };
+        }
+
+        const dbms = await this.getById(db.dbms.id);
+        return await dbms.query(query, dbId, dbUserId);
+      })
+    );
   }
 }
 
