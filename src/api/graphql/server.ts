@@ -166,6 +166,7 @@ import {
 import { DbTableResolver } from './resolvers/dbms.resolver';
 import { DbSchemaTableResolver } from './resolvers/dbms.resolver';
 import { ContainerDbTableResolver } from './resolvers/container.db.resolver';
+import { TestCaseResolver } from './resolvers/testCase.resolver';
 
 export class Context {
   constructor(data: {
@@ -229,6 +230,7 @@ async function bootstrap() {
       LogTableResolver,
       DbTableResolver,
       DbSchemaTableResolver,
+      TestCaseResolver,
     ],
   });
 
