@@ -30,6 +30,7 @@ import ImageRepo from './image.repository';
 import LogRepo from './log.repository';
 import UserRepo from './user/user.repository';
 import { Container } from '../../domain/entities/Container.entity';
+import DockerRegistryRepo from './docker.registry.repository';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function asyncSpawn(
@@ -142,8 +143,10 @@ export default class NodeRepo extends BaseRepo<Node> {
       }
       containerResult.name = instance.name + '_' + container.name;
       containerResult.description = container.id;
+
+      const defaultDockerRegistry = await new DockerRegistryRepo().getDefault();
       containerResult.image = image.repository_id
-        ? `${config.registryHost}:443/${image.image}`
+        ? `${defaultDockerRegistry.host}:443/${image.image}`
         : image.image;
       if (config.devMode) {
         containerResult.image = image.image;
@@ -252,12 +255,15 @@ export default class NodeRepo extends BaseRepo<Node> {
       nodeName: data.name,
       type: LogType.NodeInstallRegistry,
     });
+
+    const defaultDockerRegistry = await new DockerRegistryRepo().getDefault();
+
     this.runAnsible(
       `${megapolosPath}/ansible/registry.yml`,
       {
-        registry_domain: config.registryHost,
-        registry_user: config.registryUser,
-        registry_password: config.registryPassword,
+        registry_domain: defaultDockerRegistry.host,
+        registry_user: defaultDockerRegistry.user,
+        registry_password: defaultDockerRegistry.password,
       },
       log
     );
@@ -268,12 +274,17 @@ export default class NodeRepo extends BaseRepo<Node> {
     data.node = node;
     const jsonPath = megapolosPath + `/ansible/${uuidv4()}.json`;
     await fse.writeFile(jsonPath, JSON.stringify(data, null, 2));
+
+    const defaultDockerRegistry = await new DockerRegistryRepo().getDefault();
+
     let command = `MEGAPOLOS_DEBUG=${
       config.debug ? '1' : '0'
     } ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg CI_REGISTRY=${
-      config.registryHost
-    }:443 CI_REGISTRY_USER='${config.registryUser}' CI_REGISTRY_PASSWORD='${
-      config.registryPassword
+      defaultDockerRegistry.host
+    }:443 CI_REGISTRY_USER='${
+      defaultDockerRegistry.user
+    }' CI_REGISTRY_PASSWORD='${
+      defaultDockerRegistry.password
     }' ANSIBLE_PASSWORD='${
       node.password
     }' JSON_PATH=${jsonPath} ANSIBLE_SSH_COMMON_ARGS='-o UserKnownHostsFile=/dev/null' ansible-playbook -u ${
