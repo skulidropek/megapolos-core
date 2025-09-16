@@ -19,6 +19,10 @@ export class Db extends BaseEntity {
   @Field()
   name!: string;
 
+  @ManyToOne(() => DbUser)
+  @Field()
+  owner!: DbUser;
+
   @ManyToOne({ entity: () => Dbms })
   @Field(() => Dbms)
   @Hint({ type: () => ID })

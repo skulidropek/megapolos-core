@@ -17,6 +17,14 @@ export default class DbUserRepo extends BaseRepo<DbUser> {
     ).dbs.getItems();
   }
 
+  async getOwnedDbs(): Promise<Db[]> {
+    return (
+      await mem(async (em) =>
+        em.findOne(DbUser, { id: this.id }, { populate: ['ownedDbs'] })
+      )
+    ).dbs.getItems();
+  }
+
   async getDbms(): Promise<Dbms> {
     return (
       await mem(async (em) =>
