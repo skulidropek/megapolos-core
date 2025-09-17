@@ -21,6 +21,7 @@ import RepositoryRepo from '../../../features/repository/repository.repository';
 import { GraphQLResolveInfo } from 'graphql';
 import { App } from '../../../domain/entities/App.entity';
 import { ImageEnvRequirement } from '../../../domain/entities/ImageEnvRequirement.entity';
+import { resources } from '../../../features/rights/resources.list';
 import { Container } from '../../../domain/entities/Container.entity';
 import ContainerDbRepo from '../../../features/repository/cantainer/container.db.repository';
 import { ContainerRepo } from '../../../features/repository/cantainer/container.repository';
@@ -57,7 +58,10 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    new ImageRepo(ctx, imageId).build();
+    var imageRepo = new ImageRepo(ctx, imageId);
+    await imageRepo.checkActionAccess(resources.Image.actions.build);
+
+    void imageRepo.build(); //!!! fire-and-forget execution
     return true;
   }
 
@@ -66,11 +70,16 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageIds', () => [String]) imageIds: string[],
     @Ctx() ctx: Context
   ): Promise<boolean> {
+    for (const imageId of imageIds) {
+      var imageRepo = new ImageRepo(ctx, imageId);
+      await imageRepo.checkActionAccess(resources.Image.actions.build);
+    }
+
     (async () => {
       for (const imageId of imageIds) {
         await new ImageRepo(ctx, imageId).build();
       }
-    })();
+    })(); //!!! fire-and-forget execution
     return true;
   }
 
@@ -79,7 +88,10 @@ export class ImageResolver extends CreateBaseResolver(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    new ImageRepo(ctx, imageId).updateNodes();
+    var imageRepo = new ImageRepo(ctx, imageId);
+    await imageRepo.checkActionAccess(resources.Image.actions.update_nodes);
+
+    void imageRepo.updateNodes(); //!!! fire-and-forget execution
     return true;
   }
 

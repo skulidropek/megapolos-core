@@ -125,7 +125,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   }
 
   async filterEntitiesByAccess(entities: Entity[]): Promise<Entity[]> {
-    if (this.ctx?.noRightsCheck || !resources[this.entityName.toLowerCase()]) {
+    if (this.ctx?.noRightsCheck || !resources[this.entityName]) {
       return entities;
     }
 

@@ -34,7 +34,7 @@ export default class ImageRepo extends BaseRepo<Image> {
   }
 
   async build() {
-    await this.checkActionAccess(resources.image.actions.build);
+    await this.checkActionAccess(resources.Image.actions.build);
     this.ctx = this.ctx.cloneNoRightsCheck();
     const data = await this.getEntity();
     if (!data.repository?.id) {
@@ -56,6 +56,7 @@ export default class ImageRepo extends BaseRepo<Image> {
           name: 'Build image ' + data.name,
           objectId: this.id,
           objectName: data.name,
+          objectType: ResourceType.Image,
           type: LogType.ImageBuild,
         });
         const defaultDockerRegistry =
@@ -112,7 +113,8 @@ export default class ImageRepo extends BaseRepo<Image> {
   }
 
   async updateNodes(): Promise<void> {
-    await this.checkActionAccess(resources.image.actions.update_nodes);
+    await this.checkActionAccess(resources.Image.actions.update_nodes);
+    this.ctx = this.ctx.cloneNoRightsCheck();
     const containers = await new ContainerRepo(this.ctx).getByFields({
       image: this.id,
     });
@@ -130,7 +132,7 @@ export default class ImageRepo extends BaseRepo<Image> {
   async changeEnvs(
     envs: (typeof ImageEnvRequirementInput)[]
   ): Promise<boolean> {
-    await this.checkActionAccess(resources.image.actions.edit);
+    await this.checkActionAccess(resources.Image.actions.edit);
     const em = makeEm();
     await em.nativeDelete(ImageEnvRequirement, { image: this.id });
     await em.insertMany(
@@ -144,7 +146,7 @@ export default class ImageRepo extends BaseRepo<Image> {
   async changeVariables(
     variables: ImageVariableRequirementTable[]
   ): Promise<boolean> {
-    await this.checkActionAccess(resources.image.actions.edit);
+    await this.checkActionAccess(resources.Image.actions.edit);
     await knex('image_variable_requirement')
       .where({ image_id: this.id })
       .delete();
@@ -158,7 +160,7 @@ export default class ImageRepo extends BaseRepo<Image> {
   }
 
   async getEnvs(): Promise<ImageEnvRequirement[]> {
-    await this.checkActionAccess(resources.image.actions.read);
+    await this.checkActionAccess(resources.Image.actions.read);
     return (
       await makeEm().findOneOrFail(
         Image,
@@ -171,12 +173,12 @@ export default class ImageRepo extends BaseRepo<Image> {
   }
 
   async getVariables(): Promise<ImageVariableRequirementTable[]> {
-    await this.checkActionAccess(resources.image.actions.read);
+    await this.checkActionAccess(resources.Image.actions.read);
     return knex('image_variable_requirement').where({ image_id: this.id });
   }
 
   async getLastBuildLog(): Promise<Log> {
-    await this.checkActionAccess(resources.image.actions.read);
+    await this.checkActionAccess(resources.Image.actions.read);
     return (
       await makeEm().find(
         Log,
