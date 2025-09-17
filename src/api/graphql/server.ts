@@ -204,7 +204,6 @@ async function bootstrap() {
       UserResolver,
       UserTableResolver,
       AppResolver,
-      AppVersionResolver,
       AppTableResolver,
       GroupUserPrivilegeTableResolver,
       RepositoryResolver,
