@@ -15,28 +15,22 @@ import { Hint } from '../../library/graphql_types_generator';
 @ObjectType()
 export class AppVersion extends BaseEntity {
   @ManyToOne({ entity: () => App })
-  @Field(() => App)
   @Hint({ type: () => ID, skipOnUpdate: true })
   app!: App;
 
   @Property()
   @Field()
-  build_number!: number;
+  buildNumber!: number;
 
-  // TODO - suspicious inconsistence of 'version?' vs '@Field()' -
-  // the field is obligatory in graphQL ('nullable: true' is not set)
-  // but not in typescript ('?' symbol)
-  // (such inconsistence is present in many places)
   @Property({ length: -1 })
-  @Field()
+  @Field({ nullable: true })
   version?: string;
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
-  version_comment?: string;
+  versionComment?: string;
 
-  @ManyToMany(() => Image, (image) => image.appVersions, { owner: true })
-  @Field(() => [Image])
+  @ManyToMany(() => Image)
   @Hint({ skip: true })
   images = new Collection<Image>(this);
 }

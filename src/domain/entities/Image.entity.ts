@@ -96,6 +96,6 @@ export class Image extends BaseEntity {
   @Hint({ skip: true })
   envs = new Collection<ImageEnvRequirement>(this);
 
-  @ManyToMany(() => AppVersion, (appVersion) => appVersion.images)
-  appVersions = new Collection<AppVersion>(this);
+  // @ManyToMany(() => AppVersion, (appVersion) => appVersion.images)
+  // appVersions = new Collection<AppVersion>(this);
 }

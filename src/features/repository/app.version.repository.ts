@@ -22,11 +22,17 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     return ResourceType.AppVersion;
   }
 
+  async getImages(): Promise<Image[]> {
+    const appVersion = await this.getEntity();
+    const images = await appVersion.images.loadItems();
+    return new ImageRepo(this.ctx).filterEntitiesByAccess(images);
+  }
+
   async createAppVersion(
     appVersionData: RequiredEntityData<AppVersion>,
     images_data: AppVersionImageInput[]
   ): Promise<AppVersion> {
-    await this.checkActionAccess(resources.app_version.actions.create);
+    await this.checkActionAccess(resources.AppVersion.actions.create);
     const application = await new AppRepo(
       this.ctx,
       //'d10127f1-60b4-481c-b990-9845a08c8b5e'
@@ -34,9 +40,9 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     ).getEntity();
     const appVersion = await super.create({
       app: application,
-      build_number: appVersionData.build_number,
+      buildNumber: appVersionData.buildNumber,
       version: appVersionData.version,
-      version_comment: appVersionData.version_comment,
+      versionComment: appVersionData.versionComment,
     });
 
     // Array to hold Image entities' ids to associate with this version
