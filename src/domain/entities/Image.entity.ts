@@ -35,9 +35,9 @@ export class Image extends BaseEntity {
   name!: string;
 
   @ManyToOne({ entity: () => App, defaultRaw: `gen_random_uuid()` })
-  @Field(() => App)
+  @Field(() => App, { nullable: true })
   @Hint({ type: () => ID })
-  app!: App & Opt;
+  app?: App & Opt;
 
   @Property({ length: -1 })
   @Field()
@@ -95,7 +95,4 @@ export class Image extends BaseEntity {
   @Field(() => [ImageEnvRequirement])
   @Hint({ skip: true })
   envs = new Collection<ImageEnvRequirement>(this);
-
-  // @ManyToMany(() => AppVersion, (appVersion) => appVersion.images)
-  // appVersions = new Collection<AppVersion>(this);
 }

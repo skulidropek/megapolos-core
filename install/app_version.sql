@@ -25,3 +25,36 @@ ALTER TABLE "app_version_images"
 
 ALTER TABLE "app_version_images"
     ADD CONSTRAINT "app_version_images_image_id_foreign" FOREIGN KEY ("image_id") REFERENCES "image" ("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE "image"
+    ADD COLUMN "build_number" int NOT NULL DEFAULT 0,
+    ADD COLUMN "version" varchar NULL,
+    ADD COLUMN "version_comment" varchar NULL;
+
+ALTER TABLE "image"
+    ALTER COLUMN "app_id" DROP DEFAULT;
+
+ALTER TABLE "image"
+    ALTER COLUMN "app_id" TYPE uuid
+    USING ("app_id"::text::uuid);
+
+ALTER TABLE "image"
+    ALTER COLUMN "app_id" DROP NOT NULL;
+
+
+--- на подумать,не применял
+/*
+ALTER TABLE "image"
+    ALTER COLUMN "status" TYPE text
+    USING ("status"::text);
+
+ALTER TABLE "image"
+    ADD CONSTRAINT "image_status_check" CHECK ("status" IN ('not_exist', 'building', 'built'));
+
+ALTER TABLE "image"
+    ADD CONSTRAINT "image_app_id_foreign" FOREIGN KEY ("app_id") REFERENCES "app" ("id") ON UPDATE CASCADE ON DELETE SET NULL;
+
+ALTER TABLE "image"
+    ADD CONSTRAINT "image_repository_id_foreign" FOREIGN KEY ("repository_id") REFERENCES "repository" ("id") ON UPDATE CASCADE ON DELETE SET NULL;
+
+*/

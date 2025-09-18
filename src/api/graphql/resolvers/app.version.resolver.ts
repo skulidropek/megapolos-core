@@ -30,10 +30,10 @@ export const AppVersionInput = generateGraphQLInputType(
 
 @InputType()
 export class AppVersionImageInput {
-  @Field()
+  @Field({ nullable: true })
   image_id?: string;
 
-  @Field(() => ImageInput)
+  @Field(() => ImageInput, { nullable: true })
   image_data?: typeof ImageInput;
 }
 
