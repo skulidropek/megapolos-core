@@ -31,10 +31,10 @@ export const AppVersionInput = generateGraphQLInputType(
 @InputType()
 export class AppVersionImageInput {
   @Field({ nullable: true })
-  image_id?: string;
+  imageId?: string;
 
   @Field(() => ImageInput, { nullable: true })
-  image_data?: typeof ImageInput;
+  imageData?: typeof ImageInput;
 }
 
 export const AppVersionUpdateInput = generateGraphQLInputType(
@@ -53,13 +53,13 @@ export class AppVersionResolver extends CreateBaseResolver(
 ) {
   @Mutation(() => AppVersion)
   async createAppVersion(
-    @Arg('app_version_data', () => AppVersionInput)
-    app_version_data: typeof AppVersionInput,
+    @Arg('appVersionData', () => AppVersionInput)
+    appVersionData: typeof AppVersionInput,
     @Arg('images', () => [AppVersionImageInput]) images: AppVersionImageInput[],
     @Ctx() ctx: Context
   ): Promise<AppVersion> {
     const repo = new AppVersionRepo(ctx);
-    return repo.createAppVersion(app_version_data, images);
+    return repo.createAppVersion(appVersionData, images);
   }
 }
 
