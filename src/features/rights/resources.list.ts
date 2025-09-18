@@ -11,42 +11,48 @@ const defaultRights = {
   remove: 'remove',
   edit: 'edit',
   read: 'read',
+  view_log: 'view_log',
 };
 
 const resources = {
-  repository: {
-    type: 'repository',
+  Repository: {
+    type: 'Repository',
     actions: { ...defaultRights, fetch: 'fetch', push: 'push' },
   },
-  container: {
-    type: 'container',
+  Container: {
+    type: 'Container',
     actions: { ...defaultRights, manage: 'manage' },
   },
-  image: {
-    type: 'image',
+  Image: {
+    type: 'Image',
     actions: { ...defaultRights, build: 'build', update_nodes: 'update_nodes' },
   },
-  app_instance: {
-    type: 'app_instance',
+  AppInstance: {
+    type: 'AppInstance',
     actions: { ...defaultRights, build: 'build', manage: 'manage' },
+  },
+  App: {
+    type: 'App',
+    actions: { ...defaultRights },
   },
   AppVersion: {
     type: 'AppVersion',
     actions: { ...defaultRights },
   },
-  app: {
-    type: 'app',
+  Node: {
+    type: 'Node',
     actions: { ...defaultRights },
   },
 };
 
 enum ResourceType {
-  Repository = 'repository',
-  Container = 'container',
-  Image = 'image',
-  AppInstance = 'app_instance',
+  App = 'App',
+  AppInstance = 'AppInstance',
+  Container = 'Container',
+  Image = 'Image',
+  Node = 'Node',
+  Repository = 'Repository',
   AppVersion = 'AppVersion',
-  App = 'app',
 }
 
 registerEnumType(ResourceType, {

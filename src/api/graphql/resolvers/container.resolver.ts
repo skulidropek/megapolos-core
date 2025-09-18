@@ -29,6 +29,8 @@ import NodeRepo from '../../../features/repository/megapolos.node.repository';
 import { Node } from '../../../domain/entities/Node.entity';
 import ImageRepo from '../../../features/repository/image.repository';
 import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
+import { AppInstance } from '../../../domain/entities/AppInstance.entity';
+import AppInstanceRepo from '../../../features/repository/app.instance.repository';
 
 @ObjectType()
 export class ContainerFileListResult {
@@ -154,19 +156,18 @@ export class ContainerResolver extends CreateBaseResolver(
     @Arg('containerId') containerId: string,
     @Arg('dbId') dbId: string,
     @Arg('dbUserId') dbUserId: string,
-    @Arg('name') name: string,
+    @Arg('role') role: string,
     @Ctx() ctx: Context
   ): Promise<ContainerDb> {
-    return new ContainerRepo(ctx, containerId).addDb(dbId, dbUserId, name);
+    return new ContainerRepo(ctx, containerId).addDb(dbId, dbUserId, role);
   }
 
   @Mutation(() => Boolean)
   async removeDbFromContainer(
-    @Arg('containerId') containerId: string,
-    @Arg('dbId') dbId: string,
+    @Arg('containerDbId') containerDbId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    return new ContainerRepo(ctx, containerId).removeDb(dbId);
+    return new ContainerRepo(ctx).removeDbByContainerDbId(containerDbId);
   }
 }
 
@@ -238,5 +239,13 @@ export class ContainerTableResolver extends BaseTableResolver {
   @FieldResolver(() => Node)
   async node(@Root() container: Container, @Ctx() ctx: Context): Promise<Node> {
     return new NodeRepo(ctx, container.node.id).getEntity();
+  }
+
+  @FieldResolver(() => AppInstance, { nullable: false })
+  async appInstance(
+    @Root() container: Container,
+    @Ctx() ctx: Context
+  ): Promise<AppInstance> {
+    return new AppInstanceRepo(ctx, container.appInstance.id).getEntity();
   }
 }

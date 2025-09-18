@@ -18,7 +18,7 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   }
 
   async create(data: Partial<Repository>): Promise<Repository> {
-    await this.checkActionAccess(resources.repository.actions.create);
+    await this.checkActionAccess(resources.Repository.actions.create);
     const repositoryData = await super.create(data);
     const repository = new RepositoryRepo(this.ctx, repositoryData.id);
     await repository._clone();
@@ -26,7 +26,7 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   }
 
   async update(data: Partial<Repository>): Promise<boolean> {
-    await this.checkActionAccess(resources.repository.actions.edit);
+    await this.checkActionAccess(resources.Repository.actions.edit);
     const previousData = await this.getEntity();
     const result = await super.update(data);
     if (data.url && data.url !== previousData.url) {
@@ -38,14 +38,14 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   }
 
   async delete(): Promise<boolean> {
-    await this.checkActionAccess(resources.repository.actions.remove);
+    await this.checkActionAccess(resources.Repository.actions.remove);
     const path = await this._getPath();
     await fse.remove(path);
     return super.delete();
   }
 
   async fetch(): Promise<void> {
-    await this.checkActionAccess(resources.repository.actions.fetch);
+    await this.checkActionAccess(resources.Repository.actions.fetch);
     const path = await this._getPath();
     console.log('fetch', path);
     await simpleGit(path).fetch();
@@ -53,7 +53,7 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   }
 
   async push(branchFrom: string, branchTo: string): Promise<void> {
-    await this.checkActionAccess(resources.repository.actions.push);
+    await this.checkActionAccess(resources.Repository.actions.push);
     await simpleGit(await this._getPath()).push(
       'origin',
       branchFrom + ':' + branchTo
@@ -61,7 +61,7 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   }
 
   async copyBranchTo(path: string, branch: string): Promise<void> {
-    await this.checkActionAccess(resources.repository.actions.read);
+    await this.checkActionAccess(resources.Repository.actions.read);
     const repositoryPath = await this._getPath();
     if (!(await fse.exists(path))) {
       await fse.mkdir(path);
@@ -71,7 +71,7 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   }
 
   async getBranches(): Promise<string[]> {
-    await this.checkActionAccess(resources.repository.actions.read);
+    await this.checkActionAccess(resources.Repository.actions.read);
     const path = await this._getPath();
     return [
       ...(await simpleGit(path).branch()).all,
@@ -80,7 +80,7 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   }
 
   async listFiles(branch: string, path: string): Promise<RepositoryFiles> {
-    await this.checkActionAccess(resources.repository.actions.read);
+    await this.checkActionAccess(resources.Repository.actions.read);
     if (path === '') {
       path = '.';
     } else {
@@ -108,7 +108,7 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   }
 
   async showFile(branch: string, path: string): Promise<string> {
-    await this.checkActionAccess(resources.repository.actions.read);
+    await this.checkActionAccess(resources.Repository.actions.read);
     const repositoryPath = await this._getPath();
     return simpleGit(repositoryPath).show([branch + ':' + path]);
   }

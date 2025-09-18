@@ -571,5 +571,5 @@ export interface ContainerDbTable extends IEntity {
   container_id: string;
   db_id: string;
   db_user_id: string;
-  name: string;
+  role: string;
 }
