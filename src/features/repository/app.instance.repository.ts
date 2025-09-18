@@ -131,7 +131,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async changeInstanceVersion(appVersionId: string): Promise<boolean> {
-    await this.checkActionAccess(resources.app_instance.actions.edit);
+    await this.checkActionAccess(resources.AppInstance.actions.edit);
 
     const newAppVersionRepo = new AppVersionRepo(this.ctx, appVersionId);
     await newAppVersionRepo.checkActionAccess(
