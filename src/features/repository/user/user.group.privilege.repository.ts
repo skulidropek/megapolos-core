@@ -9,6 +9,12 @@ export default class UserGroupPrivilegeRepo extends BaseRepo<GroupUserPrivilege>
     return GroupUserPrivilege;
   }
 
+  async getPrivilegesByObjectId(
+    objectId: string
+  ): Promise<GroupUserPrivilege[]> {
+    return await this.getByFields({ objectId: objectId });
+  }
+
   async pushOwner(resourceType: string, resourceId: string) {
     if (!this.ctx?.user?.id || (await new UserRepo(this.ctx).amIRootUser())) {
       return;
@@ -96,7 +102,7 @@ export default class UserGroupPrivilegeRepo extends BaseRepo<GroupUserPrivilege>
       makeEm().nativeDelete(GroupUserPrivilege, { id });
 
     if (privilege.action == '*') {
-      if (!(await new UserRepo(this.ctx).amIRootUser())) {
+      if (!(await new UserRepo(this.ctx, this.ctx.user.id).amIRootUser())) {
         this._throwAccessDenied();
       } else {
         await deletePrivilege();

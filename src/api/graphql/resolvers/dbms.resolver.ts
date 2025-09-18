@@ -31,8 +31,9 @@ import { RequiredEntityData } from '@mikro-orm/core';
 import DbUserRepo from '../../../features/repository/db/db.user.repository';
 import DbSchemaRepo from '../../../features/repository/db/db.schema.repository';
 import DbRepo from '../../../features/repository/db/db.repository';
-import { makeEm } from '../../../features/db/mikro-orm';
 import { DbUserInput } from './db.user.resolver';
+import { ContainerDb } from '../../../domain/entities/ContainerDb.entity';
+import ContainerDbRepo from '../../../features/repository/cantainer/container.db.repository';
 
 export const DbInput = generateGraphQLInputType(
   Db,
@@ -50,6 +51,30 @@ class MassDbQueryResult {
 
   @Field({ nullable: true })
   error?: string;
+}
+
+@ObjectType()
+class MassDbQueryControlledResult {
+  @Field(() => Db, { nullable: true })
+  db?: Db;
+
+  @Field(() => DbUser, { nullable: true })
+  dbUser?: DbUser;
+
+  @Field()
+  result: string;
+
+  @Field({ nullable: true })
+  error?: string;
+}
+
+@InputType()
+class MassDbQueryControlledConnectionInput {
+  @Field()
+  dbId!: string;
+
+  @Field({ nullable: true })
+  dbUserId?: string;
 }
 
 export const DbmsInput = generateGraphQLInputType(
@@ -76,7 +101,7 @@ export class DbmsResolver {
     return (await DbmsRepo.getById(id)).getEntity();
   }
 
-  @Query(() => [DbUser])
+  @Query(() => DbUser)
   async getDbUser(@Arg('id') id: string, @Ctx() ctx: Context): Promise<DbUser> {
     return new DbUserRepo(ctx, id).getEntity();
   }
@@ -261,6 +286,16 @@ export class DbmsResolver {
     return (await DbmsRepo.getById(dbmsId)).massDbQuery(dbNames, query);
   }
 
+  @Mutation(() => [MassDbQueryControlledResult])
+  async massDbQueryControlled(
+    @Arg('query') query: string,
+    @Arg('connections', () => [MassDbQueryControlledConnectionInput])
+    connections: MassDbQueryControlledConnectionInput[],
+    @Ctx() ctx: Context
+  ): Promise<MassDbQueryControlledResult[]> {
+    return await DbmsRepo.мassDbQuery(query, connections);
+  }
+
   @Mutation(() => DbBackup)
   async uploadBackupText(
     @Arg('type') type: string,
@@ -303,10 +338,25 @@ export class DbTableResolver extends BaseTableResolver {
     return (await DbmsRepo.getById(db.dbms.id)).getSchema(db.name);
   }
 
-  @FieldResolver(() => [Db])
-  async users(@Root() db: Db): Promise<DbUser[]> {
-    return await makeEm().find(DbUser, {
+  @FieldResolver(() => [DbUser])
+  async users(@Root() db: Db, @Ctx() ctx: Context): Promise<DbUser[]> {
+    return new DbUserRepo(ctx).getByFields({
       dbs: { id: db.id },
+    });
+  }
+
+  @FieldResolver(() => Dbms, { nullable: false })
+  async dbms(@Root() db: Db, @Ctx() ctx: Context): Promise<Dbms> {
+    return new BaseDbmsRepo(ctx, db.dbms.id).getEntity();
+  }
+
+  @FieldResolver(() => [ContainerDb])
+  async containers(
+    @Root() db: Db,
+    @Ctx() ctx: Context
+  ): Promise<ContainerDb[]> {
+    return new ContainerDbRepo(ctx).getByFields({
+      db: { id: db.id },
     });
   }
 }
