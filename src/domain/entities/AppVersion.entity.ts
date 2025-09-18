@@ -15,6 +15,7 @@ import { Hint } from '../../library/graphql_types_generator';
 @ObjectType()
 export class AppVersion extends BaseEntity {
   @ManyToOne({ entity: () => App })
+  @Field(() => App)
   @Hint({ type: () => ID, skipOnUpdate: true })
   app!: App;
 
@@ -31,6 +32,5 @@ export class AppVersion extends BaseEntity {
   versionComment?: string;
 
   @ManyToMany(() => Image)
-  @Hint({ skip: true })
   images = new Collection<Image>(this);
 }
