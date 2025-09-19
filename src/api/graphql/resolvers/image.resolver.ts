@@ -115,6 +115,10 @@ export class ImageTableResolver extends BaseTableResolver {
     @Info() info: GraphQLResolveInfo,
     @Ctx() ctx: Context
   ): Promise<Repository | null> {
+    if (!image.repository) {
+      return null;
+    }
+
     return this.returnOnlyIdIfNeeded(info, image.repository.id, () =>
       new RepositoryRepo(ctx, image.repository.id).getEntity()
     );
