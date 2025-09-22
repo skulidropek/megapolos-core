@@ -2,6 +2,7 @@ import fse from 'fs-extra';
 import simpleGit from 'simple-git';
 import BaseRepo from './base.repository';
 import {
+  LogCommit,
   Repository,
   RepositoryFiles,
 } from '../../domain/entities/Repository.entity';
@@ -77,6 +78,26 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
       ...(await simpleGit(path).branch()).all,
       ...(await simpleGit(path).tags()).all,
     ];
+  }
+
+  async getLastCommitOfBranch(branch: string): Promise<LogCommit | null> {
+    await this.checkActionAccess(resources.Repository.actions.read);
+
+    const git = simpleGit(await this._getPath());
+    const logLatest = (await git.log([branch, '-n', '1'])).latest;
+
+    const lastCommit: LogCommit | null = logLatest
+      ? {
+          hash: logLatest.hash,
+          authorEmail: logLatest.author_email,
+          authorName: logLatest.author_name,
+          body: logLatest.body,
+          date: new Date(logLatest.date),
+          message: logLatest.message,
+          refs: logLatest.refs,
+        }
+      : null;
+    return lastCommit;
   }
 
   async listFiles(branch: string, path: string): Promise<RepositoryFiles> {

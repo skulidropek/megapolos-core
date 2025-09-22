@@ -10,6 +10,7 @@ import {
 } from 'type-graphql';
 import { BaseTableResolver, CreateBaseResolver } from '../base.resolver';
 import {
+  LogCommit,
   Repository,
   RepositoryFiles,
 } from '../../../domain/entities/Repository.entity';
@@ -69,6 +70,15 @@ export class RepositoryResolver extends CreateBaseResolver(
     @Arg('path', { defaultValue: '' }) path: string
   ): Promise<RepositoryFiles> {
     return new RepositoryRepo(ctx, id).listFiles(branch, path);
+  }
+
+  @Query(() => LogCommit, { nullable: true })
+  async getLastCommitOfBranch(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string,
+    @Arg('branch') branch: string
+  ): Promise<LogCommit | null> {
+    return new RepositoryRepo(ctx, id).getLastCommitOfBranch(branch);
   }
 
   @Mutation(() => Boolean)

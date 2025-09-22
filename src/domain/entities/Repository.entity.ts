@@ -53,3 +53,27 @@ export class RepositoryFiles {
   @Field(() => [String])
   directories: string[];
 }
+
+@ObjectType()
+export class LogCommit {
+  @Field()
+  hash: string;
+
+  @Field()
+  date: Date;
+
+  @Field()
+  message: string;
+
+  @Field()
+  refs: string;
+
+  @Field()
+  body: string;
+
+  @Field()
+  authorName: string;
+
+  @Field()
+  authorEmail: string;
+}
