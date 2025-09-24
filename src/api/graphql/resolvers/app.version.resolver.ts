@@ -61,6 +61,18 @@ export class AppVersionResolver extends CreateBaseResolver(
     const repo = new AppVersionRepo(ctx);
     return repo.createAppVersion(appVersionData, images);
   }
+
+  @Mutation(() => AppVersion)
+  async editAppVersion(
+    @Arg('id') id: string,
+    @Arg('appVersionData', () => AppVersionUpdateInput)
+    appVersionData: typeof AppVersionUpdateInput,
+    @Arg('images', () => [AppVersionImageInput]) images: AppVersionImageInput[],
+    @Ctx() ctx: Context
+  ): Promise<AppVersion> {
+    const repo = new AppVersionRepo(ctx, id);
+    return repo.editAppVersion(appVersionData, images);
+  }
 }
 
 @Resolver(() => AppVersion)

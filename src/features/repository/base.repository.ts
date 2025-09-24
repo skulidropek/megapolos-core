@@ -57,7 +57,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   // CRUD
   async create(entity: RequiredEntityData<Entity>): Promise<Entity> {
     await this.checkActionAccess(defaultRights.create);
-    const em = makeEm();
+    const em = this?.ctx.tcem ?? makeEm();
     const created = em.create(this.entityClass, entity);
     await em.persistAndFlush(created);
     this.id = created.id;

@@ -175,6 +175,7 @@ import {
   AppVersionResolver,
   AppVersionTableResolver,
 } from './resolvers/app.version.resolver';
+import { SqlEntityManager } from '@mikro-orm/postgresql';
 
 export class Context {
   constructor(data: {
@@ -193,6 +194,7 @@ export class Context {
   res: express.Response;
   user?: User;
   noRightsCheck?: boolean;
+  tcem?: SqlEntityManager;
   cloneNoRightsCheck() {
     const ctx = new Context({
       req: this.req,
@@ -201,6 +203,18 @@ export class Context {
       noRightsCheck: true,
     });
     return ctx;
+  }
+
+  setTransactionContextEM(tcem: SqlEntityManager) {
+    if (this.tcem) {
+      throw new Error('Transaction alredy set.');
+    }
+
+    this.tcem = tcem;
+  }
+
+  relizeTransactionContextEM() {
+    this.tcem = null;
   }
 }
 
