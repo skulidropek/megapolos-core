@@ -41,6 +41,8 @@ ALTER TABLE "image"
 ALTER TABLE "image"
     ALTER COLUMN "app_id" DROP NOT NULL;
 
+ALTER TABLE "image"
+    DROP CONSTRAINT "image_name_key";
 
 --- на подумать,не применял
 /*

@@ -30,7 +30,7 @@ registerEnumType(ImageStatus, {
 @Entity()
 @ObjectType()
 export class Image extends BaseEntity {
-  @Property({ length: -1, unique: 'image_name_key' })
+  @Property({ length: -1 })
   @Field()
   name!: string;
 
