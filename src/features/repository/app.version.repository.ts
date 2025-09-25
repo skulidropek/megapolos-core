@@ -102,12 +102,10 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
 
       const appVersion = await this.getEntity();
 
-      // Array to hold Image entities' ids to associate with this version
-      const imageIds: string[] = [];
+      const newImages: Image[] = [];
 
       for (const input of images_data) {
         if (input.imageId) {
-          // Existing image case
           const image = await new ImageRepo(
             this.ctx,
             input.imageId
@@ -115,16 +113,15 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
           if (!image) {
             throw new Error(`Image with id ${input.imageId} not found`);
           }
-          imageIds.push(input.imageId);
+          newImages.push(image);
         } else if (input.imageData) {
-          // New image case
           const image = await new ImageRepo(this.ctx).create(input.imageData);
-          imageIds.push(image.id);
+          newImages.push(image);
         }
       }
 
-      for (const imageId of imageIds) {
-        const image = await em.findOne(Image, { id: imageId });
+      appVersion.images.removeAll();
+      for (const image of newImages) {
         appVersion.images.add(image);
       }
 
