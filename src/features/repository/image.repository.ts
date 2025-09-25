@@ -147,8 +147,10 @@ export default class ImageRepo extends BaseRepo<Image> {
     }
   }
 
-  async getAppRepo(): Promise<AppRepo> {
+  async getAppRepo(): Promise<AppRepo | null> {
     const data = await this.getEntity();
+    if (!data.app?.id) return null;
+
     return new AppRepo(this.ctx, data.app.id);
   }
 
