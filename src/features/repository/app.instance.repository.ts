@@ -56,6 +56,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
       lifeStatus: 'stopped',
       appInstanceUrl: input.name,
       app: input.app,
+      appVersion: input.appVersion,
       // instance_type_id: 'dev',
       // deploy_strategy_id: '',
       // remove_strategy_id: '',
