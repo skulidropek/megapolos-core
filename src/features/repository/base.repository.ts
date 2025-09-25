@@ -8,6 +8,7 @@ import {
   ResourceType,
 } from '../rights/resources.list';
 import { RightsChecker } from '../rights/RightsChecker';
+import { SqlEntityManager } from '@mikro-orm/postgresql';
 
 export default abstract class BaseRepo<Entity extends BaseEntity> {
   private _entity?: Entity;
@@ -28,6 +29,10 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
     return this.entityClass.name;
   }
 
+  _getEM(): SqlEntityManager {
+    return this.ctx?.tcem ?? makeEm();
+  }
+
   async getEntity(update: boolean = false): Promise<Entity> {
     if (!update && this._entity) {
       return this._entity;
@@ -35,7 +40,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
     this._checkIdIsSet();
 
     await this.checkActionAccess(defaultRights.read);
-    const em = this?.ctx.tcem ?? makeEm();
+    const em = this._getEM();
     this._entity = (await em.findOne(this.entityClass, {
       id: this.id,
     })) as Entity;
@@ -43,13 +48,13 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   }
 
   async getAll(): Promise<Entity[]> {
-    const em = this?.ctx.tcem ?? makeEm();
+    const em = this._getEM();
     const entities = (await em.findAll(this.entityClass)) as Entity[];
     return this.filterEntitiesByAccess(entities);
   }
 
   async getByFields(fields: FilterQuery<Entity>): Promise<Entity[]> {
-    const em = this?.ctx.tcem ?? makeEm();
+    const em = this._getEM();
     const entities = (await em.find(this.entityClass, fields)) as Entity[];
     return this.filterEntitiesByAccess(entities);
   }
@@ -57,7 +62,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   // CRUD
   async create(entity: RequiredEntityData<Entity>): Promise<Entity> {
     await this.checkActionAccess(defaultRights.create);
-    const em = this?.ctx.tcem ?? makeEm();
+    const em = this._getEM();
     const created = em.create(this.entityClass, entity);
     await em.persistAndFlush(created);
     this.id = created.id;
@@ -81,7 +86,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   async update(entity: EntityData<Entity>): Promise<boolean> {
     await this.checkActionAccess(defaultRights.edit);
     this._checkIdIsSet();
-    const em = this?.ctx.tcem ?? makeEm();
+    const em = this._getEM();
     return (
       (await em.nativeUpdate(
         this.entityClass,
@@ -96,7 +101,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   async delete(): Promise<boolean> {
     await this.checkActionAccess(defaultRights.remove);
     this._checkIdIsSet();
-    const em = this?.ctx.tcem ?? makeEm();
+    const em = this._getEM();
     return (await em.nativeDelete(this.entityClass, { id: this.id })) > 0;
   }
 
