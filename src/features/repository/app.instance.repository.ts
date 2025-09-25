@@ -133,28 +133,33 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   async changeInstanceVersion(appVersionId: string): Promise<boolean> {
     await this.checkActionAccess(resources.AppInstance.actions.edit);
 
-    const newAppVersionRepo = new AppVersionRepo(this.ctx, appVersionId);
-    await newAppVersionRepo.checkActionAccess(
-      resources.AppVersion.actions.read
-    );
+    return await makeEm().transactional(async (em) => {
+      this?.ctx.setTransactionContextEM(em);
 
-    await this.update({ appVersionId: appVersionId });
-
-    const containers = await this.getContainers();
-    const newVersionImages = (await newAppVersionRepo.getEntity()).images;
-    for (const container of containers) {
-      const cr = new ContainerRepo(this.ctx, container.id);
-      const containerImage = await cr.getImage();
-      const containerGitRepo = (await containerImage.getEntity()).repository;
-      const img = newVersionImages.find(
-        (image) => image.repository === containerGitRepo
+      const newAppVersionRepo = new AppVersionRepo(this.ctx, appVersionId);
+      await newAppVersionRepo.checkActionAccess(
+        resources.AppVersion.actions.read
       );
-      if (img) {
-        await cr.update({ image: img });
-      }
-    }
 
-    return true;
+      await this.update({ appVersionId: appVersionId });
+
+      const containers = await this.getContainers();
+      const newVersionImages = (await newAppVersionRepo.getEntity()).images;
+      for (const container of containers) {
+        const cr = new ContainerRepo(this.ctx, container.id);
+        const containerImage = await cr.getImage();
+        const containerGitRepo = (await containerImage.getEntity()).repository;
+        const img = newVersionImages.find(
+          (image) => image.repository === containerGitRepo
+        );
+        if (img) {
+          await cr.update({ image: img });
+        }
+      }
+
+      this?.ctx.reliseTransactionContextEM();
+      return true;
+    });
   }
 
   async changeInstancesVersion(
