@@ -213,7 +213,7 @@ export class Context {
     this.tcem = tcem;
   }
 
-  relizeTransactionContextEM() {
+  reliseTransactionContextEM() {
     this.tcem = null;
   }
 }

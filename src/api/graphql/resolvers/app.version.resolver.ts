@@ -69,7 +69,7 @@ export class AppVersionResolver extends CreateBaseResolver(
     appVersionData: typeof AppVersionUpdateInput,
     @Arg('images', () => [AppVersionImageInput]) images: AppVersionImageInput[],
     @Ctx() ctx: Context
-  ): Promise<AppVersion> {
+  ): Promise<Boolean> {
     const repo = new AppVersionRepo(ctx, id);
     return repo.editAppVersion(appVersionData, images);
   }

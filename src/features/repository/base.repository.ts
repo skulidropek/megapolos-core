@@ -35,22 +35,22 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
     this._checkIdIsSet();
 
     await this.checkActionAccess(defaultRights.read);
-    this._entity = (await makeEm().findOne(this.entityClass, {
+    const em = this?.ctx.tcem ?? makeEm();
+    this._entity = (await em.findOne(this.entityClass, {
       id: this.id,
     })) as Entity;
     return this._entity;
   }
 
   async getAll(): Promise<Entity[]> {
-    const entities = (await makeEm().findAll(this.entityClass)) as Entity[];
+    const em = this?.ctx.tcem ?? makeEm();
+    const entities = (await em.findAll(this.entityClass)) as Entity[];
     return this.filterEntitiesByAccess(entities);
   }
 
   async getByFields(fields: FilterQuery<Entity>): Promise<Entity[]> {
-    const entities = (await makeEm().find(
-      this.entityClass,
-      fields
-    )) as Entity[];
+    const em = this?.ctx.tcem ?? makeEm();
+    const entities = (await em.find(this.entityClass, fields)) as Entity[];
     return this.filterEntitiesByAccess(entities);
   }
 
@@ -81,8 +81,9 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   async update(entity: EntityData<Entity>): Promise<boolean> {
     await this.checkActionAccess(defaultRights.edit);
     this._checkIdIsSet();
+    const em = this?.ctx.tcem ?? makeEm();
     return (
-      (await makeEm().nativeUpdate(
+      (await em.nativeUpdate(
         this.entityClass,
         {
           id: this.id,
@@ -95,7 +96,8 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   async delete(): Promise<boolean> {
     await this.checkActionAccess(defaultRights.remove);
     this._checkIdIsSet();
-    return (await makeEm().nativeDelete(this.entityClass, { id: this.id })) > 0;
+    const em = this?.ctx.tcem ?? makeEm();
+    return (await em.nativeDelete(this.entityClass, { id: this.id })) > 0;
   }
 
   // RIGHTS CHECKERS

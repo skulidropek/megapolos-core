@@ -81,7 +81,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
         data: { AppVersionId: appVersion.id },
       });
 
-      this?.ctx.relizeTransactionContextEM();
+      this?.ctx.reliseTransactionContextEM();
       return appVersion;
     });
   }
@@ -89,51 +89,54 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
   async editAppVersion(
     appVersionData: RequiredEntityData<AppVersion>,
     images_data: AppVersionImageInput[]
-  ): Promise<AppVersion> {
+  ): Promise<Boolean> {
     await this.checkActionAccess(resources.AppVersion.actions.edit);
-    const application = await new AppRepo(
-      this.ctx,
-      appVersionData.app as string
-    ).getEntity();
-    const appVersion = await super.create({
-      app: application,
-      buildNumber: appVersionData.buildNumber,
-      version: appVersionData.version,
-      versionComment: appVersionData.versionComment,
-    });
 
-    // Array to hold Image entities' ids to associate with this version
-    const imageIds: string[] = [];
+    return await makeEm().transactional(async (em) => {
+      this?.ctx.setTransactionContextEM(em);
 
-    for (const input of images_data) {
-      if (input.imageId) {
-        // Existing image case
-        const image = await new ImageRepo(this.ctx, input.imageId).getEntity();
-        if (!image) {
-          throw new Error(`Image with id ${input.imageId} not found`);
+      await super.update({
+        version: appVersionData.version,
+        versionComment: appVersionData.versionComment,
+      });
+
+      const appVersion = await this.getEntity();
+
+      // Array to hold Image entities' ids to associate with this version
+      const imageIds: string[] = [];
+
+      for (const input of images_data) {
+        if (input.imageId) {
+          // Existing image case
+          const image = await new ImageRepo(
+            this.ctx,
+            input.imageId
+          ).getEntity();
+          if (!image) {
+            throw new Error(`Image with id ${input.imageId} not found`);
+          }
+          imageIds.push(input.imageId);
+        } else if (input.imageData) {
+          // New image case
+          const image = await new ImageRepo(this.ctx).create(input.imageData);
+          imageIds.push(image.id);
         }
-        imageIds.push(input.imageId);
-      } else if (input.imageData) {
-        // New image case
-        const image = await new ImageRepo(this.ctx).create(input.imageData);
-        imageIds.push(image.id);
       }
-    }
 
-    const em = makeEm();
+      for (const imageId of imageIds) {
+        const image = await em.findOne(Image, { id: imageId });
+        appVersion.images.add(image);
+      }
 
-    for (const imageId of imageIds) {
-      const image = await em.findOne(Image, { id: imageId });
-      appVersion.images.add(image);
-    }
+      await em.persistAndFlush(appVersion);
 
-    await em.persistAndFlush(appVersion);
+      EventsObserver.listener({
+        type: 'editAppVersion',
+        data: { AppVersionId: appVersion.id },
+      });
 
-    EventsObserver.listener({
-      type: 'createAppVersion',
-      data: { AppVersionId: appVersion.id },
+      this?.ctx.reliseTransactionContextEM();
+      return true;
     });
-
-    return appVersion;
   }
 }
