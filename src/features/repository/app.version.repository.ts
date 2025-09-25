@@ -148,4 +148,32 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
       return true;
     });
   }
+
+  async deleteAppVersion(): Promise<boolean> {
+    await this.checkActionAccess(resources.AppVersion.actions.remove);
+
+    return await makeEm().transactional(async (em) => {
+      this?.ctx.setTransactionContextEM(em);
+
+      const appVersion = await this.getEntity();
+      const oldImages = await appVersion.images.loadItems();
+
+      appVersion.images.removeAll();
+      this.delete();
+      await em.persistAndFlush(appVersion);
+
+      for (const oldImage of oldImages) {
+        const linksFromAppVersions = await em.count(AppVersion, {
+          images: oldImage,
+        });
+
+        if (linksFromAppVersions === 0 && oldImage.app == null) {
+          await em.removeAndFlush(oldImage);
+        }
+      }
+
+      this?.ctx.reliseTransactionContextEM();
+      return true;
+    });
+  }
 }
