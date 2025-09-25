@@ -141,7 +141,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         resources.AppVersion.actions.read
       );
 
-      await this.update({ appVersionId: appVersionId });
+      await this.update({ appVersion: { id: appVersionId } });
 
       const containers = await this.getContainers();
       const newVersionImages = (await newAppVersionRepo.getEntity()).images;

@@ -7,6 +7,7 @@ import { InstanceType } from './InstanceType.entity';
 import { RemoveStrategy } from './RemoveStrategy.entity';
 import { User } from './User.entity';
 import { Hint } from '../../library/graphql_types_generator';
+import { AppVersion } from './AppVersion.entity';
 
 @Entity()
 @ObjectType()
@@ -33,9 +34,10 @@ export class AppInstance extends BaseEntity {
   @Hint({ type: () => ID })
   app!: App;
 
-  @Property({ length: -1 })
-  @Field()
-  appVersionId!: string;
+  @Field(() => AppVersion, { nullable: true })
+  @ManyToOne({ entity: () => AppVersion })
+  @Hint({ type: () => ID })
+  appVersion?: AppVersion;
 
   @ManyToOne({ entity: () => InstanceType, nullable: true })
   @Field(() => InstanceType, { nullable: true })

@@ -44,6 +44,9 @@ ALTER TABLE "image"
 ALTER TABLE "image"
     DROP CONSTRAINT "image_name_key";
 
+ALTER TABLE "app_instance"
+    ADD COLUMN "app_version_id" uuid NULL;
+
 --- на подумать,не применял
 /*
 ALTER TABLE "image"
