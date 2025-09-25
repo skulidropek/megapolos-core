@@ -74,6 +74,31 @@ export class AppInstanceResolver extends CreateBaseResolver(
     await new AppInstanceRepo(ctx, id).build();
     return true;
   }
+
+  @Mutation(() => Boolean)
+  async changeInstanceVersion(
+    @Arg('instanceId') instanceId: string,
+    @Arg('appVersionId') appVersionId: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new AppInstanceRepo(ctx, instanceId).changeInstanceVersion(
+      appVersionId
+    );
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async changeInstancesVersion(
+    @Arg('instancesIds', () => [String]) instancesIds: string[],
+    @Arg('appVersionId') appVersionId: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new AppInstanceRepo(ctx).changeInstancesVersion(
+      instancesIds,
+      appVersionId
+    );
+    return true;
+  }
 }
 
 @Resolver(() => AppInstance)
