@@ -62,7 +62,7 @@ export class AppVersionResolver extends CreateBaseResolver(
     return repo.createAppVersion(appVersionData, images);
   }
 
-  @Mutation(() => AppVersion)
+  @Mutation(() => Boolean)
   async editAppVersion(
     @Arg('id') id: string,
     @Arg('appVersionData', () => AppVersionUpdateInput)
