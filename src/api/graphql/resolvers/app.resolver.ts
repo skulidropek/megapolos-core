@@ -18,7 +18,9 @@ import {
 } from '../../../library/graphql_types_generator';
 import { User } from '../../../domain/entities/User.entity';
 import { AppVersion } from '../../../domain/entities/AppVersion.entity';
-import { makeEm } from '../../../features/db/mikro-orm';
+import AppVersionRepo from '../../../features/repository/app.version.repository';
+import AppInstanceRepo from '../../../features/repository/app.instance.repository';
+import { AppInstance } from '../../../domain/entities/AppInstance.entity';
 
 export const AppInput = generateGraphQLInputType(
   App,
@@ -75,7 +77,14 @@ export class AppTableResolver extends BaseTableResolver {
     @Root() app: App,
     @Ctx() ctx: Context
   ): Promise<AppVersion[]> {
-    const em = makeEm();
-    return await em.find(AppVersion, { app: { id: app.id } });
+    return new AppVersionRepo(ctx).getByFields({ app: { id: app.id } });
+  }
+
+  @FieldResolver(() => [AppInstance])
+  async instances(
+    @Root() app: App,
+    @Ctx() ctx: Context
+  ): Promise<AppInstance[]> {
+    return new AppInstanceRepo(ctx).getByFields({ app: { id: app.id } });
   }
 }
