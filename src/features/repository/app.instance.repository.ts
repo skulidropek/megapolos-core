@@ -137,15 +137,18 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     return await makeEm().transactional(async (em) => {
       this?.ctx.setTransactionContextEM(em);
 
+      const instance = await this.getEntity();
       const newAppVersionRepo = new AppVersionRepo(this.ctx, appVersionId);
       await newAppVersionRepo.checkActionAccess(
         resources.AppVersion.actions.read
       );
 
-      await this.update({ appVersion: { id: appVersionId } });
+      const newAppVesion = await newAppVersionRepo.getEntity();
+      await this.update({ appVersion: newAppVesion });
 
       const containers = await this.getContainers();
-      const newVersionImages = (await newAppVersionRepo.getEntity()).images;
+      await newAppVesion.images.init();
+      const newVersionImages = newAppVesion.images.getItems();
       for (const container of containers) {
         const cr = new ContainerRepo(this.ctx, container.id);
         const containerImage = await cr.getImage();
@@ -157,6 +160,8 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
           await cr.update({ image: img });
         }
       }
+
+      em.persistAndFlush(instance);
 
       this?.ctx.reliseTransactionContextEM();
       return true;
