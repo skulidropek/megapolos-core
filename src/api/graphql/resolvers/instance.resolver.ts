@@ -15,6 +15,8 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
+import { AppVersion } from '../../../domain/entities/AppVersion.entity';
+import AppVersionRepo from '../../../features/repository/app.version.repository';
 
 // Генерируем Input типы
 export const AppInstanceInput = generateGraphQLInputType(
@@ -109,5 +111,15 @@ export class AppInstanceTableResolver extends BaseTableResolver {
     @Ctx() ctx: Context
   ): Promise<Container[]> {
     return new AppInstanceRepo(ctx, instance.id).getContainers();
+  }
+
+  @FieldResolver(() => AppVersion, { nullable: true })
+  async appVersion(
+    @Root() instance: AppInstance,
+    @Ctx() ctx: Context
+  ): Promise<AppVersion> {
+    if (!instance.appVersion) return null;
+
+    return new AppVersionRepo(ctx, instance.appVersion.id).getEntity();
   }
 }
