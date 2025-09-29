@@ -44,6 +44,11 @@ export default class LogRepo extends BaseRepo<Log> {
     return true;
   }
 
+  async appendLine(data: string): Promise<boolean> {
+    await appendFile(this.getFilePath(), data + '\n');
+    return true;
+  }
+
   async close(): Promise<boolean> {
     await this.update({
       isClosed: true,
