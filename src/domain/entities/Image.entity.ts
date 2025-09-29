@@ -95,4 +95,16 @@ export class Image extends BaseEntity {
   @Field(() => [ImageEnvRequirement])
   @Hint({ skip: true })
   envs = new Collection<ImageEnvRequirement>(this);
+
+  getImageVersionName(): string {
+    let imageName = this.image;
+    if (!this.app) {
+      const versionPart =
+        this.version && this.version.trim() !== ''
+          ? this.version
+          : this.buildNumber ?? this.id;
+      imageName = `${this.image}:${versionPart}`;
+    }
+    return imageName;
+  }
 }

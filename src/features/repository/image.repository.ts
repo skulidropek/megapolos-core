@@ -82,14 +82,7 @@ export default class ImageRepo extends BaseRepo<Image> {
         const defaultDockerRegistry =
           await new DockerRegistryRepo().getDefault();
 
-        let imageName = data.image;
-        if (!data.app) {
-          const versionPart =
-            data.version && data.version.trim() !== ''
-              ? data.version
-              : data.buildNumber ?? data.id;
-          imageName = `${data.image}:${versionPart}`;
-        }
+        let imageName = data.getImageVersionName();
         let tags = `-t ${imageName} -t ${defaultDockerRegistry.host}:443/${imageName}`;
         if (config.devMode) {
           tags = `-t ${imageName}`;
