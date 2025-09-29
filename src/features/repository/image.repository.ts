@@ -84,9 +84,11 @@ export default class ImageRepo extends BaseRepo<Image> {
 
         let imageName = data.image;
         if (!data.app) {
-          imageName = `${data.image}:${
-            data.version ?? data.buildNumber ?? data.id
-          }`;
+          const versionPart =
+            data.version && data.version.trim() !== ''
+              ? data.version
+              : data.buildNumber ?? data.id;
+          imageName = `${data.image}:${versionPart}`;
         }
         let tags = `-t ${imageName} -t ${defaultDockerRegistry.host}:443/${imageName}`;
         if (config.devMode) {
