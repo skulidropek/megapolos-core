@@ -81,6 +81,15 @@ export class RepositoryResolver extends CreateBaseResolver(
     return new RepositoryRepo(ctx, id).getLastCommitOfBranch(branch);
   }
 
+  @Query(() => LogCommit, { nullable: true })
+  async getCommit(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string,
+    @Arg('commitId') commitId: string
+  ): Promise<LogCommit | null> {
+    return new RepositoryRepo(ctx, id).getCommit(commitId);
+  }
+
   @Mutation(() => Boolean)
   async fetchRepository(
     @Ctx() ctx: Context,

@@ -118,6 +118,26 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
     return lastCommit;
   }
 
+  async getCommit(commitId: string): Promise<LogCommit | null> {
+    await this.checkActionAccess(resources.Repository.actions.read);
+
+    const git = simpleGit(await this._getPath());
+    const logLatest = (await git.log([commitId])).latest;
+
+    const commit: LogCommit | null = logLatest
+      ? {
+          hash: logLatest.hash,
+          authorEmail: logLatest.author_email,
+          authorName: logLatest.author_name,
+          body: logLatest.body,
+          date: new Date(logLatest.date),
+          message: logLatest.message,
+          refs: logLatest.refs,
+        }
+      : null;
+    return commit;
+  }
+
   async listFiles(branch: string, path: string): Promise<RepositoryFiles> {
     await this.checkActionAccess(resources.Repository.actions.read);
     if (path === '') {
