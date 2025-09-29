@@ -34,29 +34,13 @@ export default class ImageRepo extends BaseRepo<Image> {
     return ResourceType.Image;
   }
 
-  // TODO: rewrite via dockerode (dockerCore)
   async build() {
     await this.checkActionAccess(resources.Image.actions.build);
     this.ctx = this.ctx.cloneNoRightsCheck();
     const data = await this.getEntity();
-    if (!data.repository?.id) {
-      const log = new LogRepo(this.ctx);
-      await log.create({
-        name: `Build failed for image ${data.name}: repository ID is missing`,
-        objectId: this.id,
-        objectName: data.name,
-        type: LogType.ImageBuild,
-      });
-      return;
-    }
+
     const path = megapolosPath + '/data/' + uuidv4();
-    if (!(await fse.exists(path))) {
-      await fse.mkdir(path);
-    }
-    const repository = new RepositoryRepo(this.ctx, data.repository.id);
-    await repository.fetch();
-    await repository.copyBranchTo(path, data.branch);
-    console.log(data);
+
     if (data.repository.id) {
       await this.update({ status: ImageStatus.Building });
       try {
@@ -68,12 +52,45 @@ export default class ImageRepo extends BaseRepo<Image> {
           objectType: ResourceType.Image,
           type: LogType.ImageBuild,
         });
+
+        console.log(data);
+        log.append('Image data:');
+        log.append(JSON.stringify(data, null, 2));
+
+        if (!data.repository?.id) {
+          await log.append(
+            `Build failed for image ${data.name}: repository ID is missing`
+          );
+          return;
+        }
+
+        if (!(await fse.exists(path))) {
+          await fse.mkdir(path);
+        }
+        const repository = new RepositoryRepo(this.ctx, data.repository.id);
+        await repository.fetch();
+        if (data.commitId) {
+          await repository.copyBranchWithCheckoutToCommit(
+            path,
+            data.branch,
+            data.commitId
+          );
+        } else {
+          await repository.copyBranchTo(path, data.branch);
+        }
+
         const defaultDockerRegistry =
           await new DockerRegistryRepo().getDefault();
 
-        let tags = `-t ${data.image} -t ${defaultDockerRegistry.host}:443/${data.image}`;
+        let imageName = data.image;
+        if (!data.app) {
+          imageName = `${data.image}:${
+            data.version ?? data.buildNumber ?? data.id
+          }`;
+        }
+        let tags = `-t ${imageName} -t ${defaultDockerRegistry.host}:443/${imageName}`;
         if (config.devMode) {
-          tags = `-t ${data.image}`;
+          tags = `-t ${imageName}`;
         }
 
         const result = await NodeRepo.currentNode.shellCommand(
@@ -88,7 +105,7 @@ export default class ImageRepo extends BaseRepo<Image> {
             log
           ).output;
           await NodeRepo.currentNode.shellCommand(
-            `docker push ${defaultDockerRegistry.host}:443/${data.image}`,
+            `docker push ${defaultDockerRegistry.host}:443/${imageName}`,
             new UserRepo(this.ctx, this.ctx.user.id),
             log
           ).output;
@@ -103,12 +120,10 @@ export default class ImageRepo extends BaseRepo<Image> {
           lastBuildDate: new Date(),
         });
         console.log(result);
-        if (await fse.exists(path)) {
-          await fse.remove(path);
-        }
       } catch (error) {
         await this.update({ status: ImageStatus.NotExist });
         console.error(error);
+      } finally {
         if (await fse.exists(path)) {
           await fse.remove(path);
         }

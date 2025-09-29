@@ -71,6 +71,24 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
     await simpleGit(path).checkout(branch);
   }
 
+  async copyBranchWithCheckoutToCommit(
+    path: string,
+    branch: string,
+    commitId: string
+  ): Promise<void> {
+    await this.checkActionAccess(resources.Repository.actions.read);
+    const repositoryPath = await this._getPath();
+    if (!(await fse.exists(path))) {
+      await fse.mkdir(path);
+    }
+    await fse.copy(repositoryPath, path);
+
+    if (branch) {
+      await simpleGit(path).checkout(branch);
+    }
+    await simpleGit(path).checkout(commitId);
+  }
+
   async getBranches(): Promise<string[]> {
     await this.checkActionAccess(resources.Repository.actions.read);
     const path = await this._getPath();
