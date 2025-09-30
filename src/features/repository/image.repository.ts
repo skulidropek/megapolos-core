@@ -146,9 +146,11 @@ export default class ImageRepo extends BaseRepo<Image> {
     logRepo.id = deletionLog.id;
 
     try {
-      const image = docker.getImage(data.image);
+      const image = docker.getImage(data.getImageVersionName());
       await image.remove();
-      await logRepo.append(`Docker image ${data.image} deleted successfully.`);
+      await logRepo.append(
+        `Docker image ${data.getImageVersionName()} deleted successfully.`
+      );
       await this.update({ status: ImageStatus.NotExist });
     } catch (error) {
       await logRepo.append(`Failed to delete Docker image`);
