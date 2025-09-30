@@ -126,8 +126,8 @@ export default class ImageRepo extends BaseRepo<Image> {
     }
   }
 
-  async deleteDockerImage(): Promise<void> {
-    await this.checkActionAccess(resources.Image.actions.remove);
+  async deleteDockerImage(): Promise<boolean> {
+    await this.checkActionAccess(resources.Image.actions.delete_docker_image);
     const data = await this.getEntity();
     if (!data.image) {
       throw new Error(
@@ -155,6 +155,7 @@ export default class ImageRepo extends BaseRepo<Image> {
       await logRepo.close();
       throw error;
     }
+    return true;
   }
 
   async getAppRepo(): Promise<AppRepo | null> {

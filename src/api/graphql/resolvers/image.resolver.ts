@@ -84,6 +84,14 @@ export class ImageResolver extends CreateBaseResolver(
   }
 
   @Mutation(() => Boolean)
+  async deleteDockerImage(
+    @Arg('imageId') imageId: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    return new ImageRepo(ctx, imageId).deleteDockerImage();
+  }
+
+  @Mutation(() => Boolean)
   async updateNodesOfImage(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
