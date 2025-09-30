@@ -9,6 +9,7 @@ import {
 } from '../rights/resources.list';
 import { RightsChecker } from '../rights/RightsChecker';
 import { SqlEntityManager } from '@mikro-orm/postgresql';
+import UserRepo from './user/user.repository';
 
 export default abstract class BaseRepo<Entity extends BaseEntity> {
   private _entity?: Entity;
@@ -123,6 +124,11 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
       resourceId: this.id,
       action,
     });
+  }
+  async checkOnlyRootAccess() {
+    if (this.ctx?.user?.groupUser?.id != UserRepo.rootRoleId) {
+      throw new Error('Access is allowed only to the root user!');
+    }
   }
 
   async checkActionAccess(action: string) {
