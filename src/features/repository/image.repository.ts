@@ -154,8 +154,9 @@ export default class ImageRepo extends BaseRepo<Image> {
       await this.update({ status: ImageStatus.NotExist });
     } catch (error) {
       await logRepo.append(`Failed to delete Docker image`);
-      await logRepo.close();
       throw error;
+    } finally {
+      await logRepo.close();
     }
     return true;
   }
