@@ -54,8 +54,8 @@ export default class ImageRepo extends BaseRepo<Image> {
         });
 
         console.log(data);
-        log.appendLine('Image data:');
-        log.appendLine(JSON.stringify(data, null, 2));
+        await log.appendLine('Image data:');
+        await log.appendLine(JSON.stringify(data, null, 2));
 
         if (!data.repository?.id) {
           await log.append(
