@@ -35,8 +35,12 @@ export default class ImageRepo extends BaseRepo<Image> {
   }
 
   async build() {
-    await this.checkActionAccess(resources.Image.actions.build);
+    await this.checkAppAccess(
+      resources.App.actions.build_images,
+      resources.Image.actions.build
+    );
     this.ctx = this.ctx.cloneNoRightsCheck();
+
     const data = await this.getEntity();
 
     const path = megapolosPath + '/data/' + uuidv4();
@@ -126,7 +130,11 @@ export default class ImageRepo extends BaseRepo<Image> {
     }
   }
 
-  async checkAppAccess(action: string) {
+  async checkAppAccess(appAction: string, imageAction?: string) {
+    if (imageAction && (await this.haveActionAccess(imageAction))) {
+      return;
+    }
+
     const image = await new ImageRepo(
       this.ctx.cloneNoRightsCheck(),
       this.id
@@ -134,9 +142,7 @@ export default class ImageRepo extends BaseRepo<Image> {
 
     if (image.app) {
       const appRepo = new AppRepo(this.ctx, image.app.id);
-      if (
-        await appRepo.haveActionAccess(resources.App.actions.add_app_version)
-      ) {
+      if (await appRepo.haveActionAccess(appAction)) {
         return;
       }
     }
@@ -150,9 +156,7 @@ export default class ImageRepo extends BaseRepo<Image> {
 
     for (const appId of appIds) {
       const appRepo = new AppRepo(this.ctx, appId);
-      if (
-        await appRepo.haveActionAccess(resources.App.actions.add_app_version)
-      ) {
+      if (await appRepo.haveActionAccess(appAction)) {
         return;
       }
     }
