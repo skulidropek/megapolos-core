@@ -96,6 +96,9 @@ export class Image extends BaseEntity {
   @Hint({ skip: true })
   envs = new Collection<ImageEnvRequirement>(this);
 
+  @ManyToMany(() => AppVersion)
+  appVersions = new Collection<AppVersion>(this);
+
   getImageVersionName(): string {
     let imageName = this.image;
     if (!this.app) {

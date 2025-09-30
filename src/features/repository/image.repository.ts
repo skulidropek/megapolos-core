@@ -126,8 +126,44 @@ export default class ImageRepo extends BaseRepo<Image> {
     }
   }
 
+  async checkAppAccess(action: string) {
+    const image = await new ImageRepo(
+      this.ctx.cloneNoRightsCheck(),
+      this.id
+    ).getEntity();
+
+    if (image.app) {
+      const appRepo = new AppRepo(this.ctx, image.app.id);
+      if (
+        await appRepo.haveActionAccess(resources.App.actions.add_app_version)
+      ) {
+        return;
+      }
+    }
+
+    const appVersions = await image.appVersions.loadItems();
+
+    const appIds = new Set<string>();
+    for (const av of appVersions) {
+      appIds.add(av.app.id);
+    }
+
+    for (const appId of appIds) {
+      const appRepo = new AppRepo(this.ctx, appId);
+      if (
+        await appRepo.haveActionAccess(resources.App.actions.add_app_version)
+      ) {
+        return;
+      }
+    }
+
+    this._throwAccessDenied();
+  }
+
   async deleteDockerImage(): Promise<boolean> {
-    await this.checkActionAccess(resources.Image.actions.delete_docker_image);
+    await this.checkAppAccess(resources.App.actions.delete_docker_images);
+    this.ctx = this.ctx.cloneNoRightsCheck();
+
     const data = await this.getEntity();
     if (!data.image) {
       throw new Error(

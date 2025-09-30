@@ -27,7 +27,6 @@ const resources = {
     type: 'Image',
     actions: {
       ...defaultRights,
-      delete_docker_image: 'delete_docker_image',
       build: 'build',
       update_nodes: 'update_nodes',
     },
