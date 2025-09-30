@@ -132,8 +132,8 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async changeInstanceVersion(appVersionId: string): Promise<boolean> {
-    // TODO  check intance change version right
-    // await this.checkActionAccess(resources.AppInstance.actions.edit);
+    await this.checkActionAccess(resources.AppInstance.actions.change_version);
+    this.ctx = this.ctx.cloneNoRightsCheck();
 
     return await makeEm().transactional(async (em) => {
       this?.ctx.setTransactionContextEM(em);
