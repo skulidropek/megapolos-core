@@ -18,10 +18,6 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     return AppVersion;
   }
 
-  get resourceType(): ResourceType {
-    return ResourceType.AppVersion;
-  }
-
   async getImages(): Promise<Image[]> {
     const appVersion = await this.getEntity();
     const images = await appVersion.images.loadItems();
@@ -32,7 +28,8 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     appVersionData: RequiredEntityData<AppVersion>,
     images_data: AppVersionImageInput[]
   ): Promise<AppVersion> {
-    await this.checkActionAccess(resources.AppVersion.actions.create);
+    // TODO check app to right
+    // await this.checkActionAccess(resources.AppVersion.actions.create);
 
     return await makeEm().transactional(async (em) => {
       this?.ctx.setTransactionContextEM(em);
@@ -90,7 +87,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     appVersionData: RequiredEntityData<AppVersion>,
     images_data: AppVersionImageInput[]
   ): Promise<Boolean> {
-    await this.checkActionAccess(resources.AppVersion.actions.edit);
+    await this.checkOnlyRootAccess();
 
     return await makeEm().transactional(async (em) => {
       this?.ctx.setTransactionContextEM(em);
@@ -150,7 +147,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
   }
 
   async deleteAppVersion(): Promise<boolean> {
-    await this.checkActionAccess(resources.AppVersion.actions.remove);
+    await this.checkOnlyRootAccess();
 
     return await makeEm().transactional(async (em) => {
       this?.ctx.setTransactionContextEM(em);

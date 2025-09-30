@@ -132,16 +132,14 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
   }
 
   async changeInstanceVersion(appVersionId: string): Promise<boolean> {
-    await this.checkActionAccess(resources.AppInstance.actions.edit);
+    // TODO  check intance change version right
+    // await this.checkActionAccess(resources.AppInstance.actions.edit);
 
     return await makeEm().transactional(async (em) => {
       this?.ctx.setTransactionContextEM(em);
 
       const instance = await this.getEntity();
       const newAppVersionRepo = new AppVersionRepo(this.ctx, appVersionId);
-      await newAppVersionRepo.checkActionAccess(
-        resources.AppVersion.actions.read
-      );
 
       const newAppVesion = await newAppVersionRepo.getEntity();
       await this.update({ appVersion: newAppVesion });

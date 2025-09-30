@@ -34,15 +34,22 @@ const resources = {
   },
   AppInstance: {
     type: 'AppInstance',
-    actions: { ...defaultRights, build: 'build', manage: 'manage' },
+    actions: {
+      ...defaultRights,
+      build: 'build',
+      manage: 'manage',
+      change_version: 'change_version',
+      update_node: 'update_node',
+    },
   },
   App: {
     type: 'App',
-    actions: { ...defaultRights },
-  },
-  AppVersion: {
-    type: 'AppVersion',
-    actions: { ...defaultRights },
+    actions: {
+      ...defaultRights,
+      add_app_version: 'add_app_version',
+      delete_docker_images: 'delete_docker_images',
+      build_images: 'build_images',
+    },
   },
   Node: {
     type: 'Node',
@@ -57,7 +64,6 @@ enum ResourceType {
   Image = 'Image',
   Node = 'Node',
   Repository = 'Repository',
-  AppVersion = 'AppVersion',
 }
 
 registerEnumType(ResourceType, {
