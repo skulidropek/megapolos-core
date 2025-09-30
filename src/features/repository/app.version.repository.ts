@@ -28,16 +28,14 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
     appVersionData: RequiredEntityData<AppVersion>,
     images_data: AppVersionImageInput[]
   ): Promise<AppVersion> {
-    // TODO check app to right
-    // await this.checkActionAccess(resources.AppVersion.actions.create);
+    const appRepo = new AppRepo(this.ctx, appVersionData.app as string);
+    await appRepo.checkActionAccess(resources.App.actions.add_app_version);
+    this.ctx = this.ctx.cloneNoRightsCheck();
 
     return await makeEm().transactional(async (em) => {
       this?.ctx.setTransactionContextEM(em);
 
-      const application = await new AppRepo(
-        this.ctx,
-        appVersionData.app as string
-      ).getEntity();
+      const application = await appRepo.getEntity();
       const appVersion = await super.create({
         app: application,
         buildNumber: appVersionData.buildNumber,
