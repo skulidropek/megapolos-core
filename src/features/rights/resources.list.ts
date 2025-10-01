@@ -38,7 +38,6 @@ const resources = {
       build: 'build',
       manage: 'manage',
       change_version: 'change_version',
-      update_node: 'update_node',
     },
   },
   App: {
