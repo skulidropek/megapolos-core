@@ -8,7 +8,12 @@ import {
   ImageVariableRequirementTable,
   LogType,
 } from '../db/tables';
-import { resources, ResourceType } from '../rights/resources.list';
+import {
+  defaultRights,
+  resources,
+  ResourceType,
+  UserAction,
+} from '../rights/resources.list';
 import AppRepo from './app.repository';
 import BaseRepo from './base.repository';
 import { ContainerRepo } from './cantainer/container.repository';
@@ -24,6 +29,7 @@ import { ImageEnvRequirement } from '../../domain/entities/ImageEnvRequirement.e
 import { ImageEnvRequirementInput } from '../../api/graphql/resolvers/image.resolver';
 import docker from '../docker/coreDocker';
 import DockerRegistryRepo from './docker.registry.repository';
+import { RightsChecker } from '../rights/RightsChecker';
 
 export default class ImageRepo extends BaseRepo<Image> {
   get entityClass() {
@@ -273,5 +279,62 @@ export default class ImageRepo extends BaseRepo<Image> {
         { limit: 1, orderBy: { createDate: 'desc' } }
       )
     )[0];
+  }
+
+  private _imageEntityToActions(image: Image): UserAction[] {
+    const actions: UserAction[] = [];
+
+    actions.push({
+      resourceType: ResourceType.App,
+      resourceId: image.app.id,
+      action: defaultRights.read,
+    });
+    actions.push({
+      resourceType: ResourceType.Image,
+      resourceId: image.id,
+      action: defaultRights.read,
+    });
+    return actions;
+  }
+
+  override async haveActionAccess(action: string): Promise<boolean> {
+    if (action !== defaultRights.read) {
+      return super.haveActionAccess(action);
+    }
+
+    if (
+      this.ctx?.noRightsCheck ||
+      !this.checkRights ||
+      !this.ctx?.user ||
+      this.ctx?.user?.groupUser.id == UserRepo.rootRoleId
+    ) {
+      return true;
+    }
+
+    const image = await makeEm().findOne(this.entityClass, {
+      id: this.id,
+    });
+
+    return RightsChecker.checkByAction(
+      this.ctx.user.id,
+      image,
+      this._imageEntityToActions
+    );
+  }
+
+  override async filterEntitiesByAccess(images: Image[]): Promise<Image[]> {
+    if (
+      this.ctx?.noRightsCheck ||
+      !this.ctx?.user ||
+      this.ctx?.user?.groupUser.id == UserRepo.rootRoleId
+    ) {
+      return images;
+    }
+
+    return await RightsChecker.filterByAction(
+      this.ctx.user.id,
+      images,
+      this._imageEntityToActions
+    );
   }
 }
