@@ -16,17 +16,21 @@ export class RightsChecker {
   static async checkByAction<T extends IEntity>(
     userId: string,
     entity: T,
-    getAction: (entity: T) => UserAction
+    getActions: (entity: T) => UserAction[]
   ): Promise<boolean> {
     if (!userId) {
       return true;
     }
 
-    const action = getAction(entity);
-    if (!action) return false;
-
     const privileges = await RightsChecker._getPrivileges(userId);
-    return RightsChecker.privilegesIsMatch(privileges, action);
+    const actions = getActions(entity);
+    for (const action of actions) {
+      if (RightsChecker.privilegesIsMatch(privileges, action)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   static async filter<T extends IEntity>(
@@ -52,23 +56,22 @@ export class RightsChecker {
   static async filterByAction<T extends IEntity>(
     userId: string,
     entities: T[],
-    getAction: (entity: T) => UserAction | null
+    getActions: (entity: T) => UserAction[]
   ): Promise<T[]> {
     if (!userId) {
       return entities;
     }
 
     const privileges = await RightsChecker._getPrivileges(userId);
+
     let entitiesFiltered = entities.filter((entity) => {
-      const action = getAction(entity);
-      if (!action) {
-        return false;
+      const actions = getActions(entity);
+      for (const action of actions) {
+        if (RightsChecker.privilegesIsMatch(privileges, action)) {
+          return true;
+        }
       }
-      return RightsChecker.privilegesIsMatch(privileges, {
-        resourceType: action.resourceType,
-        resourceId: action.resourceId,
-        action: action.action,
-      });
+      return false;
     });
     return entitiesFiltered;
   }

@@ -55,6 +55,7 @@ export default class ImageRepo extends BaseRepo<Image> {
           objectName: data.name,
           objectType: ResourceType.Image,
           type: LogType.ImageBuild,
+          objectMeta: { appId: data.app.id },
         });
 
         console.log(data);
@@ -164,7 +165,9 @@ export default class ImageRepo extends BaseRepo<Image> {
       name: 'Delete docker image ' + data.name,
       objectId: this.id,
       objectName: data.name,
+      objectType: ResourceType.Image,
       type: LogType.ImageDelete,
+      objectMeta: { appId: data.app.id },
     });
 
     logRepo.id = deletionLog.id;
