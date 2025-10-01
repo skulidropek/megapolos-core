@@ -31,6 +31,6 @@ export class AppVersion extends BaseEntity {
   @Field({ nullable: true })
   versionComment?: string;
 
-  @ManyToMany(() => Image)
+  @ManyToMany({ entity: () => Image, owner: true })
   images = new Collection<Image>(this);
 }

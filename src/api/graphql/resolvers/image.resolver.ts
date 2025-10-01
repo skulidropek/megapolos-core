@@ -132,11 +132,9 @@ export class ImageTableResolver extends BaseTableResolver {
     );
   }
 
-  @FieldResolver(() => App, { nullable: true })
-  async app(@Root() image: Image, @Ctx() ctx: Context): Promise<App | null> {
+  @FieldResolver(() => App)
+  async app(@Root() image: Image, @Ctx() ctx: Context): Promise<App> {
     const app = await new ImageRepo(ctx, image.id).getAppRepo();
-    if (!app) return null;
-
     return app.getEntity();
   }
 

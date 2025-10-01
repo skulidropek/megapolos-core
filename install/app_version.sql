@@ -38,8 +38,7 @@ ALTER TABLE "image"
     ALTER COLUMN "app_id" TYPE uuid
     USING ("app_id"::text::uuid);
 
-ALTER TABLE "image"
-    ALTER COLUMN "app_id" DROP NOT NULL;
+
 
 ALTER TABLE "image"
     DROP CONSTRAINT "image_name_key";
@@ -47,19 +46,19 @@ ALTER TABLE "image"
 ALTER TABLE "app_instance"
     ADD COLUMN "app_version_id" uuid NULL;
 
---- на подумать,не применял
 /*
-ALTER TABLE "image"
-    ALTER COLUMN "status" TYPE text
-    USING ("status"::text);
+-- Миграция для разработчика, возвращение image.app_id обязательным полем
+
+UPDATE public.image i
+SET app_id = av.app_id
+FROM public.app_version_images avi
+JOIN public.app_version av ON av.id = avi.app_version_id
+WHERE i.id = avi.image_id
+  AND i.app_id IS NULL;
 
 ALTER TABLE "image"
-    ADD CONSTRAINT "image_status_check" CHECK ("status" IN ('not_exist', 'building', 'built'));
+    ALTER COLUMN "app_id" DROP NOT NULL;
 
 ALTER TABLE "image"
-    ADD CONSTRAINT "image_app_id_foreign" FOREIGN KEY ("app_id") REFERENCES "app" ("id") ON UPDATE CASCADE ON DELETE SET NULL;
-
-ALTER TABLE "image"
-    ADD CONSTRAINT "image_repository_id_foreign" FOREIGN KEY ("repository_id") REFERENCES "repository" ("id") ON UPDATE CASCADE ON DELETE SET NULL;
-
+    ALTER COLUMN "app_id" SET NOT NULL;
 */
