@@ -1,4 +1,9 @@
-import { EntityData, FilterQuery, RequiredEntityData } from '@mikro-orm/core';
+import {
+  EntityData,
+  FilterQuery,
+  FindOptions,
+  RequiredEntityData,
+} from '@mikro-orm/core';
 import { Context } from '../../api/graphql/server';
 import { BaseEntity } from '../../domain/entities/Base.entity';
 import { makeEm } from '../db/mikro-orm';
@@ -54,9 +59,16 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
     return this.filterEntitiesByAccess(entities);
   }
 
-  async getByFields(fields: FilterQuery<Entity>): Promise<Entity[]> {
+  async getByFields(
+    fields: FilterQuery<Entity>,
+    options?: FindOptions<Entity, any, any>
+  ): Promise<Entity[]> {
     const em = this._getEM();
-    const entities = (await em.find(this.entityClass, fields)) as Entity[];
+    const entities = (await em.find(
+      this.entityClass,
+      fields,
+      options
+    )) as Entity[];
     return this.filterEntitiesByAccess(entities);
   }
 
