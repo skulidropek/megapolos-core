@@ -103,7 +103,10 @@ export class ImageResolver extends CreateBaseResolver(
     @Ctx() ctx: Context
   ): Promise<boolean> {
     var imageRepo = new ImageRepo(ctx, imageId);
-    await imageRepo.checkActionAccess(resources.Image.actions.update_nodes);
+    await imageRepo.checkAppAccess(
+      resources.App.actions.build_images,
+      resources.Image.actions.update_nodes
+    );
 
     void imageRepo.updateNodes(); //!!! fire-and-forget execution
     return true;

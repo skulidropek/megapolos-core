@@ -203,7 +203,10 @@ export default class ImageRepo extends BaseRepo<Image> {
   }
 
   async updateNodes(): Promise<void> {
-    await this.checkActionAccess(resources.Image.actions.update_nodes);
+    await this.checkAppAccess(
+      resources.App.actions.build_images,
+      resources.Image.actions.update_nodes
+    );
     this.ctx = this.ctx.cloneNoRightsCheck();
     const containers = await new ContainerRepo(this.ctx).getByFields({
       image: this.id,
