@@ -47,6 +47,7 @@ const resources = {
       add_app_version: 'add_app_version',
       delete_docker_images: 'delete_docker_images',
       build_images: 'build_images',
+      update_nodes: 'update_nodes',
     },
   },
   Node: {
