@@ -46,6 +46,9 @@ ALTER TABLE "image"
 ALTER TABLE "app_instance"
     ADD COLUMN "app_version_id" uuid NULL;
 
+ALTER TABLE "log"
+    ADD COLUMN "object_meta" jsonb NULL;
+
 /*
 -- Миграция для разработчика, возвращение image.app_id обязательным полем
 

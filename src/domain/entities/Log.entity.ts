@@ -45,6 +45,10 @@ export class Log extends BaseEntity {
   @Field({ nullable: true })
   objectType?: string;
 
+  @Property({ type: 'jsonb', nullable: true })
+  @Field(() => String, { nullable: true })
+  objectMeta?: Record<string, any>;
+
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
   type?: string;
