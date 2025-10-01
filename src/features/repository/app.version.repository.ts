@@ -59,7 +59,10 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
           imageIds.push(input.imageId);
         } else if (input.imageData) {
           // New image case
-          const image = await new ImageRepo(this.ctx).create(input.imageData);
+          const image = await new ImageRepo(this.ctx).create({
+            ...input.imageData,
+            app: application,
+          });
           imageIds.push(image.id);
         }
       }
@@ -96,7 +99,10 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
       });
 
       const appVersion = await this.getEntity();
-
+      const application = await new AppRepo(
+        this.ctx,
+        appVersion.app.id
+      ).getEntity();
       const newImages: Image[] = [];
 
       for (const input of images_data) {
@@ -110,7 +116,10 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
           }
           newImages.push(image);
         } else if (input.imageData) {
-          const image = await new ImageRepo(this.ctx).create(input.imageData);
+          const image = await new ImageRepo(this.ctx).create({
+            ...input.imageData,
+            app: application,
+          });
           newImages.push(image);
         }
       }
