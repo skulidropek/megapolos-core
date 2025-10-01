@@ -140,25 +140,9 @@ export default class ImageRepo extends BaseRepo<Image> {
       this.id
     ).getEntity();
 
-    if (image.app) {
-      const appRepo = new AppRepo(this.ctx, image.app.id);
-      if (await appRepo.haveActionAccess(appAction)) {
-        return;
-      }
-    }
-
-    const appVersions = await image.appVersions.loadItems();
-
-    const appIds = new Set<string>();
-    for (const av of appVersions) {
-      appIds.add(av.app.id);
-    }
-
-    for (const appId of appIds) {
-      const appRepo = new AppRepo(this.ctx, appId);
-      if (await appRepo.haveActionAccess(appAction)) {
-        return;
-      }
+    const appRepo = new AppRepo(this.ctx, image.app.id);
+    if (await appRepo.haveActionAccess(appAction)) {
+      return;
     }
 
     this._throwAccessDenied();
