@@ -12,6 +12,7 @@ import ImageRepo from './image.repository';
 import { RequiredEntityData } from '@mikro-orm/core';
 import { App } from '../../domain/entities/App.entity';
 import AppRepo from './app.repository';
+import { ImageStatus } from '../db/tables';
 
 export default class AppVersionRepo extends BaseRepo<AppVersion> {
   get entityClass() {
@@ -62,6 +63,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
           const image = await new ImageRepo(this.ctx).create({
             ...input.imageData,
             app: application,
+            status: ImageStatus.NotExist,
           });
           imageIds.push(image.id);
         }
@@ -119,6 +121,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
           const image = await new ImageRepo(this.ctx).create({
             ...input.imageData,
             app: application,
+            status: ImageStatus.NotExist,
           });
           newImages.push(image);
         }
