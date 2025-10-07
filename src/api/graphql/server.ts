@@ -165,6 +165,10 @@ import {
 } from './resolvers/db.user.resolver';
 import { DbTableResolver } from './resolvers/dbms.resolver';
 import { DbSchemaTableResolver } from './resolvers/dbms.resolver';
+import {
+  DockerRegistryResolver,
+  DockerRegistryTableResolver,
+} from './resolvers/docker.registry.resolver';
 import { ContainerDbTableResolver } from './resolvers/container.db.resolver';
 import { TestCaseResolver } from './resolvers/testCase.resolver';
 
@@ -207,6 +211,8 @@ async function bootstrap() {
       RepositoryResolver,
       RepositoryTableResolver,
       DomainResolver,
+      DockerRegistryResolver,
+      DockerRegistryTableResolver,
       ImageResolver,
       ImageTableResolver,
       AppInstanceResolver,

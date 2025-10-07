@@ -43,5 +43,9 @@ export class Log extends BaseEntity {
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
+  objectType?: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
   type?: string;
 }

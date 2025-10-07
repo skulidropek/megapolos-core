@@ -169,6 +169,16 @@ export class ContainerResolver extends CreateBaseResolver(
   ): Promise<boolean> {
     return new ContainerRepo(ctx).removeDbByContainerDbId(containerDbId);
   }
+
+  @Mutation(() => Boolean)
+  async updateShowOnDesktop(
+    @Arg('id') id: string,
+    @Arg('showOnDesktop') showOnDesktop: boolean,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new ContainerRepo(ctx, id).updateShowOnDesktop(showOnDesktop);
+    return true;
+  }
 }
 
 @Resolver(() => Container)

@@ -10,6 +10,7 @@ import {
 
 export interface AppInput {
   name: string;
+  description: string;
   images: [
     {
       name: string;

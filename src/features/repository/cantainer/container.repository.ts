@@ -77,7 +77,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   async create(
     data: RequiredEntityData<Container> & { node?: string }
   ): Promise<Container> {
-    await this.checkActionAccess(resources.container.actions.create);
+    await this.checkActionAccess(resources.Container.actions.create);
     const node = new NodeRepo(this.ctx, data.node);
     let outerPort = await node.getPort();
     if (data.outerPort) {
@@ -95,7 +95,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async start() {
-    await this.checkActionAccess(resources.container.actions.manage);
+    await this.checkActionAccess(resources.Container.actions.manage);
     try {
       // await (await this.getDockerContainer()).start();
     } catch (e) {
@@ -110,7 +110,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async stop() {
-    await this.checkActionAccess(resources.container.actions.manage);
+    await this.checkActionAccess(resources.Container.actions.manage);
     try {
       // await (await this.getDockerContainer()).stop();
     } catch (e) {
@@ -127,7 +127,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   async update(
     data: RequiredEntityData<Container> & { nodeId?: string }
   ): Promise<boolean> {
-    await this.checkActionAccess(resources.container.actions.edit);
+    await this.checkActionAccess(resources.Container.actions.edit);
     const entity = await this.getEntity();
     if (data.outerPort) {
       if (data.outerPort !== entity.outerPort) {
@@ -139,7 +139,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async delete(): Promise<boolean> {
-    await this.checkActionAccess(resources.container.actions.remove);
+    await this.checkActionAccess(resources.Container.actions.remove);
     const data = await this.getEntity();
     if (data.dockerRuntimeId) {
       try {
@@ -176,7 +176,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async restore() {
-    await this.checkActionAccess(resources.container.actions.manage);
+    await this.checkActionAccess(resources.Container.actions.manage);
     const container = await this.getEntity();
     try {
       if (!container.dockerRuntimeId) {
@@ -270,7 +270,7 @@ export class ContainerRepo extends BaseRepo<Container> {
       value: string;
     }[]
   ) {
-    await this.checkActionAccess(resources.container.actions.edit);
+    await this.checkActionAccess(resources.Container.actions.edit);
     await this.removeContainerEnvOptions();
     for (let i in input) {
       const env = input[i];
@@ -285,7 +285,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async changeVariables(input: RequiredEntityData<ContainerVariable>[]) {
-    await this.checkActionAccess(resources.container.actions.edit);
+    await this.checkActionAccess(resources.Container.actions.edit);
     await makeEm().nativeDelete(ContainerVariable, { container: this.id });
     await makeEm().insertMany(ContainerVariable, input);
   }
@@ -334,7 +334,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async getEnvs(): Promise<ContainerEnvOption[]> {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     return (
       await makeEm().findOneOrFail(
         Container,
@@ -347,7 +347,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async getVariables(): Promise<ContainerVariableTable[]> {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     return knex<ContainerVariableTable>('container_variable')
       .select('*')
       .where('container_id', this.id);
@@ -356,7 +356,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   async getVolumes(): Promise<
     { containerVolume: ContainerVolume; volume: VolumeRepo }[]
   > {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     const containerVolumes = await new VolumeRepo(
       this.ctx
     ).getVolumesOfContainer(this.id);
@@ -367,12 +367,12 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async getDbs(): Promise<ContainerDb[]> {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     return new ContainerDbRepo(this.ctx).getByFields({ container: this.id });
   }
 
   async getDockerLog(): Promise<string> {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     const data = await this.getEntity();
     return new NodeRepo(this.ctx, data.node.id).getDockerContainerLog(data.id);
   }
@@ -380,7 +380,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   async listFiles(
     path: string
   ): Promise<{ files: string[]; directories: string[] }> {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     const output = await this.shellCommand(`ls -p ${path}`).output;
     const files: string[] = [];
     const directories: string[] = [];
@@ -400,13 +400,13 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async showFile(path: string): Promise<string> {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     const output = await this.shellCommand(`cat ${path}`).output;
     return output.stdout;
   }
 
   async addContainerEnvOption(input: Partial<ContainerEnvOptionTable>) {
-    await this.checkActionAccess(resources.container.actions.edit);
+    await this.checkActionAccess(resources.Container.actions.edit);
     await knex<ContainerEnvOptionTable>('container_env_option').insert({
       container_id: this.id,
       ...input,
@@ -414,14 +414,14 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async removeContainerEnvOptions() {
-    await this.checkActionAccess(resources.container.actions.edit);
+    await this.checkActionAccess(resources.Container.actions.edit);
     await knex<ContainerEnvOptionTable>('container_env_option')
       .delete()
       .where('container_id', this.id);
   }
 
   async getDomain(): Promise<Domain | null> {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     const data = await this.getEntity();
     if (!data.domain) {
       return null;
@@ -432,7 +432,7 @@ export class ContainerRepo extends BaseRepo<Container> {
   async getRuntimeVariables(
     withoutInstance: boolean = false
   ): Promise<ContainerRuntimeVariables> {
-    await this.checkActionAccess(resources.container.actions.read);
+    await this.checkActionAccess(resources.Container.actions.read);
     const domain = await this.getDomain();
     const volumes = await this.getVolumes();
     const variables = await this.getVariables();
@@ -482,7 +482,7 @@ export class ContainerRepo extends BaseRepo<Container> {
     dbUserId: string,
     role: string
   ): Promise<ContainerDb> {
-    await this.checkActionAccess(resources.container.actions.edit);
+    await this.checkActionAccess(resources.Container.actions.edit);
     return new ContainerDbRepo(this.ctx).create({
       container: this.id,
       db: dbId,
@@ -492,11 +492,16 @@ export class ContainerRepo extends BaseRepo<Container> {
   }
 
   async removeDbByContainerDbId(containerDbId: string): Promise<boolean> {
-    await this.checkActionAccess(resources.container.actions.edit);
+    await this.checkActionAccess(resources.Container.actions.edit);
     return new ContainerDbRepo(this.ctx, containerDbId).delete();
   }
 
   async _updateLifeStatus(status: string): Promise<void> {
     await this.update({ lifeStatus: status });
+  }
+
+  async updateShowOnDesktop(showOnDesktop: boolean): Promise<void> {
+    await this.checkActionAccess(resources.Container.actions.edit);
+    await this.update({ showOnDesktop });
   }
 }
