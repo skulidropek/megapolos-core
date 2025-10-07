@@ -11,6 +11,10 @@ export class App extends BaseEntity {
   @Field()
   name!: string;
 
+  @Property({ length: -1 })
+  @Field()
+  description!: string;
+
   @ManyToOne({ entity: () => User })
   @Field(() => User)
   @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })

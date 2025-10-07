@@ -5,7 +5,7 @@
 -- Dumped from database version 16.1 (Debian 16.1-1.pgdg120+1)
 -- Dumped by pg_dump version 17.5
 
--- Started on 2025-09-17 17:01:28
+-- Started on 2025-10-07 13:30:13
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -25,15 +25,6 @@ SET row_security = off;
 --
 
 -- *not* creating schema, since initdb creates it
-
-
---
--- TOC entry 3994 (class 0 OID 0)
--- Dependencies: 5
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON SCHEMA public IS '';
 
 
 --
@@ -61,7 +52,8 @@ CREATE TABLE public.app (
     owner_user_id uuid DEFAULT gen_random_uuid() NOT NULL,
     status character varying DEFAULT 'stoppd'::character varying,
     create_date timestamp without time zone DEFAULT now(),
-    update_date timestamp without time zone DEFAULT now()
+    update_date timestamp without time zone DEFAULT now(),
+    description text DEFAULT ''::text NOT NULL
 );
 
 
@@ -141,7 +133,8 @@ CREATE TABLE public.container (
     update_date timestamp without time zone DEFAULT now(),
     remove_date timestamp without time zone,
     docker_runtime_id character varying,
-    domain_id uuid
+    domain_id uuid,
+    show_on_desktop boolean NOT NULL DEFAULT false
 );
 
 
@@ -1002,7 +995,7 @@ CREATE TABLE public.web_server (
 
 
 --
--- TOC entry 3673 (class 2606 OID 60704)
+-- TOC entry 3674 (class 2606 OID 60704)
 -- Name: app_device app_device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1011,7 +1004,7 @@ ALTER TABLE ONLY public.app_device
 
 
 --
--- TOC entry 3675 (class 2606 OID 60722)
+-- TOC entry 3676 (class 2606 OID 60722)
 -- Name: app_instance_device app_instance_device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1020,7 +1013,7 @@ ALTER TABLE ONLY public.app_instance_device
 
 
 --
--- TOC entry 3655 (class 2606 OID 60572)
+-- TOC entry 3656 (class 2606 OID 60572)
 -- Name: app_instance app_instance_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1029,7 +1022,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3657 (class 2606 OID 60570)
+-- TOC entry 3658 (class 2606 OID 60570)
 -- Name: app_instance app_instance_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1038,7 +1031,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3635 (class 2606 OID 60499)
+-- TOC entry 3636 (class 2606 OID 60499)
 -- Name: app app_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1047,7 +1040,7 @@ ALTER TABLE ONLY public.app
 
 
 --
--- TOC entry 3637 (class 2606 OID 60497)
+-- TOC entry 3638 (class 2606 OID 60497)
 -- Name: app app_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1056,7 +1049,7 @@ ALTER TABLE ONLY public.app
 
 
 --
--- TOC entry 3745 (class 2606 OID 106730)
+-- TOC entry 3746 (class 2606 OID 106730)
 -- Name: artifact artifact_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1065,7 +1058,7 @@ ALTER TABLE ONLY public.artifact
 
 
 --
--- TOC entry 3757 (class 2606 OID 221208)
+-- TOC entry 3758 (class 2606 OID 221208)
 -- Name: container_db container_db_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1074,7 +1067,7 @@ ALTER TABLE ONLY public.container_db
 
 
 --
--- TOC entry 3713 (class 2606 OID 61046)
+-- TOC entry 3714 (class 2606 OID 61046)
 -- Name: container_device_aux_option container_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1083,7 +1076,7 @@ ALTER TABLE ONLY public.container_device_aux_option
 
 
 --
--- TOC entry 3693 (class 2606 OID 60873)
+-- TOC entry 3694 (class 2606 OID 60873)
 -- Name: container_device_certificate container_device_certificate_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1092,7 +1085,7 @@ ALTER TABLE ONLY public.container_device_certificate
 
 
 --
--- TOC entry 3697 (class 2606 OID 60906)
+-- TOC entry 3698 (class 2606 OID 60906)
 -- Name: container_device_db container_device_db_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1101,7 +1094,7 @@ ALTER TABLE ONLY public.container_device_db
 
 
 --
--- TOC entry 3689 (class 2606 OID 60839)
+-- TOC entry 3690 (class 2606 OID 60839)
 -- Name: container_device_domain container_device_domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1110,7 +1103,7 @@ ALTER TABLE ONLY public.container_device_domain
 
 
 --
--- TOC entry 3707 (class 2606 OID 60986)
+-- TOC entry 3708 (class 2606 OID 60986)
 -- Name: container_device_env_option container_device_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1119,7 +1112,7 @@ ALTER TABLE ONLY public.container_device_env_option
 
 
 --
--- TOC entry 3677 (class 2606 OID 60740)
+-- TOC entry 3678 (class 2606 OID 60740)
 -- Name: container_device container_device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1128,7 +1121,7 @@ ALTER TABLE ONLY public.container_device
 
 
 --
--- TOC entry 3701 (class 2606 OID 60939)
+-- TOC entry 3702 (class 2606 OID 60939)
 -- Name: container_device_repository container_device_repository_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1137,7 +1130,7 @@ ALTER TABLE ONLY public.container_device_repository
 
 
 --
--- TOC entry 3723 (class 2606 OID 61139)
+-- TOC entry 3724 (class 2606 OID 61139)
 -- Name: container_env_option container_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1146,7 +1139,7 @@ ALTER TABLE ONLY public.container_env_option
 
 
 --
--- TOC entry 3659 (class 2606 OID 60614)
+-- TOC entry 3660 (class 2606 OID 60614)
 -- Name: container container_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1155,7 +1148,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3661 (class 2606 OID 60612)
+-- TOC entry 3662 (class 2606 OID 60612)
 -- Name: container container_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1164,7 +1157,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3709 (class 2606 OID 61006)
+-- TOC entry 3710 (class 2606 OID 61006)
 -- Name: container_resource_env_option container_resource_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1173,7 +1166,7 @@ ALTER TABLE ONLY public.container_resource_env_option
 
 
 --
--- TOC entry 3679 (class 2606 OID 60758)
+-- TOC entry 3680 (class 2606 OID 60758)
 -- Name: container_resource container_resource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1182,7 +1175,7 @@ ALTER TABLE ONLY public.container_resource
 
 
 --
--- TOC entry 3755 (class 2606 OID 213026)
+-- TOC entry 3756 (class 2606 OID 213026)
 -- Name: container_variable container_variable_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1191,7 +1184,7 @@ ALTER TABLE ONLY public.container_variable
 
 
 --
--- TOC entry 3719 (class 2606 OID 61106)
+-- TOC entry 3720 (class 2606 OID 61106)
 -- Name: container_volume container_volume_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1200,7 +1193,7 @@ ALTER TABLE ONLY public.container_volume
 
 
 --
--- TOC entry 3743 (class 2606 OID 106721)
+-- TOC entry 3744 (class 2606 OID 106721)
 -- Name: db_backup db_backup_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1209,7 +1202,7 @@ ALTER TABLE ONLY public.db_backup
 
 
 --
--- TOC entry 3741 (class 2606 OID 141019)
+-- TOC entry 3742 (class 2606 OID 141019)
 -- Name: db_db_user db_db_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1218,7 +1211,7 @@ ALTER TABLE ONLY public.db_db_user
 
 
 --
--- TOC entry 3737 (class 2606 OID 106673)
+-- TOC entry 3738 (class 2606 OID 106673)
 -- Name: db db_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1227,7 +1220,7 @@ ALTER TABLE ONLY public.db
 
 
 --
--- TOC entry 3749 (class 2606 OID 106753)
+-- TOC entry 3750 (class 2606 OID 106753)
 -- Name: db_schema db_schema_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1236,7 +1229,7 @@ ALTER TABLE ONLY public.db_schema
 
 
 --
--- TOC entry 3739 (class 2606 OID 106682)
+-- TOC entry 3740 (class 2606 OID 106682)
 -- Name: db_user db_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1245,7 +1238,7 @@ ALTER TABLE ONLY public.db_user
 
 
 --
--- TOC entry 3735 (class 2606 OID 106664)
+-- TOC entry 3736 (class 2606 OID 106664)
 -- Name: dbms dbms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1254,7 +1247,7 @@ ALTER TABLE ONLY public.dbms
 
 
 --
--- TOC entry 3643 (class 2606 OID 60535)
+-- TOC entry 3644 (class 2606 OID 60535)
 -- Name: deploy_strategy deploy_strategy_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1263,7 +1256,7 @@ ALTER TABLE ONLY public.deploy_strategy
 
 
 --
--- TOC entry 3645 (class 2606 OID 60533)
+-- TOC entry 3646 (class 2606 OID 60533)
 -- Name: deploy_strategy deploy_strategy_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1272,7 +1265,7 @@ ALTER TABLE ONLY public.deploy_strategy
 
 
 --
--- TOC entry 3729 (class 2606 OID 61183)
+-- TOC entry 3730 (class 2606 OID 61183)
 -- Name: device_backup device_backup_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1281,7 +1274,7 @@ ALTER TABLE ONLY public.device_backup
 
 
 --
--- TOC entry 3667 (class 2606 OID 60662)
+-- TOC entry 3668 (class 2606 OID 60662)
 -- Name: device device_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1290,7 +1283,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3727 (class 2606 OID 61167)
+-- TOC entry 3728 (class 2606 OID 61167)
 -- Name: device_option device_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1299,7 +1292,7 @@ ALTER TABLE ONLY public.device_option
 
 
 --
--- TOC entry 3669 (class 2606 OID 60660)
+-- TOC entry 3670 (class 2606 OID 60660)
 -- Name: device device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1308,7 +1301,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3623 (class 2606 OID 60445)
+-- TOC entry 3624 (class 2606 OID 60445)
 -- Name: device_type device_type_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1317,7 +1310,7 @@ ALTER TABLE ONLY public.device_type
 
 
 --
--- TOC entry 3625 (class 2606 OID 60443)
+-- TOC entry 3626 (class 2606 OID 60443)
 -- Name: device_type device_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1326,7 +1319,7 @@ ALTER TABLE ONLY public.device_type
 
 
 --
--- TOC entry 3733 (class 2606 OID 81939)
+-- TOC entry 3734 (class 2606 OID 81939)
 -- Name: domain domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1335,7 +1328,7 @@ ALTER TABLE ONLY public.domain
 
 
 --
--- TOC entry 3663 (class 2606 OID 60640)
+-- TOC entry 3664 (class 2606 OID 60640)
 -- Name: driver driver_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1344,7 +1337,7 @@ ALTER TABLE ONLY public.driver
 
 
 --
--- TOC entry 3665 (class 2606 OID 60638)
+-- TOC entry 3666 (class 2606 OID 60638)
 -- Name: driver driver_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1353,7 +1346,7 @@ ALTER TABLE ONLY public.driver
 
 
 --
--- TOC entry 3631 (class 2606 OID 60468)
+-- TOC entry 3632 (class 2606 OID 60468)
 -- Name: group_user group_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1362,7 +1355,7 @@ ALTER TABLE ONLY public.group_user
 
 
 --
--- TOC entry 3759 (class 2606 OID 221234)
+-- TOC entry 3760 (class 2606 OID 221234)
 -- Name: image_db_requirement image_db_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1371,7 +1364,7 @@ ALTER TABLE ONLY public.image_db_requirement
 
 
 --
--- TOC entry 3715 (class 2606 OID 61066)
+-- TOC entry 3716 (class 2606 OID 61066)
 -- Name: image_device_aux_option image_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1380,7 +1373,7 @@ ALTER TABLE ONLY public.image_device_aux_option
 
 
 --
--- TOC entry 3711 (class 2606 OID 61026)
+-- TOC entry 3712 (class 2606 OID 61026)
 -- Name: image_device_env_option image_device_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1389,7 +1382,7 @@ ALTER TABLE ONLY public.image_device_env_option
 
 
 --
--- TOC entry 3681 (class 2606 OID 60776)
+-- TOC entry 3682 (class 2606 OID 60776)
 -- Name: image_device image_device_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1398,7 +1391,7 @@ ALTER TABLE ONLY public.image_device
 
 
 --
--- TOC entry 3725 (class 2606 OID 61153)
+-- TOC entry 3726 (class 2606 OID 61153)
 -- Name: image_env_option image_env_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1407,7 +1400,7 @@ ALTER TABLE ONLY public.image_env_option
 
 
 --
--- TOC entry 3687 (class 2606 OID 60823)
+-- TOC entry 3688 (class 2606 OID 60823)
 -- Name: image_env_requirement image_env_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1416,7 +1409,7 @@ ALTER TABLE ONLY public.image_env_requirement
 
 
 --
--- TOC entry 3639 (class 2606 OID 60520)
+-- TOC entry 3640 (class 2606 OID 60520)
 -- Name: image image_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1425,7 +1418,7 @@ ALTER TABLE ONLY public.image
 
 
 --
--- TOC entry 3641 (class 2606 OID 60518)
+-- TOC entry 3642 (class 2606 OID 60518)
 -- Name: image image_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1434,7 +1427,7 @@ ALTER TABLE ONLY public.image
 
 
 --
--- TOC entry 3683 (class 2606 OID 60795)
+-- TOC entry 3684 (class 2606 OID 60795)
 -- Name: image_resource_requirement image_resource_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1443,7 +1436,7 @@ ALTER TABLE ONLY public.image_resource_requirement
 
 
 --
--- TOC entry 3753 (class 2606 OID 213012)
+-- TOC entry 3754 (class 2606 OID 213012)
 -- Name: image_variable_requirement image_variable_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1452,7 +1445,7 @@ ALTER TABLE ONLY public.image_variable_requirement
 
 
 --
--- TOC entry 3721 (class 2606 OID 61125)
+-- TOC entry 3722 (class 2606 OID 61125)
 -- Name: image_volume image_volume_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1461,7 +1454,7 @@ ALTER TABLE ONLY public.image_volume
 
 
 --
--- TOC entry 3685 (class 2606 OID 60809)
+-- TOC entry 3686 (class 2606 OID 60809)
 -- Name: image_volume_requirement image_volume_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1470,7 +1463,7 @@ ALTER TABLE ONLY public.image_volume_requirement
 
 
 --
--- TOC entry 3647 (class 2606 OID 60545)
+-- TOC entry 3648 (class 2606 OID 60545)
 -- Name: instance_type instance_type_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1479,7 +1472,7 @@ ALTER TABLE ONLY public.instance_type
 
 
 --
--- TOC entry 3649 (class 2606 OID 60543)
+-- TOC entry 3650 (class 2606 OID 60543)
 -- Name: instance_type instance_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1488,7 +1481,7 @@ ALTER TABLE ONLY public.instance_type
 
 
 --
--- TOC entry 3747 (class 2606 OID 106744)
+-- TOC entry 3748 (class 2606 OID 106744)
 -- Name: log log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1497,7 +1490,7 @@ ALTER TABLE ONLY public.log
 
 
 --
--- TOC entry 3627 (class 2606 OID 60458)
+-- TOC entry 3628 (class 2606 OID 60458)
 -- Name: node node_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1506,7 +1499,7 @@ ALTER TABLE ONLY public.node
 
 
 --
--- TOC entry 3629 (class 2606 OID 60456)
+-- TOC entry 3630 (class 2606 OID 60456)
 -- Name: node node_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1515,7 +1508,7 @@ ALTER TABLE ONLY public.node
 
 
 --
--- TOC entry 3651 (class 2606 OID 60555)
+-- TOC entry 3652 (class 2606 OID 60555)
 -- Name: remove_strategy remove_strategy_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1524,7 +1517,7 @@ ALTER TABLE ONLY public.remove_strategy
 
 
 --
--- TOC entry 3653 (class 2606 OID 60553)
+-- TOC entry 3654 (class 2606 OID 60553)
 -- Name: remove_strategy remove_strategy_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1533,7 +1526,7 @@ ALTER TABLE ONLY public.remove_strategy
 
 
 --
--- TOC entry 3731 (class 2606 OID 73738)
+-- TOC entry 3732 (class 2606 OID 73738)
 -- Name: repository repository_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1542,7 +1535,7 @@ ALTER TABLE ONLY public.repository
 
 
 --
--- TOC entry 3695 (class 2606 OID 60891)
+-- TOC entry 3696 (class 2606 OID 60891)
 -- Name: resource_certificate resource_certificate_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1551,7 +1544,7 @@ ALTER TABLE ONLY public.resource_certificate
 
 
 --
--- TOC entry 3699 (class 2606 OID 60924)
+-- TOC entry 3700 (class 2606 OID 60924)
 -- Name: resource_db resource_db_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1560,7 +1553,7 @@ ALTER TABLE ONLY public.resource_db
 
 
 --
--- TOC entry 3717 (class 2606 OID 61086)
+-- TOC entry 3718 (class 2606 OID 61086)
 -- Name: resource_device_aux_option resource_device_aux_option_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1569,7 +1562,7 @@ ALTER TABLE ONLY public.resource_device_aux_option
 
 
 --
--- TOC entry 3705 (class 2606 OID 60971)
+-- TOC entry 3706 (class 2606 OID 60971)
 -- Name: resource_docker_image resource_docker_image_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1578,7 +1571,7 @@ ALTER TABLE ONLY public.resource_docker_image
 
 
 --
--- TOC entry 3691 (class 2606 OID 60858)
+-- TOC entry 3692 (class 2606 OID 60858)
 -- Name: resource_domain resource_domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1587,7 +1580,7 @@ ALTER TABLE ONLY public.resource_domain
 
 
 --
--- TOC entry 3671 (class 2606 OID 60691)
+-- TOC entry 3672 (class 2606 OID 60691)
 -- Name: resource resource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1596,7 +1589,7 @@ ALTER TABLE ONLY public.resource
 
 
 --
--- TOC entry 3703 (class 2606 OID 60957)
+-- TOC entry 3704 (class 2606 OID 60957)
 -- Name: resource_repository resource_repository_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1605,7 +1598,7 @@ ALTER TABLE ONLY public.resource_repository
 
 
 --
--- TOC entry 3761 (class 2606 OID 415604)
+-- TOC entry 3762 (class 2606 OID 415604)
 -- Name: test_case test_case_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1614,7 +1607,7 @@ ALTER TABLE ONLY public.test_case
 
 
 --
--- TOC entry 3633 (class 2606 OID 60480)
+-- TOC entry 3634 (class 2606 OID 60480)
 -- Name: user user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1623,7 +1616,7 @@ ALTER TABLE ONLY public."user"
 
 
 --
--- TOC entry 3751 (class 2606 OID 157576)
+-- TOC entry 3752 (class 2606 OID 157576)
 -- Name: volume_backup volume_backup_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1632,7 +1625,7 @@ ALTER TABLE ONLY public.volume_backup
 
 
 --
--- TOC entry 3621 (class 2606 OID 60435)
+-- TOC entry 3622 (class 2606 OID 60435)
 -- Name: volume volume_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1641,7 +1634,7 @@ ALTER TABLE ONLY public.volume
 
 
 --
--- TOC entry 3781 (class 2606 OID 60705)
+-- TOC entry 3782 (class 2606 OID 60705)
 -- Name: app_device app_device_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1650,7 +1643,7 @@ ALTER TABLE ONLY public.app_device
 
 
 --
--- TOC entry 3782 (class 2606 OID 60710)
+-- TOC entry 3783 (class 2606 OID 60710)
 -- Name: app_device app_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1659,7 +1652,7 @@ ALTER TABLE ONLY public.app_device
 
 
 --
--- TOC entry 3766 (class 2606 OID 60583)
+-- TOC entry 3767 (class 2606 OID 60583)
 -- Name: app_instance app_instance_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1668,7 +1661,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3767 (class 2606 OID 60573)
+-- TOC entry 3768 (class 2606 OID 60573)
 -- Name: app_instance app_instance_deploy_strategy_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1677,7 +1670,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3783 (class 2606 OID 60723)
+-- TOC entry 3784 (class 2606 OID 60723)
 -- Name: app_instance_device app_instance_device_app_instance_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1686,7 +1679,7 @@ ALTER TABLE ONLY public.app_instance_device
 
 
 --
--- TOC entry 3784 (class 2606 OID 60728)
+-- TOC entry 3785 (class 2606 OID 60728)
 -- Name: app_instance_device app_instance_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1695,7 +1688,7 @@ ALTER TABLE ONLY public.app_instance_device
 
 
 --
--- TOC entry 3768 (class 2606 OID 60588)
+-- TOC entry 3769 (class 2606 OID 60588)
 -- Name: app_instance app_instance_instance_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1704,7 +1697,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3769 (class 2606 OID 60578)
+-- TOC entry 3770 (class 2606 OID 60578)
 -- Name: app_instance app_instance_remove_strategy_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1713,7 +1706,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3770 (class 2606 OID 60593)
+-- TOC entry 3771 (class 2606 OID 60593)
 -- Name: app_instance app_instance_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1722,7 +1715,7 @@ ALTER TABLE ONLY public.app_instance
 
 
 --
--- TOC entry 3763 (class 2606 OID 60500)
+-- TOC entry 3764 (class 2606 OID 60500)
 -- Name: app app_owner_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1731,7 +1724,7 @@ ALTER TABLE ONLY public.app
 
 
 --
--- TOC entry 3771 (class 2606 OID 60625)
+-- TOC entry 3772 (class 2606 OID 60625)
 -- Name: container container_app_instance_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1740,7 +1733,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3839 (class 2606 OID 221219)
+-- TOC entry 3840 (class 2606 OID 221219)
 -- Name: container_db container_db_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1749,7 +1742,7 @@ ALTER TABLE ONLY public.container_db
 
 
 --
--- TOC entry 3840 (class 2606 OID 221209)
+-- TOC entry 3841 (class 2606 OID 221209)
 -- Name: container_db container_db_db_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1758,7 +1751,7 @@ ALTER TABLE ONLY public.container_db
 
 
 --
--- TOC entry 3841 (class 2606 OID 221214)
+-- TOC entry 3842 (class 2606 OID 221214)
 -- Name: container_db container_db_db_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1767,7 +1760,7 @@ ALTER TABLE ONLY public.container_db
 
 
 --
--- TOC entry 3813 (class 2606 OID 61052)
+-- TOC entry 3814 (class 2606 OID 61052)
 -- Name: container_device_aux_option container_device_aux_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1776,7 +1769,7 @@ ALTER TABLE ONLY public.container_device_aux_option
 
 
 --
--- TOC entry 3814 (class 2606 OID 61047)
+-- TOC entry 3815 (class 2606 OID 61047)
 -- Name: container_device_aux_option container_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1785,7 +1778,7 @@ ALTER TABLE ONLY public.container_device_aux_option
 
 
 --
--- TOC entry 3797 (class 2606 OID 60874)
+-- TOC entry 3798 (class 2606 OID 60874)
 -- Name: container_device_certificate container_device_certificate_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1794,7 +1787,7 @@ ALTER TABLE ONLY public.container_device_certificate
 
 
 --
--- TOC entry 3798 (class 2606 OID 60879)
+-- TOC entry 3799 (class 2606 OID 60879)
 -- Name: container_device_certificate container_device_certificate_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1803,7 +1796,7 @@ ALTER TABLE ONLY public.container_device_certificate
 
 
 --
--- TOC entry 3785 (class 2606 OID 60746)
+-- TOC entry 3786 (class 2606 OID 60746)
 -- Name: container_device container_device_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1812,7 +1805,7 @@ ALTER TABLE ONLY public.container_device
 
 
 --
--- TOC entry 3800 (class 2606 OID 60912)
+-- TOC entry 3801 (class 2606 OID 60912)
 -- Name: container_device_db container_device_db_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1821,7 +1814,7 @@ ALTER TABLE ONLY public.container_device_db
 
 
 --
--- TOC entry 3801 (class 2606 OID 60907)
+-- TOC entry 3802 (class 2606 OID 60907)
 -- Name: container_device_db container_device_db_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1830,7 +1823,7 @@ ALTER TABLE ONLY public.container_device_db
 
 
 --
--- TOC entry 3786 (class 2606 OID 60741)
+-- TOC entry 3787 (class 2606 OID 60741)
 -- Name: container_device container_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1839,7 +1832,7 @@ ALTER TABLE ONLY public.container_device
 
 
 --
--- TOC entry 3794 (class 2606 OID 60845)
+-- TOC entry 3795 (class 2606 OID 60845)
 -- Name: container_device_domain container_device_domain_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1848,7 +1841,7 @@ ALTER TABLE ONLY public.container_device_domain
 
 
 --
--- TOC entry 3795 (class 2606 OID 60840)
+-- TOC entry 3796 (class 2606 OID 60840)
 -- Name: container_device_domain container_device_domain_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1857,7 +1850,7 @@ ALTER TABLE ONLY public.container_device_domain
 
 
 --
--- TOC entry 3807 (class 2606 OID 60992)
+-- TOC entry 3808 (class 2606 OID 60992)
 -- Name: container_device_env_option container_device_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1866,7 +1859,7 @@ ALTER TABLE ONLY public.container_device_env_option
 
 
 --
--- TOC entry 3808 (class 2606 OID 60987)
+-- TOC entry 3809 (class 2606 OID 60987)
 -- Name: container_device_env_option container_device_env_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1875,7 +1868,7 @@ ALTER TABLE ONLY public.container_device_env_option
 
 
 --
--- TOC entry 3803 (class 2606 OID 60945)
+-- TOC entry 3804 (class 2606 OID 60945)
 -- Name: container_device_repository container_device_repository_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1884,7 +1877,7 @@ ALTER TABLE ONLY public.container_device_repository
 
 
 --
--- TOC entry 3804 (class 2606 OID 60940)
+-- TOC entry 3805 (class 2606 OID 60940)
 -- Name: container_device_repository container_device_repository_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1893,7 +1886,7 @@ ALTER TABLE ONLY public.container_device_repository
 
 
 --
--- TOC entry 3772 (class 2606 OID 81940)
+-- TOC entry 3773 (class 2606 OID 81940)
 -- Name: container container_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1902,7 +1895,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3822 (class 2606 OID 61140)
+-- TOC entry 3823 (class 2606 OID 61140)
 -- Name: container_env_option container_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1911,7 +1904,7 @@ ALTER TABLE ONLY public.container_env_option
 
 
 --
--- TOC entry 3773 (class 2606 OID 60620)
+-- TOC entry 3774 (class 2606 OID 60620)
 -- Name: container container_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1920,7 +1913,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3774 (class 2606 OID 60615)
+-- TOC entry 3775 (class 2606 OID 60615)
 -- Name: container container_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1929,7 +1922,7 @@ ALTER TABLE ONLY public.container
 
 
 --
--- TOC entry 3787 (class 2606 OID 60759)
+-- TOC entry 3788 (class 2606 OID 60759)
 -- Name: container_resource container_resource_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1938,7 +1931,7 @@ ALTER TABLE ONLY public.container_resource
 
 
 --
--- TOC entry 3809 (class 2606 OID 61012)
+-- TOC entry 3810 (class 2606 OID 61012)
 -- Name: container_resource_env_option container_resource_env_option_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1947,7 +1940,7 @@ ALTER TABLE ONLY public.container_resource_env_option
 
 
 --
--- TOC entry 3810 (class 2606 OID 61007)
+-- TOC entry 3811 (class 2606 OID 61007)
 -- Name: container_resource_env_option container_resource_env_option_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1956,7 +1949,7 @@ ALTER TABLE ONLY public.container_resource_env_option
 
 
 --
--- TOC entry 3788 (class 2606 OID 60764)
+-- TOC entry 3789 (class 2606 OID 60764)
 -- Name: container_resource container_resource_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1965,7 +1958,7 @@ ALTER TABLE ONLY public.container_resource
 
 
 --
--- TOC entry 3838 (class 2606 OID 213027)
+-- TOC entry 3839 (class 2606 OID 213027)
 -- Name: container_variable container_variable_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1974,7 +1967,7 @@ ALTER TABLE ONLY public.container_variable
 
 
 --
--- TOC entry 3819 (class 2606 OID 61112)
+-- TOC entry 3820 (class 2606 OID 61112)
 -- Name: container_volume container_volume_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1983,7 +1976,7 @@ ALTER TABLE ONLY public.container_volume
 
 
 --
--- TOC entry 3820 (class 2606 OID 61107)
+-- TOC entry 3821 (class 2606 OID 61107)
 -- Name: container_volume container_volume_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1992,7 +1985,7 @@ ALTER TABLE ONLY public.container_volume
 
 
 --
--- TOC entry 3833 (class 2606 OID 106731)
+-- TOC entry 3834 (class 2606 OID 106731)
 -- Name: db_backup db_backup_artifact_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2001,7 +1994,7 @@ ALTER TABLE ONLY public.db_backup
 
 
 --
--- TOC entry 3831 (class 2606 OID 106696)
+-- TOC entry 3832 (class 2606 OID 106696)
 -- Name: db_db_user db_db_user_db_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2010,7 +2003,7 @@ ALTER TABLE ONLY public.db_db_user
 
 
 --
--- TOC entry 3832 (class 2606 OID 106701)
+-- TOC entry 3833 (class 2606 OID 106701)
 -- Name: db_db_user db_db_user_db_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2019,7 +2012,7 @@ ALTER TABLE ONLY public.db_db_user
 
 
 --
--- TOC entry 3829 (class 2606 OID 108247)
+-- TOC entry 3830 (class 2606 OID 108247)
 -- Name: db db_dbms_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2028,7 +2021,7 @@ ALTER TABLE ONLY public.db
 
 
 --
--- TOC entry 3830 (class 2606 OID 106688)
+-- TOC entry 3831 (class 2606 OID 106688)
 -- Name: db_user db_user_dbms_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2037,7 +2030,7 @@ ALTER TABLE ONLY public.db_user
 
 
 --
--- TOC entry 3825 (class 2606 OID 61194)
+-- TOC entry 3826 (class 2606 OID 61194)
 -- Name: device_backup device_backup_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2046,7 +2039,7 @@ ALTER TABLE ONLY public.device_backup
 
 
 --
--- TOC entry 3826 (class 2606 OID 61184)
+-- TOC entry 3827 (class 2606 OID 61184)
 -- Name: device_backup device_backup_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2055,7 +2048,7 @@ ALTER TABLE ONLY public.device_backup
 
 
 --
--- TOC entry 3827 (class 2606 OID 61189)
+-- TOC entry 3828 (class 2606 OID 61189)
 -- Name: device_backup device_backup_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2064,7 +2057,7 @@ ALTER TABLE ONLY public.device_backup
 
 
 --
--- TOC entry 3776 (class 2606 OID 60678)
+-- TOC entry 3777 (class 2606 OID 60678)
 -- Name: device device_backup_volume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2073,7 +2066,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3777 (class 2606 OID 60668)
+-- TOC entry 3778 (class 2606 OID 60668)
 -- Name: device device_device_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2082,7 +2075,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3778 (class 2606 OID 60673)
+-- TOC entry 3779 (class 2606 OID 60673)
 -- Name: device device_driver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2091,7 +2084,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3779 (class 2606 OID 60663)
+-- TOC entry 3780 (class 2606 OID 60663)
 -- Name: device device_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2100,7 +2093,7 @@ ALTER TABLE ONLY public.device
 
 
 --
--- TOC entry 3824 (class 2606 OID 61168)
+-- TOC entry 3825 (class 2606 OID 61168)
 -- Name: device_option device_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2109,7 +2102,7 @@ ALTER TABLE ONLY public.device_option
 
 
 --
--- TOC entry 3834 (class 2606 OID 131106)
+-- TOC entry 3835 (class 2606 OID 131106)
 -- Name: docker_registry docker_registry_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2118,7 +2111,7 @@ ALTER TABLE ONLY public.docker_registry
 
 
 --
--- TOC entry 3775 (class 2606 OID 60641)
+-- TOC entry 3776 (class 2606 OID 60641)
 -- Name: driver driver_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2127,7 +2120,7 @@ ALTER TABLE ONLY public.driver
 
 
 --
--- TOC entry 3843 (class 2606 OID 309101)
+-- TOC entry 3844 (class 2606 OID 309101)
 -- Name: group_user_privilege group_user_privilege_group_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2136,7 +2129,7 @@ ALTER TABLE ONLY public.group_user_privilege
 
 
 --
--- TOC entry 3764 (class 2606 OID 60521)
+-- TOC entry 3765 (class 2606 OID 60521)
 -- Name: image image_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2145,7 +2138,7 @@ ALTER TABLE ONLY public.image
 
 
 --
--- TOC entry 3842 (class 2606 OID 221235)
+-- TOC entry 3843 (class 2606 OID 221235)
 -- Name: image_db_requirement image_db_requirement_db_backup_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2154,7 +2147,7 @@ ALTER TABLE ONLY public.image_db_requirement
 
 
 --
--- TOC entry 3815 (class 2606 OID 61072)
+-- TOC entry 3816 (class 2606 OID 61072)
 -- Name: image_device_aux_option image_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2163,7 +2156,7 @@ ALTER TABLE ONLY public.image_device_aux_option
 
 
 --
--- TOC entry 3816 (class 2606 OID 61067)
+-- TOC entry 3817 (class 2606 OID 61067)
 -- Name: image_device_aux_option image_device_aux_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2172,7 +2165,7 @@ ALTER TABLE ONLY public.image_device_aux_option
 
 
 --
--- TOC entry 3789 (class 2606 OID 60777)
+-- TOC entry 3790 (class 2606 OID 60777)
 -- Name: image_device image_device_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2181,7 +2174,7 @@ ALTER TABLE ONLY public.image_device
 
 
 --
--- TOC entry 3811 (class 2606 OID 61027)
+-- TOC entry 3812 (class 2606 OID 61027)
 -- Name: image_device_env_option image_device_env_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2190,7 +2183,7 @@ ALTER TABLE ONLY public.image_device_env_option
 
 
 --
--- TOC entry 3812 (class 2606 OID 61032)
+-- TOC entry 3813 (class 2606 OID 61032)
 -- Name: image_device_env_option image_device_env_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2199,7 +2192,7 @@ ALTER TABLE ONLY public.image_device_env_option
 
 
 --
--- TOC entry 3790 (class 2606 OID 60782)
+-- TOC entry 3791 (class 2606 OID 60782)
 -- Name: image_device image_device_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2208,7 +2201,7 @@ ALTER TABLE ONLY public.image_device
 
 
 --
--- TOC entry 3823 (class 2606 OID 61154)
+-- TOC entry 3824 (class 2606 OID 61154)
 -- Name: image_env_option image_env_option_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2217,7 +2210,7 @@ ALTER TABLE ONLY public.image_env_option
 
 
 --
--- TOC entry 3793 (class 2606 OID 60824)
+-- TOC entry 3794 (class 2606 OID 60824)
 -- Name: image_env_requirement image_env_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2226,7 +2219,7 @@ ALTER TABLE ONLY public.image_env_requirement
 
 
 --
--- TOC entry 3765 (class 2606 OID 73739)
+-- TOC entry 3766 (class 2606 OID 73739)
 -- Name: image image_repository_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2235,7 +2228,7 @@ ALTER TABLE ONLY public.image
 
 
 --
--- TOC entry 3791 (class 2606 OID 60796)
+-- TOC entry 3792 (class 2606 OID 60796)
 -- Name: image_resource_requirement image_resource_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2244,7 +2237,7 @@ ALTER TABLE ONLY public.image_resource_requirement
 
 
 --
--- TOC entry 3837 (class 2606 OID 213013)
+-- TOC entry 3838 (class 2606 OID 213013)
 -- Name: image_variable_requirement image_variable_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2253,7 +2246,7 @@ ALTER TABLE ONLY public.image_variable_requirement
 
 
 --
--- TOC entry 3821 (class 2606 OID 61126)
+-- TOC entry 3822 (class 2606 OID 61126)
 -- Name: image_volume image_volume_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2262,7 +2255,7 @@ ALTER TABLE ONLY public.image_volume
 
 
 --
--- TOC entry 3792 (class 2606 OID 60810)
+-- TOC entry 3793 (class 2606 OID 60810)
 -- Name: image_volume_requirement image_volume_requirement_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2271,7 +2264,7 @@ ALTER TABLE ONLY public.image_volume_requirement
 
 
 --
--- TOC entry 3828 (class 2606 OID 221197)
+-- TOC entry 3829 (class 2606 OID 221197)
 -- Name: repository repository_app_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2280,7 +2273,7 @@ ALTER TABLE ONLY public.repository
 
 
 --
--- TOC entry 3799 (class 2606 OID 60892)
+-- TOC entry 3800 (class 2606 OID 60892)
 -- Name: resource_certificate resource_certificate_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2289,7 +2282,7 @@ ALTER TABLE ONLY public.resource_certificate
 
 
 --
--- TOC entry 3802 (class 2606 OID 60925)
+-- TOC entry 3803 (class 2606 OID 60925)
 -- Name: resource_db resource_db_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2298,7 +2291,7 @@ ALTER TABLE ONLY public.resource_db
 
 
 --
--- TOC entry 3817 (class 2606 OID 61092)
+-- TOC entry 3818 (class 2606 OID 61092)
 -- Name: resource_device_aux_option resource_device_aux_option_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2307,7 +2300,7 @@ ALTER TABLE ONLY public.resource_device_aux_option
 
 
 --
--- TOC entry 3818 (class 2606 OID 61087)
+-- TOC entry 3819 (class 2606 OID 61087)
 -- Name: resource_device_aux_option resource_device_aux_option_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2316,7 +2309,7 @@ ALTER TABLE ONLY public.resource_device_aux_option
 
 
 --
--- TOC entry 3780 (class 2606 OID 60692)
+-- TOC entry 3781 (class 2606 OID 60692)
 -- Name: resource resource_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2325,7 +2318,7 @@ ALTER TABLE ONLY public.resource
 
 
 --
--- TOC entry 3806 (class 2606 OID 60972)
+-- TOC entry 3807 (class 2606 OID 60972)
 -- Name: resource_docker_image resource_docker_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2334,7 +2327,7 @@ ALTER TABLE ONLY public.resource_docker_image
 
 
 --
--- TOC entry 3796 (class 2606 OID 60859)
+-- TOC entry 3797 (class 2606 OID 60859)
 -- Name: resource_domain resource_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2343,7 +2336,7 @@ ALTER TABLE ONLY public.resource_domain
 
 
 --
--- TOC entry 3805 (class 2606 OID 60958)
+-- TOC entry 3806 (class 2606 OID 60958)
 -- Name: resource_repository resource_repository_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2352,7 +2345,7 @@ ALTER TABLE ONLY public.resource_repository
 
 
 --
--- TOC entry 3844 (class 2606 OID 309115)
+-- TOC entry 3845 (class 2606 OID 309115)
 -- Name: user_group_link user_group_link_group_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2361,7 +2354,7 @@ ALTER TABLE ONLY public.user_group_link
 
 
 --
--- TOC entry 3845 (class 2606 OID 309110)
+-- TOC entry 3846 (class 2606 OID 309110)
 -- Name: user_group_link user_group_link_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2370,7 +2363,7 @@ ALTER TABLE ONLY public.user_group_link
 
 
 --
--- TOC entry 3762 (class 2606 OID 60481)
+-- TOC entry 3763 (class 2606 OID 60481)
 -- Name: user user_group_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2379,7 +2372,7 @@ ALTER TABLE ONLY public."user"
 
 
 --
--- TOC entry 3836 (class 2606 OID 157577)
+-- TOC entry 3837 (class 2606 OID 157577)
 -- Name: volume_backup volume_backup_artifact_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2388,7 +2381,7 @@ ALTER TABLE ONLY public.volume_backup
 
 
 --
--- TOC entry 3835 (class 2606 OID 131111)
+-- TOC entry 3836 (class 2606 OID 131111)
 -- Name: web_server web_server_container_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2396,7 +2389,7 @@ ALTER TABLE ONLY public.web_server
     ADD CONSTRAINT web_server_container_id_fkey FOREIGN KEY (container_id) REFERENCES public.container(id) NOT VALID;
 
 
--- Completed on 2025-09-17 17:01:28
+-- Completed on 2025-10-07 13:30:13
 
 --
 -- PostgreSQL database dump complete

@@ -76,4 +76,8 @@ export class Container extends BaseEntity {
   })
   @Hint({ skip: true })
   envs = new Collection<ContainerEnvOption>(this);
+
+  @Property({ type: 'boolean', default: false, fieldName: 'show_on_desktop' })
+  @Field(() => Boolean)
+  showOnDesktop: boolean = false;
 }

@@ -499,4 +499,9 @@ export class ContainerRepo extends BaseRepo<Container> {
   async _updateLifeStatus(status: string): Promise<void> {
     await this.update({ lifeStatus: status });
   }
+
+  async updateShowOnDesktop(showOnDesktop: boolean): Promise<void> {
+    await this.checkActionAccess(resources.Container.actions.edit);
+    await this.update({ showOnDesktop });
+  }
 }
