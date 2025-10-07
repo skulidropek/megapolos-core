@@ -25,6 +25,7 @@ export default class AppRepo extends BaseRepo<App> {
     const app = await this.create({
       ownerUser: userId,
       name: input.name,
+      description: input.description,
     });
     for (let i in input.images) {
       const image = input.images[i];
