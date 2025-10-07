@@ -133,7 +133,8 @@ CREATE TABLE public.container (
     update_date timestamp without time zone DEFAULT now(),
     remove_date timestamp without time zone,
     docker_runtime_id character varying,
-    domain_id uuid
+    domain_id uuid,
+    show_on_desktop boolean NOT NULL DEFAULT false
 );
 
 

@@ -179,6 +179,7 @@ export interface ContainerTable {
   update_date: Date;
   remove_date: Date;
   domain_id: string;
+  show_on_desktop: boolean;
 }
 
 export interface ContainerDeviceAuxOptionTable {
