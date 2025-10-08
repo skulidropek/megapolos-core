@@ -153,9 +153,6 @@ export default class NodeRepo extends BaseRepo<Node> {
       }
       containerResult.inner_port = image.inner_port;
       containerResult.outer_port = container.outer_port;
-      if (container.domain_id && !config.devMode) {
-        containerResult.outer_port = '127.0.0.1:' + containerResult.outer_port;
-      }
       containerResult.envs = [];
       containerResult.domain_name = domain ? domain.name : null;
       containerResult.auth = domain ? domain.auth : '';

@@ -4,7 +4,11 @@ services:
 {% if True or item.disabled is not defined and item.disabled != True %}
   {{ item.name }}:
     image: "{{ item.image }}"
-{% if item.outer_port != None and item.inner_port != 0 and (data.dev_mode is not defined or data.dev_mode != True) %}
+{% if item.domain_name == None && item.outer_port != None and item.inner_port != 0 and (data.dev_mode is not defined or data.dev_mode != True) %}
+    ports: 
+      - {{ item.outer_port }}:{{ item.inner_port | default(80) }}
+{% endif %}
+{% if item.domain_name != None && item.outer_port != None and item.inner_port != 0 and (data.dev_mode is not defined or data.dev_mode != True) %}
     ports: 
       - published: {{ item.outer_port }}
         target: {{ item.inner_port | default(80) }}
