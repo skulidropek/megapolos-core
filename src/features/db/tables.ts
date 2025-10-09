@@ -466,6 +466,7 @@ export interface DbTable {
   create_date: Date;
   update_date: Date;
   dbms_id: string;
+  owner_id: string;
 }
 
 export interface DbUserTable {

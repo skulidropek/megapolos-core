@@ -65,6 +65,26 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
     return true;
   }
 
+  async assignOwnerToDb(
+    userId: string,
+    dbId: string,
+    withoutChange: boolean = false
+  ): Promise<boolean> {
+    await mem(async (em) => {
+      const db = await em.findOne(Db, dbId);
+      const dbUser = await em.findOne(DbUser, userId);
+      db.owner = dbUser;
+      await em.flush();
+    });
+
+    if (!withoutChange) {
+      const user = await new DbUserRepo(this.ctx, userId).getEntity();
+      const db = await new DbRepo(this.ctx, dbId).getEntity();
+      await this.assignOwnerToDbChange(user.name, db.name);
+    }
+    return true;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async createDbChange(db: Partial<Db>): Promise<boolean> {
     return true;
@@ -82,6 +102,14 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async addUserToDbChange(userName: string, dbName: string): Promise<boolean> {
+    return true;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async assignOwnerToDbChange(
+    userName: string,
+    dbName: string
+  ): Promise<boolean> {
     return true;
   }
 
