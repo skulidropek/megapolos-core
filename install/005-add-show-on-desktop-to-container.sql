@@ -1,0 +1,2 @@
+ALTER TABLE IF EXISTS public.container 
+ADD COLUMN show_on_desktop BOOLEAN NOT NULL DEFAULT FALSE;
