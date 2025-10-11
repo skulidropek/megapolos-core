@@ -87,6 +87,7 @@ CREATE TABLE public.app_instance (
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone DEFAULT now(),
     remove_date timestamp without time zone
+    description text DEFAULT ''::text NOT NULL
 );
 
 
