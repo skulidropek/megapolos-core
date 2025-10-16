@@ -582,6 +582,7 @@ CREATE TABLE public.image (
     branch character varying,
     status public.image_status DEFAULT 'not_exist'::public.image_status NOT NULL,
     last_build_date timestamp without time zone
+    role_in_app text DEFAULT ''::text NOT NULL
 );
 
 
