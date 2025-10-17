@@ -10,6 +10,7 @@ import { BaseEntity } from './Base.entity';
 import { Image } from './Image.entity';
 import { App } from './App.entity';
 import { Hint } from '../../library/graphql_types_generator';
+import { Configuraion } from './configuration/Configuraion.entity';
 
 @Entity()
 @ObjectType()
@@ -18,6 +19,11 @@ export class AppVersion extends BaseEntity {
   @Field(() => App)
   @Hint({ type: () => ID, skipOnUpdate: true })
   app!: App;
+
+  @ManyToOne({ entity: () => Configuraion })
+  @Field(() => Configuraion)
+  @Hint({ type: () => ID })
+  configuraion!: Configuraion;
 
   @Property()
   @Field()

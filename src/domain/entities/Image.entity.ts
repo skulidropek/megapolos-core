@@ -34,6 +34,10 @@ export class Image extends BaseEntity {
   @Field()
   name!: string;
 
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  role?: string;
+
   @ManyToOne({ entity: () => App, defaultRaw: `gen_random_uuid()` })
   @Field(() => App)
   @Hint({ type: () => ID })
