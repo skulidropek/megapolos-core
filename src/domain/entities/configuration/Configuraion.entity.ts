@@ -32,9 +32,7 @@ export class Configuraion extends BaseEntity {
 @ObjectType()
 @Entity()
 export class ConfiguraionService extends BaseEntity {
-  @Field(() => Configuraion)
   @ManyToOne({ entity: () => Configuraion })
-  @Hint({ type: () => ID })
   configuraion!: Configuraion;
 
   @Field()
@@ -65,9 +63,7 @@ export class ConfiguraionService extends BaseEntity {
 @ObjectType()
 @Entity()
 export class ConfigurationVolume extends BaseEntity {
-  @Field(() => ConfiguraionService)
   @ManyToOne({ entity: () => ConfiguraionService })
-  @Hint({ type: () => ID })
   service!: ConfiguraionService;
 
   @Field()
@@ -82,9 +78,7 @@ export class ConfigurationVolume extends BaseEntity {
 @ObjectType()
 @Entity()
 export class ConfigurationPort extends BaseEntity {
-  @Field(() => ConfiguraionService)
   @ManyToOne({ entity: () => ConfiguraionService })
-  @Hint({ type: () => ID })
   service!: ConfiguraionService;
 
   @Field()
@@ -111,9 +105,7 @@ export class ConfigurationPort extends BaseEntity {
 @ObjectType()
 @Entity()
 export class ConfigurationDbWithUser extends BaseEntity {
-  @Field(() => ConfiguraionService)
   @ManyToOne({ entity: () => ConfiguraionService })
-  @Hint({ type: () => ID })
   service!: ConfiguraionService;
 
   @Field()
@@ -140,9 +132,7 @@ registerEnumType(ConfigurationEnvOptionType, {
 @ObjectType()
 @Entity()
 export class ConfigurationEnvOption extends BaseEntity {
-  @Field(() => ConfiguraionService)
   @ManyToOne({ entity: () => ConfiguraionService })
-  @Hint({ type: () => ID })
   service!: ConfiguraionService;
 
   @Field()
@@ -170,9 +160,7 @@ export class ConfigurationEnvOption extends BaseEntity {
 @ObjectType()
 @Entity()
 export class ConfigurationEnvOptionValue extends BaseEntity {
-  @Field(() => ConfigurationEnvOption)
   @ManyToOne({ entity: () => ConfigurationEnvOption })
-  @Hint({ type: () => ID })
   env!: ConfigurationEnvOption;
 
   @Field()
