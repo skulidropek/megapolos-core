@@ -21,7 +21,8 @@ import { AppVersion } from '../../../domain/entities/AppVersion.entity';
 import AppVersionRepo from '../../../features/repository/app.version.repository';
 import AppInstanceRepo from '../../../features/repository/app.instance.repository';
 import { AppInstance } from '../../../domain/entities/AppInstance.entity';
-
+import { Configuration } from '../../../domain/entities/configuration/Configuration.entity';
+import { ConfigurationRepo } from '../../../features/repository/configuration.repository';
 export const AppInput = generateGraphQLInputType(
   App,
   'AppInput',
@@ -86,5 +87,13 @@ export class AppTableResolver extends BaseTableResolver {
     @Ctx() ctx: Context
   ): Promise<AppInstance[]> {
     return new AppInstanceRepo(ctx).getByFields({ app: { id: app.id } });
+  }
+
+  @FieldResolver(() => [Configuration])
+  async configurations(
+    @Root() app: App,
+    @Ctx() ctx: Context
+  ): Promise<Configuration[]> {
+    return new ConfigurationRepo(ctx).getByFields({ app: { id: app.id } });
   }
 }
