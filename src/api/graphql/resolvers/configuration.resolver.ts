@@ -5,12 +5,12 @@ import {
   Resolver,
   Mutation,
   Arg,
+  Query,
+  InputType,
+  Field,
+  Int,
 } from 'type-graphql';
 import { Context } from '../server';
-import {
-  generateGraphQLInputType,
-  GenerationType,
-} from '../../../library/graphql_types_generator';
 import {
   Configuration,
   ConfigurationService,
@@ -18,6 +18,7 @@ import {
   ConfigurationEnvOption,
   ConfigurationPort,
   ConfigurationVolume,
+  ConfigurationEnvOptionType,
 } from '../../../domain/entities/configuration/Configuration.entity';
 import {
   ConfigurationRepo,
@@ -27,10 +28,106 @@ import {
 import { App } from '../../../domain/entities/App.entity';
 import AppRepo from '../../../features/repository/app.repository';
 
+@InputType()
+class VolumeInput {
+  @Field()
+  role!: string;
+  @Field()
+  innerPath!: string;
+}
+
+@InputType()
+class PortInput {
+  @Field()
+  role!: string;
+  @Field(() => Int)
+  innerPort!: number;
+  @Field(() => Int)
+  outerPort!: number;
+  @Field()
+  isDomainRequired!: boolean;
+  @Field()
+  isLoginAndPasswordRequired!: boolean;
+}
+
+@InputType()
+class DbInput {
+  @Field()
+  dbRole!: string;
+  @Field()
+  dbUserRole!: string;
+}
+
+@InputType()
+class EnvInput {
+  @Field()
+  name!: string;
+  @Field()
+  defaultValue!: string;
+  @Field(() => ConfigurationEnvOptionType)
+  type!: ConfigurationEnvOptionType;
+  @Field()
+  isRequired!: boolean;
+  @Field(() => [String])
+  valueOptions!: string[];
+}
+
+@InputType()
+class ServiceInput {
+  @Field()
+  role!: string;
+  @Field(() => [VolumeInput])
+  volumes!: VolumeInput[];
+  @Field(() => [PortInput])
+  ports!: PortInput[];
+  @Field(() => [DbInput])
+  dbs!: DbInput[];
+  @Field(() => [EnvInput])
+  envs!: EnvInput[];
+}
+
+@InputType()
+export class ConfigurationDataInput {
+  @Field()
+  name!: string;
+  @Field(() => [ServiceInput])
+  services!: ServiceInput[];
+}
+
 @Resolver()
 export class ConfigurationResolver {
+  @Query(() => Configuration)
+  async getConfiguration(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<Configuration> {
+    return new ConfigurationRepo(ctx, id).getEntity();
+  }
+
+  @Query(() => [Configuration])
+  async getAllConfiguration(@Ctx() ctx: Context): Promise<Configuration[]> {
+    return new ConfigurationRepo(ctx).getAll();
+  }
+
   //createConfiguration(appId, configurationData)
-  //deleteConfiguration(configurationId)
+  //editConfiguration
+  @Mutation(() => Configuration)
+  async createConfiguration(
+    @Arg('appId') appId: string,
+    @Arg('configurationData') configurationData: ConfigurationDataInput,
+    @Ctx() ctx: Context
+  ): Promise<Configuration> {
+    return null;
+    //return new ConfigurationRepo(ctx, id)();
+  }
+
+  @Mutation(() => Boolean)
+  async deleteConfiguration(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    return new ConfigurationRepo(ctx, id).delete();
+  }
 }
 
 @Resolver(() => Configuration)
