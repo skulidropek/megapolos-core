@@ -21,6 +21,8 @@ import {
 import { ImageInput } from './image.resolver';
 import { App } from '../../../domain/entities/App.entity';
 import AppRepo from '../../../features/repository/app.repository';
+import { Configuration } from '../../../domain/entities/configuration/Configuration.entity';
+import { ConfigurationRepo } from '../../../features/repository/configuration.repository';
 
 export const AppVersionInput = generateGraphQLInputType(
   AppVersion,
@@ -97,5 +99,13 @@ export class AppVersionTableResolver extends BaseTableResolver {
   @FieldResolver(() => App)
   async app(@Root() appVersion: AppVersion, @Ctx() ctx: Context): Promise<App> {
     return await new AppRepo(ctx, appVersion.app.id).getEntity();
+  }
+
+  @FieldResolver(() => Configuration)
+  async configuration(
+    @Root() appVersion: AppVersion,
+    @Ctx() ctx: Context
+  ): Promise<Configuration> {
+    return new ConfigurationRepo(ctx, appVersion.configuration.id).getEntity();
   }
 }
