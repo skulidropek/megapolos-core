@@ -1,30 +1,30 @@
 import BaseRepo from './base.repository';
 import { App } from '../../domain/entities/App.entity';
 import {
-  Configuraion,
-  ConfiguraionService,
+  Configuration,
+  ConfigurationService,
   ConfigurationDbWithUser,
   ConfigurationEnvOption,
   ConfigurationEnvOptionValue,
   ConfigurationPort,
   ConfigurationVolume,
-} from '../../domain/entities/configuration/Configuraion.entity';
+} from '../../domain/entities/configuration/Configuration.entity';
 
-export class ConfiguraionRepo extends BaseRepo<Configuraion> {
+export class ConfigurationRepo extends BaseRepo<Configuration> {
   get entityClass() {
-    return Configuraion;
+    return Configuration;
   }
 
-  async getServices(): Promise<ConfiguraionService[]> {
-    return new ConfiguraionServiceRepo(this.ctx).getByFields({
-      configuraion: { id: this.id },
+  async getServices(): Promise<ConfigurationService[]> {
+    return new ConfigurationServiceRepo(this.ctx).getByFields({
+      configuration: { id: this.id },
     });
   }
 }
 
-export class ConfiguraionServiceRepo extends BaseRepo<ConfiguraionService> {
+export class ConfigurationServiceRepo extends BaseRepo<ConfigurationService> {
   get entityClass() {
-    return ConfiguraionService;
+    return ConfigurationService;
   }
 
   async getVolumes(): Promise<ConfigurationVolume[]> {

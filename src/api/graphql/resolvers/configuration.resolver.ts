@@ -12,78 +12,78 @@ import {
   GenerationType,
 } from '../../../library/graphql_types_generator';
 import {
-  Configuraion,
-  ConfiguraionService,
+  Configuration,
+  ConfigurationService,
   ConfigurationDbWithUser,
   ConfigurationEnvOption,
   ConfigurationPort,
   ConfigurationVolume,
-} from '../../../domain/entities/configuration/Configuraion.entity';
+} from '../../../domain/entities/configuration/Configuration.entity';
 import {
-  ConfiguraionRepo,
-  ConfiguraionServiceRepo,
+  ConfigurationRepo,
+  ConfigurationServiceRepo,
   ConfigurationEnvOptionRepo,
-} from '../../../features/repository/configuraion.repository';
+} from '../../../features/repository/configuration.repository';
 import { App } from '../../../domain/entities/App.entity';
 import AppRepo from '../../../features/repository/app.repository';
 
 @Resolver()
-export class ConfiguraionResolver {
+export class ConfigurationResolver {
   //createConfiguration(appId, configurationData)
   //deleteConfiguration(configurationId)
 }
 
-@Resolver(() => Configuraion)
-export class ConfiguraionFieldsResolver {
+@Resolver(() => Configuration)
+export class ConfigurationFieldsResolver {
   @FieldResolver(() => App)
   async app(
-    @Root() configuraion: Configuraion,
+    @Root() configuration: Configuration,
     @Ctx() ctx: Context
   ): Promise<App> {
-    return new AppRepo(ctx, configuraion.app.id).getEntity();
+    return new AppRepo(ctx, configuration.app.id).getEntity();
   }
 
-  @FieldResolver(() => [ConfiguraionService])
+  @FieldResolver(() => [ConfigurationService])
   async services(
-    @Root() configuraion: Configuraion,
+    @Root() configuration: Configuration,
     @Ctx() ctx: Context
-  ): Promise<ConfiguraionService[]> {
-    return await new ConfiguraionRepo(ctx, configuraion.id).getServices();
+  ): Promise<ConfigurationService[]> {
+    return await new ConfigurationRepo(ctx, configuration.id).getServices();
   }
 }
 
-@Resolver(() => ConfiguraionService)
-export class ConfiguraionServiceFieldsResolver {
+@Resolver(() => ConfigurationService)
+export class ConfigurationServiceFieldsResolver {
   @FieldResolver(() => [ConfigurationVolume])
   async volumes(
-    @Root() service: ConfiguraionService,
+    @Root() service: ConfigurationService,
     @Ctx() ctx: Context
   ): Promise<ConfigurationVolume[]> {
-    return await new ConfiguraionServiceRepo(ctx, service.id).getVolumes();
+    return await new ConfigurationServiceRepo(ctx, service.id).getVolumes();
   }
 
   @FieldResolver(() => [ConfigurationPort])
   async ports(
-    @Root() service: ConfiguraionService,
+    @Root() service: ConfigurationService,
     @Ctx() ctx: Context
   ): Promise<ConfigurationPort[]> {
-    return await new ConfiguraionServiceRepo(ctx, service.id).getPorts();
+    return await new ConfigurationServiceRepo(ctx, service.id).getPorts();
   }
 
   @FieldResolver(() => [ConfigurationDbWithUser])
   async dbs(
-    @Root() service: ConfiguraionService,
+    @Root() service: ConfigurationService,
     @Ctx() ctx: Context
   ): Promise<ConfigurationDbWithUser[]> {
-    return await new ConfiguraionServiceRepo(ctx, service.id).getDbs();
+    return await new ConfigurationServiceRepo(ctx, service.id).getDbs();
   }
 
   @FieldResolver(() => [ConfigurationEnvOption])
   async envs(
-    @Root() service: ConfiguraionService,
+    @Root() service: ConfigurationService,
     @Ctx() ctx: Context
   ): Promise<ConfigurationEnvOption[]> {
-    return await new ConfiguraionServiceRepo(ctx, service.id).getEnvs();
+    return await new ConfigurationServiceRepo(ctx, service.id).getEnvs();
   }
 }
 

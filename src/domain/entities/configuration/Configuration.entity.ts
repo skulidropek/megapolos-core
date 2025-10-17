@@ -7,13 +7,13 @@ import {
   Enum,
 } from '@mikro-orm/core';
 import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
-import { BaseEntity } from './../Base.entity';
+import { BaseEntity } from '../Base.entity';
 import { Hint } from '../../../library/graphql_types_generator';
 import { App } from '../App.entity';
 
 @ObjectType()
 @Entity()
-export class Configuraion extends BaseEntity {
+export class Configuration extends BaseEntity {
   @Field(() => App)
   @ManyToOne({ entity: () => App })
   @Hint({ type: () => ID })
@@ -23,17 +23,17 @@ export class Configuraion extends BaseEntity {
   @Property({ length: -1 })
   name!: string;
 
-  @Field(() => [ConfiguraionService])
-  @OneToMany(() => ConfiguraionService, (service) => service.configuraion)
+  @Field(() => [ConfigurationService])
+  @OneToMany(() => ConfigurationService, (service) => service.configuration)
   @Hint({ skip: true })
-  services = new Collection<ConfiguraionService>(this);
+  services = new Collection<ConfigurationService>(this);
 }
 
 @ObjectType()
 @Entity()
-export class ConfiguraionService extends BaseEntity {
-  @ManyToOne({ entity: () => Configuraion })
-  configuraion!: Configuraion;
+export class ConfigurationService extends BaseEntity {
+  @ManyToOne({ entity: () => Configuration })
+  configuration!: Configuration;
 
   @Field()
   @Property({ length: -1 })
@@ -63,8 +63,8 @@ export class ConfiguraionService extends BaseEntity {
 @ObjectType()
 @Entity()
 export class ConfigurationVolume extends BaseEntity {
-  @ManyToOne({ entity: () => ConfiguraionService })
-  service!: ConfiguraionService;
+  @ManyToOne({ entity: () => ConfigurationService })
+  service!: ConfigurationService;
 
   @Field()
   @Property({ length: -1 })
@@ -78,8 +78,8 @@ export class ConfigurationVolume extends BaseEntity {
 @ObjectType()
 @Entity()
 export class ConfigurationPort extends BaseEntity {
-  @ManyToOne({ entity: () => ConfiguraionService })
-  service!: ConfiguraionService;
+  @ManyToOne({ entity: () => ConfigurationService })
+  service!: ConfigurationService;
 
   @Field()
   @Property({ length: -1 })
@@ -105,8 +105,8 @@ export class ConfigurationPort extends BaseEntity {
 @ObjectType()
 @Entity()
 export class ConfigurationDbWithUser extends BaseEntity {
-  @ManyToOne({ entity: () => ConfiguraionService })
-  service!: ConfiguraionService;
+  @ManyToOne({ entity: () => ConfigurationService })
+  service!: ConfigurationService;
 
   @Field()
   @Property({ length: -1 })
@@ -132,8 +132,8 @@ registerEnumType(ConfigurationEnvOptionType, {
 @ObjectType()
 @Entity()
 export class ConfigurationEnvOption extends BaseEntity {
-  @ManyToOne({ entity: () => ConfiguraionService })
-  service!: ConfiguraionService;
+  @ManyToOne({ entity: () => ConfigurationService })
+  service!: ConfigurationService;
 
   @Field()
   @Property({ length: -1 })

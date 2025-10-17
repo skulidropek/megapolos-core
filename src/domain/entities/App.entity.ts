@@ -11,7 +11,7 @@ import { ObjectType, Field, ID } from 'type-graphql';
 import { BaseEntity } from './Base.entity';
 import { Hint } from '../../library/graphql_types_generator';
 import { AppVersion } from './AppVersion.entity';
-import { Configuraion } from './configuration/Configuraion.entity';
+import { Configuration } from './configuration/Configuration.entity';
 
 @Entity()
 @ObjectType()
@@ -38,8 +38,8 @@ export class App extends BaseEntity {
   @Hint({ skip: true })
   appVersions = new Collection<AppVersion>(this);
 
-  @OneToMany(() => Configuraion, (configuraion) => configuraion.app)
-  @Field(() => [Configuraion])
+  @OneToMany(() => Configuration, (configuration) => configuration.app)
+  @Field(() => [Configuration])
   @Hint({ skip: true })
-  configuraions = new Collection<Configuraion>(this);
+  configurations = new Collection<Configuration>(this);
 }
