@@ -5,6 +5,7 @@ import {
   ManyToOne,
   Property,
   Enum,
+  Cascade,
 } from '@mikro-orm/core';
 import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
 import { BaseEntity } from '../Base.entity';
@@ -24,7 +25,10 @@ export class Configuration extends BaseEntity {
   name!: string;
 
   @Field(() => [ConfigurationService])
-  @OneToMany(() => ConfigurationService, (service) => service.configuration)
+  @OneToMany(() => ConfigurationService, (service) => service.configuration, {
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   @Hint({ skip: true })
   services = new Collection<ConfigurationService>(this);
 }
@@ -40,22 +44,34 @@ export class ConfigurationService extends BaseEntity {
   role!: string;
 
   @Field(() => [ConfigurationVolume])
-  @OneToMany(() => ConfigurationVolume, (volume) => volume.service)
+  @OneToMany(() => ConfigurationVolume, (volume) => volume.service, {
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   @Hint({ skip: true })
   volumes = new Collection<ConfigurationVolume>(this);
 
   @Field(() => [ConfigurationPort])
-  @OneToMany(() => ConfigurationPort, (port) => port.service)
+  @OneToMany(() => ConfigurationPort, (port) => port.service, {
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   @Hint({ skip: true })
   ports = new Collection<ConfigurationPort>(this);
 
   @Field(() => [ConfigurationDbWithUser])
-  @OneToMany(() => ConfigurationDbWithUser, (db) => db.service)
+  @OneToMany(() => ConfigurationDbWithUser, (db) => db.service, {
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   @Hint({ skip: true })
   dbs = new Collection<ConfigurationDbWithUser>(this);
 
   @Field(() => [ConfigurationEnvOption])
-  @OneToMany(() => ConfigurationEnvOption, (env) => env.service)
+  @OneToMany(() => ConfigurationEnvOption, (env) => env.service, {
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   @Hint({ skip: true })
   envs = new Collection<ConfigurationEnvOption>(this);
 }
@@ -152,7 +168,10 @@ export class ConfigurationEnvOption extends BaseEntity {
   isRequired: boolean = true;
 
   @Field(() => [ConfigurationEnvOptionValue])
-  @OneToMany(() => ConfigurationEnvOptionValue, (envOption) => envOption.env)
+  @OneToMany(() => ConfigurationEnvOptionValue, (envOption) => envOption.env, {
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   @Hint({ skip: true })
   valueOptions = new Collection<ConfigurationEnvOptionValue>(this);
 }

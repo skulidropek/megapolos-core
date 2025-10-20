@@ -93,6 +93,29 @@ export class ConfigurationRepo extends BaseRepo<Configuration> {
     });
   }
 
+  async deleteCascade(): Promise<Boolean> {
+    const em = this._getEM();
+    await em.transactional(async (tx) => {
+      const configuration = await tx.findOneOrFail(
+        Configuration,
+        { id: this.id },
+        {
+          populate: [
+            'services',
+            'services.volumes',
+            'services.ports',
+            'services.dbs',
+            'services.envs',
+            'services.envs.valueOptions',
+          ],
+        }
+      );
+
+      await tx.removeAndFlush(configuration);
+    });
+    return true;
+  }
+
   async getServices(): Promise<ConfigurationService[]> {
     return new ConfigurationServiceRepo(this.ctx).getByFields({
       configuration: { id: this.id },

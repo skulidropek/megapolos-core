@@ -124,8 +124,8 @@ export class ConfigurationResolver {
   async deleteConfiguration(
     @Arg('id') id: string,
     @Ctx() ctx: Context
-  ): Promise<boolean> {
-    return new ConfigurationRepo(ctx, id).delete();
+  ): Promise<Boolean> {
+    return new ConfigurationRepo(ctx, id).deleteCascade();
   }
 }
 
