@@ -8,11 +8,90 @@ import {
   ConfigurationEnvOptionValue,
   ConfigurationPort,
   ConfigurationVolume,
+  ConfigurationEnvOptionType,
 } from '../../domain/entities/configuration/Configuration.entity';
+import { ConfigurationDataInput } from '../../api/graphql/resolvers/configuration.resolver';
 
 export class ConfigurationRepo extends BaseRepo<Configuration> {
   get entityClass() {
     return Configuration;
+  }
+
+  async createFromData(
+    appId: string,
+    configurationData: ConfigurationDataInput
+  ): Promise<Configuration> {
+    const em = this._getEM();
+    return await em.transactional(async (tx) => {
+      const app = await tx.findOneOrFail(App, { id: appId });
+      const configuration = tx.create(Configuration, {
+        app,
+        name: configurationData.name,
+      });
+
+      for (const serviceInp of configurationData.services) {
+        const service = tx.create(ConfigurationService, {
+          configuration,
+          role: serviceInp.role,
+        });
+
+        for (const volInp of serviceInp.volumes) {
+          const vol = tx.create(ConfigurationVolume, {
+            service,
+            role: volInp.role,
+            innerPath: volInp.innerPath,
+          });
+          service.volumes.add(vol);
+        }
+
+        for (const portInp of serviceInp.ports) {
+          const port = tx.create(ConfigurationPort, {
+            service,
+            role: portInp.role,
+            innerPort: portInp.innerPort,
+            outerPort: portInp.outerPort,
+            isDomainRequired: portInp.isDomainRequired,
+            isLoginAndPasswordRequired: portInp.isLoginAndPasswordRequired,
+          });
+          service.ports.add(port);
+        }
+
+        for (const dbInp of serviceInp.dbs) {
+          const db = tx.create(ConfigurationDbWithUser, {
+            service,
+            dbRole: dbInp.dbRole,
+            dbUserRole: dbInp.dbUserRole,
+          });
+          service.dbs.add(db);
+        }
+
+        for (const envInp of serviceInp.envs) {
+          const envOption = tx.create(ConfigurationEnvOption, {
+            service,
+            name: envInp.name,
+            defaultValue: envInp.defaultValue,
+            type: envInp.type,
+            isRequired: envInp.isRequired,
+          });
+
+          envInp.valueOptions.forEach((value, index) => {
+            const envValue = tx.create(ConfigurationEnvOptionValue, {
+              env: envOption,
+              value,
+              order: index,
+            });
+            envOption.valueOptions.add(envValue);
+          });
+
+          service.envs.add(envOption);
+        }
+
+        configuration.services.add(service);
+      }
+
+      await tx.persistAndFlush(configuration);
+      return configuration;
+    });
   }
 
   async getServices(): Promise<ConfigurationService[]> {

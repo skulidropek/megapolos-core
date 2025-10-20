@@ -117,8 +117,7 @@ export class ConfigurationResolver {
     @Arg('configurationData') configurationData: ConfigurationDataInput,
     @Ctx() ctx: Context
   ): Promise<Configuration> {
-    return null;
-    //return new ConfigurationRepo(ctx, id)();
+    return new ConfigurationRepo(ctx).createFromData(appId, configurationData);
   }
 
   @Mutation(() => Boolean)
