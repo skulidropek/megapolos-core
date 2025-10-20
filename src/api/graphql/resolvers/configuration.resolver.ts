@@ -29,7 +29,7 @@ import { App } from '../../../domain/entities/App.entity';
 import AppRepo from '../../../features/repository/app.repository';
 
 @InputType()
-class VolumeInput {
+class ConfigurationVolumeInput {
   @Field()
   role!: string;
   @Field()
@@ -37,7 +37,7 @@ class VolumeInput {
 }
 
 @InputType()
-class PortInput {
+class ConfigurationPortInput {
   @Field()
   role!: string;
   @Field(() => Int)
@@ -51,7 +51,7 @@ class PortInput {
 }
 
 @InputType()
-class DbInput {
+class ConfigurationDbInput {
   @Field()
   dbRole!: string;
   @Field()
@@ -59,7 +59,7 @@ class DbInput {
 }
 
 @InputType()
-class EnvInput {
+class ConfigurationEnvInput {
   @Field()
   name!: string;
   @Field()
@@ -73,25 +73,25 @@ class EnvInput {
 }
 
 @InputType()
-class ServiceInput {
+class ConfigurationServiceInput {
   @Field()
   role!: string;
-  @Field(() => [VolumeInput])
-  volumes!: VolumeInput[];
-  @Field(() => [PortInput])
-  ports!: PortInput[];
-  @Field(() => [DbInput])
-  dbs!: DbInput[];
-  @Field(() => [EnvInput])
-  envs!: EnvInput[];
+  @Field(() => [ConfigurationVolumeInput])
+  volumes!: ConfigurationVolumeInput[];
+  @Field(() => [ConfigurationPortInput])
+  ports!: ConfigurationPortInput[];
+  @Field(() => [ConfigurationDbInput])
+  dbs!: ConfigurationDbInput[];
+  @Field(() => [ConfigurationEnvInput])
+  envs!: ConfigurationEnvInput[];
 }
 
 @InputType()
 export class ConfigurationDataInput {
   @Field()
   name!: string;
-  @Field(() => [ServiceInput])
-  services!: ServiceInput[];
+  @Field(() => [ConfigurationServiceInput])
+  services!: ConfigurationServiceInput[];
 }
 
 @Resolver()

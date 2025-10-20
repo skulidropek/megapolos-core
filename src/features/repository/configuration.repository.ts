@@ -8,7 +8,6 @@ import {
   ConfigurationEnvOptionValue,
   ConfigurationPort,
   ConfigurationVolume,
-  ConfigurationEnvOptionType,
 } from '../../domain/entities/configuration/Configuration.entity';
 import { ConfigurationDataInput } from '../../api/graphql/resolvers/configuration.resolver';
 

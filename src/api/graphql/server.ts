@@ -176,6 +176,10 @@ import {
   AppVersionTableResolver,
 } from './resolvers/app.version.resolver';
 import { SqlEntityManager } from '@mikro-orm/postgresql';
+import {
+  ConfigurationFieldsResolver,
+  ConfigurationResolver,
+} from './resolvers/configuration.resolver';
 
 export class Context {
   constructor(data: {
@@ -257,6 +261,8 @@ async function bootstrap() {
       TestCaseResolver,
       AppVersionResolver,
       AppVersionTableResolver,
+      ConfigurationResolver,
+      ConfigurationFieldsResolver,
     ],
   });
 
