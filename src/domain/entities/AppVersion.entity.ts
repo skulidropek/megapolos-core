@@ -37,6 +37,11 @@ export class AppVersion extends BaseEntity {
   @Field({ nullable: true })
   versionComment?: string;
 
-  @ManyToMany({ entity: () => Image, owner: true })
+  @ManyToMany({
+    entity: () => Image,
+    pivotTable: 'app_version_images',
+    owner: true,
+    mappedBy: (image) => image.appVersions,
+  })
   images = new Collection<Image>(this);
 }
