@@ -39,6 +39,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
       const application = await appRepo.getEntity();
       const appVersion = await super.create({
         app: application,
+        configuration: appVersionData.configuration,
         buildNumber: appVersionData.buildNumber,
         version: appVersionData.version,
         versionComment: appVersionData.versionComment,
