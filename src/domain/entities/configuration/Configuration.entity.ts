@@ -167,7 +167,6 @@ export class ConfigurationEnvOption extends BaseEntity {
   @Property({ default: true })
   isRequired: boolean = true;
 
-  @Field(() => [ConfigurationEnvOptionValue])
   @OneToMany(() => ConfigurationEnvOptionValue, (envOption) => envOption.env, {
     cascade: [Cascade.PERSIST, Cascade.REMOVE],
     orphanRemoval: true,
@@ -176,17 +175,14 @@ export class ConfigurationEnvOption extends BaseEntity {
   valueOptions = new Collection<ConfigurationEnvOptionValue>(this);
 }
 
-@ObjectType()
 @Entity()
 export class ConfigurationEnvOptionValue extends BaseEntity {
   @ManyToOne({ entity: () => ConfigurationEnvOption })
   env!: ConfigurationEnvOption;
 
-  @Field()
   @Property({ length: -1 })
   value!: string;
 
-  @Field()
   @Property()
   order!: number;
 }

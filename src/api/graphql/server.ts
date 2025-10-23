@@ -177,8 +177,13 @@ import {
 } from './resolvers/app.version.resolver';
 import { SqlEntityManager } from '@mikro-orm/postgresql';
 import {
+  ConfigurationDbWithUserResolver,
+  ConfigurationEnvOptionResolver,
   ConfigurationFieldsResolver,
+  ConfigurationPortResolver,
   ConfigurationResolver,
+  ConfigurationServiceFieldsResolver,
+  ConfigurationVolumeFieldsResolver,
 } from './resolvers/configuration.resolver';
 
 export class Context {
@@ -263,6 +268,11 @@ async function bootstrap() {
       AppVersionTableResolver,
       ConfigurationResolver,
       ConfigurationFieldsResolver,
+      ConfigurationServiceFieldsResolver,
+      ConfigurationVolumeFieldsResolver,
+      ConfigurationPortResolver,
+      ConfigurationDbWithUserResolver,
+      ConfigurationEnvOptionResolver,
     ],
   });
 

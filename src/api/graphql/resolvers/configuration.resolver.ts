@@ -194,7 +194,7 @@ export class ConfigurationDbWithUserResolver {}
 
 @Resolver(() => ConfigurationEnvOption)
 export class ConfigurationEnvOptionResolver {
-  @FieldResolver(() => [ConfigurationEnvOption])
+  @FieldResolver(() => [String])
   async valueOptions(
     @Root() env: ConfigurationEnvOption,
     @Ctx() ctx: Context
