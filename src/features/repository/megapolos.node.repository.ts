@@ -194,6 +194,11 @@ export default class NodeRepo extends BaseRepo<Node> {
       }
       result.containers.push(containerResult);
       result.init = init;
+      const currentContainer = await containerObject.getEntity();
+      if (currentContainer.lifeStatus === 'running') {
+        const currentDate = new Date();
+        await containerObject.update({ uptime: currentDate });
+      }
     }
     const log = new LogRepo(this.ctx);
     await log.create({
