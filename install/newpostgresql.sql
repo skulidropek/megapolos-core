@@ -87,6 +87,7 @@ CREATE TABLE public.app_instance (
     create_date timestamp without time zone DEFAULT now(),
     update_date timestamp without time zone DEFAULT now(),
     remove_date timestamp without time zone
+    description text DEFAULT ''::text NOT NULL
 );
 
 
@@ -581,6 +582,7 @@ CREATE TABLE public.image (
     branch character varying,
     status public.image_status DEFAULT 'not_exist'::public.image_status NOT NULL,
     last_build_date timestamp without time zone
+    role_in_app text DEFAULT ''::text NOT NULL
 );
 
 

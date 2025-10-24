@@ -80,4 +80,8 @@ export class Container extends BaseEntity {
   @Property({ type: 'boolean', default: false, fieldName: 'show_on_desktop' })
   @Field(() => Boolean)
   showOnDesktop: boolean = false;
+
+  @Property({ columnType: 'timestamp(6)', nullable: true })
+  @Field({ nullable: true })
+  uptime?: Date;
 }

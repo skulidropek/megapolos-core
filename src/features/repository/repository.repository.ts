@@ -70,13 +70,23 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
     await simpleGit(path).checkout(branch);
   }
 
-  async getBranches(): Promise<string[]> {
+  // async getBranches(): Promise<string[]> {
+  //   await this.checkActionAccess(resources.Repository.actions.read);
+  //   const path = await this._getPath();
+  //   return [
+  //     ...(await simpleGit(path).branch()).all,
+  //     ...(await simpleGit(path).tags()).all,
+  //   ];
+  // }
+  async getBranchesAndTags(): Promise<{
+    branches: string[];
+    tags: string[];
+  }> {
     await this.checkActionAccess(resources.Repository.actions.read);
     const path = await this._getPath();
-    return [
-      ...(await simpleGit(path).branch()).all,
-      ...(await simpleGit(path).tags()).all,
-    ];
+    const branches = (await simpleGit(path).branch()).all;
+    const tags = (await simpleGit(path).tags()).all;
+    return { branches, tags };
   }
 
   async listFiles(branch: string, path: string): Promise<RepositoryFiles> {

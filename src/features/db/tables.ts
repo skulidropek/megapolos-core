@@ -180,6 +180,7 @@ export interface ContainerTable {
   remove_date: Date;
   domain_id: string;
   show_on_desktop: boolean;
+  uptime: Date;
 }
 
 export interface ContainerDeviceAuxOptionTable {
