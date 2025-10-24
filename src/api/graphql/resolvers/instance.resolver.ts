@@ -5,6 +5,9 @@ import {
   Root,
   Resolver,
   Arg,
+  ID,
+  InputType,
+  Field,
 } from 'type-graphql';
 import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { AppInstance } from '../../../domain/entities/AppInstance.entity';
@@ -30,6 +33,159 @@ export const AppInstanceUpdateInput = generateGraphQLInputType(
   'AppInstanceUpdateInput',
   GenerationType.update
 );
+
+@InputType()
+class DomainDataInput {
+  @Field()
+  name!: string;
+
+  @Field({ nullable: true })
+  user?: string;
+
+  @Field({ nullable: true })
+  password?: string;
+}
+
+@InputType()
+class DomainBindInput {
+  @Field(() => ID, { nullable: true })
+  id?: string;
+
+  @Field(() => DomainDataInput, { nullable: true })
+  domainData?: DomainDataInput;
+}
+
+@InputType()
+class DbDataInput {
+  @Field()
+  name!: string;
+
+  @Field(() => ID)
+  dbms!: string;
+}
+
+@InputType()
+class DbUserDataInput {
+  @Field()
+  name!: string;
+
+  @Field(() => ID)
+  dbms!: string;
+
+  @Field()
+  password!: string;
+}
+
+@InputType()
+class DbBindInnerInput {
+  @Field(() => ID, { nullable: true })
+  id?: string;
+
+  @Field(() => DbDataInput, { nullable: true })
+  dbData?: DbDataInput;
+}
+
+@InputType()
+class DbUserBindInnerInput {
+  @Field(() => ID, { nullable: true })
+  id?: string;
+
+  @Field(() => DbUserDataInput, { nullable: true })
+  dbUserData?: DbUserDataInput;
+}
+
+@InputType()
+class DbBindInput {
+  @Field()
+  role!: string;
+
+  @Field(() => DbBindInnerInput)
+  db!: DbBindInnerInput;
+
+  @Field(() => DbUserBindInnerInput)
+  dbUser!: DbUserBindInnerInput;
+}
+
+@InputType()
+class VolumeDataInput {
+  @Field()
+  outerPath!: string;
+}
+
+@InputType()
+class VolumeInnerInput {
+  @Field(() => ID, { nullable: true })
+  id?: string;
+
+  @Field(() => VolumeDataInput, { nullable: true })
+  volumeData?: VolumeDataInput;
+}
+
+@InputType()
+class VolumeBindDataInput {
+  @Field()
+  name!: string;
+
+  @Field()
+  innerPath!: string;
+
+  @Field(() => VolumeInnerInput)
+  volume!: VolumeInnerInput;
+}
+
+@InputType()
+class VolumeBindInput {
+  @Field(() => ID, { nullable: true })
+  id?: string;
+
+  @Field(() => VolumeBindDataInput, { nullable: true })
+  volumeBindData?: VolumeBindDataInput;
+}
+
+@InputType()
+class EnvVarInput {
+  @Field()
+  name!: string;
+
+  @Field()
+  value!: string;
+}
+
+@InputType()
+class ConfiguratedContainerInput {
+  @Field()
+  name!: string;
+
+  @Field(() => ID)
+  node!: string;
+
+  @Field(() => ID)
+  image!: string;
+
+  @Field()
+  outerPort!: number;
+
+  @Field(() => DomainBindInput, { nullable: true })
+  domain?: DomainBindInput;
+
+  @Field(() => [VolumeBindInput])
+  volumes!: VolumeBindInput[];
+
+  @Field(() => [DbBindInput])
+  dbs!: DbBindInput[];
+
+  @Field(() => [EnvVarInput])
+  envs!: EnvVarInput[];
+}
+
+@InputType()
+class InstanceDataInput {
+  @Field()
+  name!: string;
+
+  @Field(() => [ConfiguratedContainerInput])
+  containers!: ConfiguratedContainerInput[];
+}
 
 @Resolver()
 export class AppInstanceResolver extends CreateBaseResolver(
@@ -100,6 +256,16 @@ export class AppInstanceResolver extends CreateBaseResolver(
       appVersionId
     );
     return true;
+  }
+
+  @Mutation(() => AppInstance)
+  async createConfiguratedInstance(
+    @Arg('appVersionId', () => ID) appVersionId: string,
+    @Arg('instanceId', () => ID, { nullable: true }) instanceId: string | null,
+    @Arg('instanceData', () => InstanceDataInput)
+    instanceData: InstanceDataInput
+  ): Promise<AppInstance> {
+    throw new Error('not implementaed');
   }
 }
 
