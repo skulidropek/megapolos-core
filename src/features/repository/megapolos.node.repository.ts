@@ -10,7 +10,6 @@ import {
   AppInstanceTable,
   ContainerTable,
   DomainTable,
-  ImageTable,
   LogType,
 } from '../db/tables';
 import { knex } from '../db/knex';
@@ -112,9 +111,10 @@ export default class NodeRepo extends BaseRepo<Node> {
       const containerResult: any = {};
       const container = containers[i];
       const containerObject = new ContainerRepo(this.ctx, container.id);
-      const image: ImageTable = await knex('image')
-        .where({ id: container.image_id })
-        .first();
+      const image = await new ImageRepo(
+        this.ctx,
+        container.image_id
+      ).getEntity();
       if (withRebuild) {
         if (!builded.includes(image.id)) {
           const imageObject = new ImageRepo(this.ctx, image.id);
@@ -145,13 +145,14 @@ export default class NodeRepo extends BaseRepo<Node> {
       containerResult.description = container.id;
 
       const defaultDockerRegistry = await new DockerRegistryRepo().getDefault();
-      containerResult.image = image.repository_id
-        ? `${defaultDockerRegistry.host}:443/${image.image}`
-        : image.image;
+      const imageName = image.getImageVersionName();
+      containerResult.image = image.repository?.id
+        ? `${defaultDockerRegistry.host}:443/${imageName}`
+        : imageName;
       if (config.devMode) {
-        containerResult.image = image.image;
+        containerResult.image = imageName;
       }
-      containerResult.inner_port = image.inner_port;
+      containerResult.inner_port = image.innerPort;
       containerResult.outer_port = container.outer_port;
       containerResult.envs = [];
       containerResult.domain_name = domain ? domain.name : null;
@@ -179,8 +180,8 @@ export default class NodeRepo extends BaseRepo<Node> {
       console.log(envs);
       containerResult.envs.push({
         name: 'MEGAPOLOS_LAST_BUILD_DATE',
-        value: image.last_build_date
-          ? new Date(image.last_build_date).toISOString()
+        value: image.lastBuildDate
+          ? new Date(image.lastBuildDate).toISOString()
           : '',
       });
       containerResult.volumes = [];

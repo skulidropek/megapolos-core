@@ -1,4 +1,9 @@
-import { EntityData, FilterQuery, RequiredEntityData } from '@mikro-orm/core';
+import {
+  EntityData,
+  FilterQuery,
+  FindOptions,
+  RequiredEntityData,
+} from '@mikro-orm/core';
 import { Context } from '../../api/graphql/server';
 import { BaseEntity } from '../../domain/entities/Base.entity';
 import { makeEm } from '../db/mikro-orm';
@@ -8,6 +13,8 @@ import {
   ResourceType,
 } from '../rights/resources.list';
 import { RightsChecker } from '../rights/RightsChecker';
+import { SqlEntityManager } from '@mikro-orm/postgresql';
+import UserRepo from './user/user.repository';
 
 export default abstract class BaseRepo<Entity extends BaseEntity> {
   private _entity?: Entity;
@@ -28,6 +35,10 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
     return this.entityClass.name;
   }
 
+  _getEM(): SqlEntityManager {
+    return this.ctx?.tcem ?? makeEm();
+  }
+
   async getEntity(update: boolean = false): Promise<Entity> {
     if (!update && this._entity) {
       return this._entity;
@@ -35,21 +46,28 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
     this._checkIdIsSet();
 
     await this.checkActionAccess(defaultRights.read);
-    this._entity = (await makeEm().findOne(this.entityClass, {
+    const em = this._getEM();
+    this._entity = (await em.findOne(this.entityClass, {
       id: this.id,
     })) as Entity;
     return this._entity;
   }
 
   async getAll(): Promise<Entity[]> {
-    const entities = (await makeEm().findAll(this.entityClass)) as Entity[];
+    const em = this._getEM();
+    const entities = (await em.findAll(this.entityClass)) as Entity[];
     return this.filterEntitiesByAccess(entities);
   }
 
-  async getByFields(fields: FilterQuery<Entity>): Promise<Entity[]> {
-    const entities = (await makeEm().find(
+  async getByFields(
+    fields: FilterQuery<Entity>,
+    options?: FindOptions<Entity, any, any>
+  ): Promise<Entity[]> {
+    const em = this._getEM();
+    const entities = (await em.find(
       this.entityClass,
-      fields
+      fields,
+      options
     )) as Entity[];
     return this.filterEntitiesByAccess(entities);
   }
@@ -57,7 +75,7 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   // CRUD
   async create(entity: RequiredEntityData<Entity>): Promise<Entity> {
     await this.checkActionAccess(defaultRights.create);
-    const em = makeEm();
+    const em = this._getEM();
     const created = em.create(this.entityClass, entity);
     await em.persistAndFlush(created);
     this.id = created.id;
@@ -81,8 +99,9 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   async update(entity: EntityData<Entity>): Promise<boolean> {
     await this.checkActionAccess(defaultRights.edit);
     this._checkIdIsSet();
+    const em = this._getEM();
     return (
-      (await makeEm().nativeUpdate(
+      (await em.nativeUpdate(
         this.entityClass,
         {
           id: this.id,
@@ -95,7 +114,8 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
   async delete(): Promise<boolean> {
     await this.checkActionAccess(defaultRights.remove);
     this._checkIdIsSet();
-    return (await makeEm().nativeDelete(this.entityClass, { id: this.id })) > 0;
+    const em = this._getEM();
+    return (await em.nativeDelete(this.entityClass, { id: this.id })) > 0;
   }
 
   // RIGHTS CHECKERS
@@ -116,6 +136,11 @@ export default abstract class BaseRepo<Entity extends BaseEntity> {
       resourceId: this.id,
       action,
     });
+  }
+  async checkOnlyRootAccess() {
+    if (this.ctx?.user?.groupUser?.id != UserRepo.rootRoleId) {
+      throw new Error('Access is allowed only to the root user!');
+    }
   }
 
   async checkActionAccess(action: string) {

@@ -4,6 +4,8 @@ import BaseRepo from './base.repository';
 import { AppInstance } from '../../domain/entities/AppInstance.entity';
 import UserRepo from './user/user.repository';
 import UserGroupRepo from './user/user.group.repository';
+import ImageRepo from './image.repository';
+import { Image } from '../../domain/entities/Image.entity';
 import {
   ContainerRepo,
   ContainerResult,
@@ -11,6 +13,8 @@ import {
 } from './cantainer/container.repository';
 import { RequiredEntityData } from '@mikro-orm/core';
 import { Container } from '../../domain/entities/Container.entity';
+import { makeEm } from '../db/mikro-orm';
+import AppVersionRepo from './app.version.repository';
 
 export interface InstanceRuntimeVariables {
   containers: {
@@ -53,6 +57,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
       appInstanceUrl: input.name,
       app: input.app,
       description: input.description,
+      appVersion: input.appVersion,
       // instance_type_id: 'dev',
       // deploy_strategy_id: '',
       // remove_strategy_id: '',
@@ -125,6 +130,54 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
 
     EventsObserver.listener({ type: 'editAppInstance', data: { id: this.id } });
     return result;
+  }
+
+  async changeInstanceVersion(appVersionId: string): Promise<boolean> {
+    await this.checkActionAccess(resources.AppInstance.actions.change_version);
+    this.ctx = this.ctx.cloneNoRightsCheck();
+
+    return await makeEm().transactional(async (em) => {
+      this?.ctx.setTransactionContextEM(em);
+
+      const instance = await this.getEntity();
+      const newAppVersionRepo = new AppVersionRepo(this.ctx, appVersionId);
+
+      const newAppVesion = await newAppVersionRepo.getEntity();
+      await this.update({ appVersion: newAppVesion });
+
+      const containers = await this.getContainers();
+      await newAppVesion.images.init();
+      const newVersionImages = newAppVesion.images.getItems();
+      for (const container of containers) {
+        const cr = new ContainerRepo(this.ctx, container.id);
+        const containerImage = await cr.getImage();
+        const containerGitRepo = (await containerImage.getEntity()).repository;
+        const img = newVersionImages.find(
+          (image) => image.repository === containerGitRepo
+        );
+        if (img) {
+          await cr.update({ image: img });
+        }
+      }
+
+      em.persistAndFlush(instance);
+
+      this?.ctx.reliseTransactionContextEM();
+      return true;
+    });
+  }
+
+  async changeInstancesVersion(
+    instancesIds: string[],
+    appVersionId: string
+  ): Promise<boolean> {
+    for (const id of instancesIds) {
+      await new AppInstanceRepo(this.ctx, id).changeInstanceVersion(
+        appVersionId
+      );
+    }
+
+    return true;
   }
 
   async delete(): Promise<boolean> {

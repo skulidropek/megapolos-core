@@ -171,6 +171,20 @@ import {
 } from './resolvers/docker.registry.resolver';
 import { ContainerDbTableResolver } from './resolvers/container.db.resolver';
 import { TestCaseResolver } from './resolvers/testCase.resolver';
+import {
+  AppVersionResolver,
+  AppVersionTableResolver,
+} from './resolvers/app.version.resolver';
+import { SqlEntityManager } from '@mikro-orm/postgresql';
+import {
+  ConfigurationDbWithUserResolver,
+  ConfigurationEnvOptionResolver,
+  ConfigurationFieldsResolver,
+  ConfigurationPortResolver,
+  ConfigurationResolver,
+  ConfigurationServiceFieldsResolver,
+  ConfigurationVolumeFieldsResolver,
+} from './resolvers/configuration.resolver';
 
 export class Context {
   constructor(data: {
@@ -189,6 +203,7 @@ export class Context {
   res: express.Response;
   user?: User;
   noRightsCheck?: boolean;
+  tcem?: SqlEntityManager;
   cloneNoRightsCheck() {
     const ctx = new Context({
       req: this.req,
@@ -197,6 +212,18 @@ export class Context {
       noRightsCheck: true,
     });
     return ctx;
+  }
+
+  setTransactionContextEM(tcem: SqlEntityManager) {
+    if (this.tcem) {
+      throw new Error('Transaction alredy set.');
+    }
+
+    this.tcem = tcem;
+  }
+
+  reliseTransactionContextEM() {
+    this.tcem = null;
   }
 }
 
@@ -237,6 +264,15 @@ async function bootstrap() {
       DbTableResolver,
       DbSchemaTableResolver,
       TestCaseResolver,
+      AppVersionResolver,
+      AppVersionTableResolver,
+      ConfigurationResolver,
+      ConfigurationFieldsResolver,
+      ConfigurationServiceFieldsResolver,
+      ConfigurationVolumeFieldsResolver,
+      ConfigurationPortResolver,
+      ConfigurationDbWithUserResolver,
+      ConfigurationEnvOptionResolver,
     ],
   });
 

@@ -25,15 +25,30 @@ const resources = {
   },
   Image: {
     type: 'Image',
-    actions: { ...defaultRights, build: 'build', update_nodes: 'update_nodes' },
+    actions: {
+      ...defaultRights,
+      build: 'build',
+      update_nodes: 'update_nodes',
+    },
   },
   AppInstance: {
     type: 'AppInstance',
-    actions: { ...defaultRights, build: 'build', manage: 'manage' },
+    actions: {
+      ...defaultRights,
+      build: 'build',
+      manage: 'manage',
+      change_version: 'change_version',
+    },
   },
   App: {
     type: 'App',
-    actions: { ...defaultRights },
+    actions: {
+      ...defaultRights,
+      add_app_version: 'add_app_version',
+      delete_docker_images: 'delete_docker_images',
+      build_images: 'build_images',
+      update_nodes: 'update_nodes',
+    },
   },
   Node: {
     type: 'Node',

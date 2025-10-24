@@ -4,6 +4,7 @@ import {
   Enum,
   ManyToOne,
   OneToMany,
+  ManyToMany,
   type Opt,
   Property,
 } from '@mikro-orm/core';
@@ -13,6 +14,7 @@ import { App } from './App.entity';
 import { Repository } from './Repository.entity';
 import { Hint } from '../../library/graphql_types_generator';
 import { ImageEnvRequirement } from './ImageEnvRequirement.entity';
+import { AppVersion } from './AppVersion.entity';
 
 export enum ImageStatus {
   NotExist = 'not_exist',
@@ -28,9 +30,13 @@ registerEnumType(ImageStatus, {
 @Entity()
 @ObjectType()
 export class Image extends BaseEntity {
-  @Property({ length: -1, unique: 'image_name_key' })
+  @Property({ length: -1 })
   @Field()
   name!: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  role?: string;
 
   @ManyToOne({ entity: () => App, defaultRaw: `gen_random_uuid()` })
   @Field(() => App)
@@ -58,19 +64,31 @@ export class Image extends BaseEntity {
   @Property({ length: -1 })
   @Field()
   roleInApp!: string;
+  
+  @Property()
+  @Field()
+  buildNumber!: number;
 
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
-  commitId?: string;
+  version?: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  versionComment?: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  commitId!: string;
+
+  @Property({ length: -1, nullable: true })
+  @Field({ nullable: true })
+  branch!: string;
 
   @ManyToOne({ entity: () => Repository, nullable: true })
   @Field(() => Repository, { nullable: true })
   @Hint({ type: () => ID })
   repository?: Repository;
-
-  @Property({ length: -1, nullable: true })
-  @Field({ nullable: true })
-  branch?: string;
 
   @Enum({ items: () => ImageStatus })
   @Field(() => ImageStatus)
@@ -85,4 +103,23 @@ export class Image extends BaseEntity {
   @Field(() => [ImageEnvRequirement])
   @Hint({ skip: true })
   envs = new Collection<ImageEnvRequirement>(this);
+
+  @ManyToMany({
+    entity: () => AppVersion,
+    pivotTable: 'app_version_images',
+    mappedBy: (appVersion) => appVersion.images,
+  })
+  appVersions = new Collection<AppVersion>(this);
+
+  getImageVersionName(): string {
+    let imageName = this.image;
+    if (!this.app) {
+      const versionPart =
+        this.version && this.version.trim() !== ''
+          ? this.version
+          : this.buildNumber ?? this.id;
+      imageName = `${this.image}:${versionPart}`;
+    }
+    return imageName;
+  }
 }

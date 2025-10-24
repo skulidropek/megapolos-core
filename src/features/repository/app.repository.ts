@@ -72,7 +72,15 @@ export default class AppRepo extends BaseRepo<App> {
   }
 
   async getImages(): Promise<Image[]> {
-    return new ImageRepo(this.ctx).getByFields({ app: this.id });
+    const images = await new ImageRepo(this.ctx).getByFields(
+      { app: this.id },
+      { populate: ['appVersions'] }
+    );
+
+    const imagesWithoutVersions = images.filter((image) =>
+      image.appVersions.isEmpty()
+    );
+    return imagesWithoutVersions;
   }
 
   async getRepositories(): Promise<Repository[]> {

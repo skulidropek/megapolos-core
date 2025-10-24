@@ -44,6 +44,11 @@ export default class LogRepo extends BaseRepo<Log> {
     return true;
   }
 
+  async appendLine(data: string): Promise<boolean> {
+    await appendFile(this.getFilePath(), data + '\n');
+    return true;
+  }
+
   async close(): Promise<boolean> {
     await this.update({
       isClosed: true,
@@ -52,24 +57,33 @@ export default class LogRepo extends BaseRepo<Log> {
     return true;
   }
 
-  private _logEntityToLogViewAction(log: Log): UserAction | null {
+  private _logEntityToLogViewAction(log: Log): UserAction[] {
+    const actions: UserAction[] = [];
     if (log.nodeId) {
-      return {
+      actions.push({
         resourceType: ResourceType.Node,
         resourceId: log.nodeId,
         action: defaultRights.view_log,
-      };
+      });
+    }
+
+    if (log.objectMeta?.appId) {
+      actions.push({
+        resourceType: ResourceType.App,
+        resourceId: log.objectMeta.appId,
+        action: defaultRights.view_log,
+      });
     }
 
     if (log.objectId && log.objectType && resources[log.objectType]) {
-      return {
+      actions.push({
         resourceType: log.objectType,
         resourceId: log.objectId,
         action: defaultRights.view_log,
-      };
+      });
     }
 
-    return null;
+    return actions;
   }
 
   override async haveActionAccess(action: string): Promise<boolean> {

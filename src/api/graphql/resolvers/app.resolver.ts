@@ -17,7 +17,12 @@ import {
   GenerationType,
 } from '../../../library/graphql_types_generator';
 import { User } from '../../../domain/entities/User.entity';
-
+import { AppVersion } from '../../../domain/entities/AppVersion.entity';
+import AppVersionRepo from '../../../features/repository/app.version.repository';
+import AppInstanceRepo from '../../../features/repository/app.instance.repository';
+import { AppInstance } from '../../../domain/entities/AppInstance.entity';
+import { Configuration } from '../../../domain/entities/configuration/Configuration.entity';
+import { ConfigurationRepo } from '../../../features/repository/configuration.repository';
 export const AppInput = generateGraphQLInputType(
   App,
   'AppInput',
@@ -66,5 +71,29 @@ export class AppTableResolver extends BaseTableResolver {
   @FieldResolver(() => User)
   async user(@Root() app: App, @Ctx() ctx: Context): Promise<User> {
     return (await new AppRepo(ctx, app.id).getUser()).getEntity();
+  }
+
+  @FieldResolver(() => [AppVersion])
+  async appVersions(
+    @Root() app: App,
+    @Ctx() ctx: Context
+  ): Promise<AppVersion[]> {
+    return new AppVersionRepo(ctx).getByFields({ app: { id: app.id } });
+  }
+
+  @FieldResolver(() => [AppInstance])
+  async instances(
+    @Root() app: App,
+    @Ctx() ctx: Context
+  ): Promise<AppInstance[]> {
+    return new AppInstanceRepo(ctx).getByFields({ app: { id: app.id } });
+  }
+
+  @FieldResolver(() => [Configuration])
+  async configurations(
+    @Root() app: App,
+    @Ctx() ctx: Context
+  ): Promise<Configuration[]> {
+    return new ConfigurationRepo(ctx).getByFields({ app: { id: app.id } });
   }
 }

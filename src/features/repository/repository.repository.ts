@@ -2,6 +2,7 @@ import fse from 'fs-extra';
 import simpleGit from 'simple-git';
 import BaseRepo from './base.repository';
 import {
+  LogCommit,
   Repository,
   RepositoryFiles,
 } from '../../domain/entities/Repository.entity';
@@ -70,6 +71,24 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
     await simpleGit(path).checkout(branch);
   }
 
+  async copyBranchWithCheckoutToCommit(
+    path: string,
+    branch: string,
+    commitId: string
+  ): Promise<void> {
+    await this.checkActionAccess(resources.Repository.actions.read);
+    const repositoryPath = await this._getPath();
+    if (!(await fse.exists(path))) {
+      await fse.mkdir(path);
+    }
+    await fse.copy(repositoryPath, path);
+
+    if (branch) {
+      await simpleGit(path).checkout(branch);
+    }
+    await simpleGit(path).checkout(commitId);
+  }
+
   // async getBranches(): Promise<string[]> {
   //   await this.checkActionAccess(resources.Repository.actions.read);
   //   const path = await this._getPath();
@@ -87,6 +106,46 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
     const branches = (await simpleGit(path).branch()).all;
     const tags = (await simpleGit(path).tags()).all;
     return { branches, tags };
+  }
+
+  async getLastCommitOfBranch(branch: string): Promise<LogCommit | null> {
+    await this.checkActionAccess(resources.Repository.actions.read);
+
+    const git = simpleGit(await this._getPath());
+    const logLatest = (await git.log([branch, '-n', '1'])).latest;
+
+    const lastCommit: LogCommit | null = logLatest
+      ? {
+          hash: logLatest.hash,
+          authorEmail: logLatest.author_email,
+          authorName: logLatest.author_name,
+          body: logLatest.body,
+          date: new Date(logLatest.date),
+          message: logLatest.message,
+          refs: logLatest.refs,
+        }
+      : null;
+    return lastCommit;
+  }
+
+  async getCommit(commitId: string): Promise<LogCommit | null> {
+    await this.checkActionAccess(resources.Repository.actions.read);
+
+    const git = simpleGit(await this._getPath());
+    const logLatest = (await git.log([commitId])).latest;
+
+    const commit: LogCommit | null = logLatest
+      ? {
+          hash: logLatest.hash,
+          authorEmail: logLatest.author_email,
+          authorName: logLatest.author_name,
+          body: logLatest.body,
+          date: new Date(logLatest.date),
+          message: logLatest.message,
+          refs: logLatest.refs,
+        }
+      : null;
+    return commit;
   }
 
   async listFiles(branch: string, path: string): Promise<RepositoryFiles> {

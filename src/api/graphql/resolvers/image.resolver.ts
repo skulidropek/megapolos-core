@@ -59,7 +59,10 @@ export class ImageResolver extends CreateBaseResolver(
     @Ctx() ctx: Context
   ): Promise<boolean> {
     var imageRepo = new ImageRepo(ctx, imageId);
-    await imageRepo.checkActionAccess(resources.Image.actions.build);
+    await imageRepo.checkAppAccess(
+      resources.App.actions.build_images,
+      resources.Image.actions.build
+    );
 
     void imageRepo.build(); //!!! fire-and-forget execution
     return true;
@@ -72,7 +75,10 @@ export class ImageResolver extends CreateBaseResolver(
   ): Promise<boolean> {
     for (const imageId of imageIds) {
       var imageRepo = new ImageRepo(ctx, imageId);
-      await imageRepo.checkActionAccess(resources.Image.actions.build);
+      await imageRepo.checkAppAccess(
+        resources.App.actions.build_images,
+        resources.Image.actions.build
+      );
     }
 
     (async () => {
@@ -84,12 +90,23 @@ export class ImageResolver extends CreateBaseResolver(
   }
 
   @Mutation(() => Boolean)
+  async deleteDockerImage(
+    @Arg('imageId') imageId: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    return new ImageRepo(ctx, imageId).deleteDockerImage();
+  }
+
+  @Mutation(() => Boolean)
   async updateNodesOfImage(
     @Arg('imageId') imageId: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
     var imageRepo = new ImageRepo(ctx, imageId);
-    await imageRepo.checkActionAccess(resources.Image.actions.update_nodes);
+    await imageRepo.checkAppAccess(
+      resources.App.actions.build_images,
+      resources.Image.actions.update_nodes
+    );
 
     void imageRepo.updateNodes(); //!!! fire-and-forget execution
     return true;
@@ -115,14 +132,19 @@ export class ImageTableResolver extends BaseTableResolver {
     @Info() info: GraphQLResolveInfo,
     @Ctx() ctx: Context
   ): Promise<Repository | null> {
+    if (!image.repository) {
+      return null;
+    }
+
     return this.returnOnlyIdIfNeeded(info, image.repository.id, () =>
       new RepositoryRepo(ctx, image.repository.id).getEntity()
     );
   }
 
   @FieldResolver(() => App)
-  async app(@Root() image: Image, @Ctx() ctx: Context): Promise<App | null> {
-    return (await new ImageRepo(ctx, image.id).getAppRepo()).getEntity();
+  async app(@Root() image: Image, @Ctx() ctx: Context): Promise<App> {
+    const app = await new ImageRepo(ctx, image.id).getAppRepo();
+    return app.getEntity();
   }
 
   @FieldResolver(() => [Log])
