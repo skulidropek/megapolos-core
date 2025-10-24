@@ -93,6 +93,15 @@ export default class PostgresDmbs extends BaseDbmsRepo {
     return true;
   }
 
+  async assignOwnerToDbChange(
+    userName: string,
+    dbName: string
+  ): Promise<boolean> {
+    const knex = await this.getKnex(dbName);
+    await knex.raw(`ALTER DATABASE ?? OWNER TO ??`, [dbName, userName]);
+    return true;
+  }
+
   /*
   SELECT table_name, column_name, is_nullable
   FROM information_schema.columns
