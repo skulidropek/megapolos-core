@@ -152,7 +152,7 @@ class EnvVarInput {
 }
 
 @InputType()
-class ConfiguratedContainerInput {
+export class ConfiguratedContainerInput {
   @Field()
   name!: string;
 
@@ -179,7 +179,7 @@ class ConfiguratedContainerInput {
 }
 
 @InputType()
-class InstanceDataInput {
+export class InstanceDataInput {
   @Field()
   name!: string;
 
@@ -263,9 +263,14 @@ export class AppInstanceResolver extends CreateBaseResolver(
     @Arg('appVersionId', () => ID) appVersionId: string,
     @Arg('instanceId', () => ID, { nullable: true }) instanceId: string | null,
     @Arg('instanceData', () => InstanceDataInput)
-    instanceData: InstanceDataInput
+    instanceData: InstanceDataInput,
+    @Ctx() ctx: Context
   ): Promise<AppInstance> {
-    throw new Error('not implementaed');
+    return new AppInstanceRepo(ctx).createConfiguratedInstance(
+      appVersionId,
+      instanceId,
+      instanceData
+    );
   }
 }
 
