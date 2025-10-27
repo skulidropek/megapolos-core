@@ -295,40 +295,25 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         }
 
         // Step 4. Handle volumes
-        // TODO fix and check volume bind logic
-        for (const volumeBind of containerInput.volumes || []) {
-          const { id, volumeBindData } = volumeBind;
-          let containerVolumeData = null;
-
-          if (id) {
-            // existing container volume
-            const volumeRepo = new VolumeRepo(this.ctx, id);
-            const volume = await volumeRepo.getEntity();
-            await new VolumeRepo(this.ctx, id).addToContainer(
-              container.id,
-              volumeBindData.name,
-              volumeBindData.innerPath
-            );
-          } else if (volumeBindData) {
-            const innerVolume = volumeBindData.volume;
-            let volumeEntity;
-            if (innerVolume.id) {
-              volumeEntity = await new VolumeRepo(
-                this.ctx,
-                innerVolume.id
-              ).getEntity();
-            } else if (innerVolume.volumeData) {
-              volumeEntity = await new VolumeRepo(this.ctx).create(
-                innerVolume.volumeData
-              );
-            }
-
-            await new VolumeRepo(this.ctx, volumeEntity.id).addToContainer(
-              container.id,
-              volumeBindData.name,
-              volumeBindData.innerPath
+        for (const volumeBindData of containerInput.volumes || []) {
+          const innerVolume = volumeBindData.volume;
+          let volumeEntity;
+          if (innerVolume.id) {
+            volumeEntity = await new VolumeRepo(
+              this.ctx,
+              innerVolume.id
+            ).getEntity();
+          } else if (innerVolume.volumeData) {
+            volumeEntity = await new VolumeRepo(this.ctx).create(
+              innerVolume.volumeData
             );
           }
+
+          await new VolumeRepo(this.ctx, volumeEntity.id).addToContainer(
+            container.id,
+            volumeBindData.name,
+            volumeBindData.innerPath
+          );
         }
 
         // Step 5. Handle DB bindings

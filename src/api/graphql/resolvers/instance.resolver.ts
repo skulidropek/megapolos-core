@@ -134,15 +134,6 @@ class VolumeBindDataInput {
 }
 
 @InputType()
-class VolumeBindInput {
-  @Field(() => ID, { nullable: true })
-  id?: string;
-
-  @Field(() => VolumeBindDataInput, { nullable: true })
-  volumeBindData?: VolumeBindDataInput;
-}
-
-@InputType()
 class EnvVarInput {
   @Field()
   name!: string;
@@ -168,8 +159,8 @@ export class ConfiguratedContainerInput {
   @Field(() => DomainBindInput, { nullable: true })
   domain?: DomainBindInput;
 
-  @Field(() => [VolumeBindInput])
-  volumes!: VolumeBindInput[];
+  @Field(() => [VolumeBindDataInput])
+  volumes!: VolumeBindDataInput[];
 
   @Field(() => [DbBindInput])
   dbs!: DbBindInput[];
