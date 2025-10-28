@@ -20,4 +20,12 @@ export default class DbRepo extends BaseRepo<Db> {
     const data = await this.getEntity();
     return new BaseDbmsRepo(this.ctx, data.dbms.id).getEntity();
   }
+
+  async setOwner(userId: string): Promise<void> {
+    const em = makeEm();
+    const db = await em.findOne(Db, { id: this.id }, { populate: ['owner'] });
+    const user = await em.findOne(DbUser, { id: userId });
+    db.owner = user;
+    await em.persistAndFlush(db);
+  }
 }

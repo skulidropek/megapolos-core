@@ -70,16 +70,12 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
     dbId: string,
     withoutChange: boolean = false
   ): Promise<boolean> {
-    await mem(async (em) => {
-      const db = await em.findOne(Db, dbId);
-      const dbUser = await em.findOne(DbUser, userId);
-      db.owner = dbUser;
-      await em.flush();
-    });
+    const dbRepo = new DbRepo(this.ctx, dbId);
+    await dbRepo.setOwner(userId);
 
     if (!withoutChange) {
       const user = await new DbUserRepo(this.ctx, userId).getEntity();
-      const db = await new DbRepo(this.ctx, dbId).getEntity();
+      const db = await dbRepo.getEntity();
       await this.assignOwnerToDbChange(user.name, db.name);
     }
     return true;
