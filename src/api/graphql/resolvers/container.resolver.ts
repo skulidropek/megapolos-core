@@ -121,6 +121,15 @@ export class ContainerResolver extends CreateBaseResolver(
   }
 
   @Mutation(() => Boolean)
+  async restartContainer(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new ContainerRepo(ctx, id).restartSwarmService();
+    return true;
+  }
+
+  @Mutation(() => Boolean)
   async updateContainer(
     @Arg('id') id: string,
     @Arg('noRebuild') noRebuild: boolean,
