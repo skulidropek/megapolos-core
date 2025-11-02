@@ -6,6 +6,9 @@ import {
   Root,
   Resolver,
   Arg,
+  ObjectType,
+  Field,
+  ID,
 } from 'type-graphql';
 import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { Node } from '../../../domain/entities/Node.entity';
@@ -28,6 +31,27 @@ export const NodeUpdateInput = generateGraphQLInputType(
   'NodeUpdateInput',
   GenerationType.update
 );
+
+@ObjectType()
+export class NodeSystemInfo {
+  @Field(() => ID)
+  nodeId: string;
+
+  @Field({ nullable: true })
+  totalMemoryMb?: number;
+
+  @Field({ nullable: true })
+  availableMemoryMb?: number;
+
+  @Field({ nullable: true })
+  cpuCores?: number;
+
+  @Field({ nullable: true })
+  totalDiskGb?: number;
+
+  @Field({ nullable: true })
+  freeDiskGb?: number;
+}
 
 @Resolver()
 export class NodeResolver extends CreateBaseResolver(
@@ -85,6 +109,10 @@ export class NodeResolver extends CreateBaseResolver(
   ): Promise<boolean> {
     await new NodeRepo(ctx, id).installRegistry();
     return true;
+  }
+  @Query(() => [NodeSystemInfo])
+  async nodesSystemInfo(@Ctx() ctx: Context): Promise<NodeSystemInfo[]> {
+    return new NodeRepo().getSystemInfo();
   }
 }
 

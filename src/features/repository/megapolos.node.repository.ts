@@ -30,6 +30,9 @@ import LogRepo from './log.repository';
 import UserRepo from './user/user.repository';
 import { Container } from '../../domain/entities/Container.entity';
 import DockerRegistryRepo from './docker.registry.repository';
+import { NodeSystemInfo } from '../../api/graphql/resolvers/node.resolver';
+import { makeEm } from '../db/mikro-orm';
+import { SystemInfoCollector } from '../system/SystemInfoCollector';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function asyncSpawn(
@@ -509,5 +512,30 @@ export default class NodeRepo extends BaseRepo<Node> {
   async getIp() {
     const data = await this.getEntity();
     return lookupPromise(data.host);
+  }
+
+  async getSystemInfo(): Promise<NodeSystemInfo[]> {
+    const nodes = await makeEm().findAll(Node);
+    const collector = new SystemInfoCollector();
+    const results = await Promise.all(
+      nodes.map(async (node) => {
+        const info = await collector.collect({
+          id: node.id,
+          host: node.host,
+          user: node.user,
+          password: node.password,
+        });
+        return {
+          nodeId: node.id,
+          totalMemoryMb: info.totalMemoryMb,
+          availableMemoryMb: info.availableMemoryMb,
+          cpuCores: info.cpuCores,
+          totalDiskGb: info.totalDiskGb,
+          freeDiskGb: info.freeDiskGb,
+        };
+      })
+    );
+
+    return results;
   }
 }
