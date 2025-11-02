@@ -99,19 +99,23 @@ export class SystemInfoCollector {
       const cpuCores = parseInt(cpuResult.stdout.trim(), 10) || null;
 
       return {
-        totalMemoryMb: totalMem
-          ? parseInt((totalMem / 1024 ** 2).toFixed(0))
-          : null,
-        availableMemoryMb: availableMem
-          ? parseInt((availableMem / 1024 ** 2).toFixed(0))
-          : null,
+        totalMemoryMb:
+          totalMem !== null
+            ? parseInt((totalMem / 1024 ** 2).toFixed(0))
+            : null,
+        availableMemoryMb:
+          availableMem !== null
+            ? parseInt((availableMem / 1024 ** 2).toFixed(0))
+            : null,
 
-        totalDiskGb: totalDisk
-          ? parseFloat((totalDisk / 1024 ** 3).toFixed(2))
-          : null,
-        freeDiskGb: availableDisk
-          ? parseFloat((availableDisk / 1024 ** 3).toFixed(2))
-          : null,
+        totalDiskGb:
+          totalDisk !== null
+            ? parseFloat((totalDisk / 1024 ** 3).toFixed(2))
+            : null,
+        freeDiskGb:
+          availableDisk !== null
+            ? parseFloat((availableDisk / 1024 ** 3).toFixed(2))
+            : null,
 
         cpuCores: cpuCores,
       };
