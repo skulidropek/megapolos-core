@@ -32,8 +32,6 @@ import UserRepo from './user/user.repository';
 import { Container } from '../../domain/entities/Container.entity';
 import DockerRegistryRepo from './docker.registry.repository';
 import { NodeSystemInfo } from '../../api/graphql/resolvers/node.resolver';
-import { makeEm } from '../db/mikro-orm';
-import { SystemInfoCollector } from '../system/SystemInfoCollector';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function asyncSpawn(
@@ -514,24 +512,69 @@ export default class NodeRepo extends BaseRepo<Node> {
   }
 
   async getSystemInfo(): Promise<NodeSystemInfo[]> {
-    const nodes = await makeEm().findAll(Node);
-    const collector = new SystemInfoCollector();
+    const nodes = await this.getAll();
+
     const results = await Promise.all(
       nodes.map(async (node) => {
-        const info = await collector.collect({
-          id: node.id,
-          host: node.host,
-          user: node.user,
-          password: node.password,
-        });
-        return {
-          nodeId: node.id,
-          totalMemoryMb: info.totalMemoryMb,
-          availableMemoryMb: info.availableMemoryMb,
-          cpuCores: info.cpuCores,
-          totalDiskGb: info.totalDiskGb,
-          freeDiskGb: info.freeDiskGb,
-        };
+        const isLocal = ['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(
+          node.host
+        );
+
+        const nodeRepo = isLocal
+          ? NodeRepo.currentNode
+          : new NodeRepo(this.ctx, node.id);
+
+        const userRepo = new UserRepo(this.ctx);
+
+        try {
+          const [memRes, diskRes, cpuRes] = await Promise.all([
+            nodeRepo.shellCommand('free -b', userRepo).output,
+            nodeRepo.shellCommand(
+              "df -B1 / | awk 'NR==2 {print $2,$4}'",
+              userRepo
+            ).output,
+            nodeRepo.shellCommand('nproc', userRepo).output,
+          ]);
+
+          const memLines = memRes.stdout.trim().split('\n');
+          const memVals = memLines[1]?.split(/\s+/).filter(Boolean) || [];
+          const totalMem = parseInt(memVals[1], 10) || 0;
+          const availMem = parseInt(memVals[6], 10) || 0;
+
+          const diskParts = diskRes.stdout.trim().split(/\s+/);
+          const totalDisk = diskParts[0] ? parseInt(diskParts[0], 10) : null;
+          const availDisk = diskParts[1] ? parseInt(diskParts[1], 10) : null;
+
+          const cpuCores = parseInt(cpuRes.stdout.trim(), 10) || null;
+
+          return {
+            nodeId: node.id,
+            totalMemoryMb: totalMem ? Math.round(totalMem / 1024 ** 2) : null,
+            availableMemoryMb: availMem
+              ? Math.round(availMem / 1024 ** 2)
+              : null,
+            cpuCores,
+            totalDiskGb: totalDisk
+              ? parseFloat((totalDisk / 1024 ** 3).toFixed(2))
+              : null,
+            freeDiskGb: availDisk
+              ? parseFloat((availDisk / 1024 ** 3).toFixed(2))
+              : null,
+          };
+        } catch (error) {
+          console.warn(
+            `Ошибка сбора системной информации для ноды ${node.id}:`,
+            error
+          );
+          return {
+            nodeId: node.id,
+            totalMemoryMb: null,
+            availableMemoryMb: null,
+            cpuCores: null,
+            totalDiskGb: null,
+            freeDiskGb: null,
+          };
+        }
       })
     );
 
