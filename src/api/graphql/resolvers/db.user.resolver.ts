@@ -44,11 +44,4 @@ export class DbUserTableResolver extends BaseTableResolver {
   async dbms(@Root() dbUser: DbUser): Promise<Dbms> {
     return await makeEm().findOneOrFail(Dbms, { id: dbUser.dbms.id });
   }
-
-  @FieldResolver(() => [Db])
-  async ownedDbs(@Root() owner: DbUser): Promise<Db[]> {
-    return await makeEm().find(Db, {
-      owner: owner,
-    });
-  }
 }
