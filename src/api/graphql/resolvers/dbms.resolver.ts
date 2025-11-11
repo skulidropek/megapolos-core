@@ -234,6 +234,19 @@ export class DbmsResolver {
   }
 
   @Mutation(() => Boolean)
+  async assignOwnerToDb(
+    @Arg('userId') userId: string,
+    @Arg('dbId') dbId: string,
+    @Arg('withoutChange', { nullable: true }) withoutChange: boolean
+  ): Promise<boolean> {
+    return (await DbmsRepo.getByDbId(dbId)).assignOwnerToDb(
+      userId,
+      dbId,
+      withoutChange
+    );
+  }
+
+  @Mutation(() => Boolean)
   async restoreDbUsers(@Arg('dbId') dbId: string): Promise<boolean> {
     return (await DbmsRepo.getByDbId(dbId)).restoreDbPrivileges(dbId);
   }
@@ -358,6 +371,11 @@ export class DbTableResolver extends BaseTableResolver {
     return new ContainerDbRepo(ctx).getByFields({
       db: { id: db.id },
     });
+  }
+  @FieldResolver(() => DbUser, { nullable: true })
+  async owner(@Root() db: Db, @Ctx() ctx: Context): Promise<DbUser | null> {
+    if (!db.owner) return null;
+    return new DbUserRepo(ctx, db.owner.id).getEntity();
   }
 }
 
