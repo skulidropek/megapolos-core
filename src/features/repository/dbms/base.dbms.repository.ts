@@ -65,6 +65,22 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
     return true;
   }
 
+  async assignOwnerToDb(
+    userId: string,
+    dbId: string,
+    withoutChange: boolean = false
+  ): Promise<boolean> {
+    const dbRepo = new DbRepo(this.ctx, dbId);
+    await dbRepo.setOwner(userId);
+
+    if (!withoutChange) {
+      const user = await new DbUserRepo(this.ctx, userId).getEntity();
+      const db = await dbRepo.getEntity();
+      await this.assignOwnerToDbChange(user.name, db.name);
+    }
+    return true;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async createDbChange(db: Partial<Db>): Promise<boolean> {
     return true;
@@ -85,12 +101,20 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
     return true;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async assignOwnerToDbChange(
+    userName: string,
+    dbName: string
+  ): Promise<boolean> {
+    return true;
+  }
+
   async getDbs(): Promise<Db[]> {
-    return (await mem(async (em) => em.find(Db, { dbms: this.id }))) ?? [];
+    return new DbRepo(this.ctx).getByFields({ dbms: this.id });
   }
 
   async getUsers(): Promise<DbUser[]> {
-    return (await mem(async (em) => em.find(DbUser, { dbms: this.id }))) ?? [];
+    return new DbUserRepo(this.ctx).getByFields({ dbms: this.id });
   }
 
   async getInternalDbs(): Promise<string[]> {

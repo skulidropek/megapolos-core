@@ -26,6 +26,10 @@ export class AppInstance extends BaseEntity {
 
   @Property({ length: -1 })
   @Field()
+  description!: string;
+
+  @Property({ length: -1 })
+  @Field()
   appInstanceUrl!: string;
 
   @ManyToOne({ entity: () => App })

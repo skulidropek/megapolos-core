@@ -7,6 +7,8 @@ import {
   Arg,
   FieldResolver,
   Info,
+  ObjectType,
+  Field,
 } from 'type-graphql';
 import { BaseTableResolver, CreateBaseResolver } from '../base.resolver';
 import {
@@ -35,6 +37,15 @@ export const RepositoryUpdateInput = generateGraphQLInputType(
   GenerationType.update
 );
 
+@ObjectType()
+class BranchesAndTags {
+  @Field(() => [String])
+  branches: string[];
+
+  @Field(() => [String])
+  tags: string[];
+}
+
 @Resolver()
 export class RepositoryResolver extends CreateBaseResolver(
   'Repository',
@@ -43,12 +54,12 @@ export class RepositoryResolver extends CreateBaseResolver(
   RepositoryInput,
   RepositoryUpdateInput
 ) {
-  @Query(() => [String])
-  async getBranches(
+  @Query(() => BranchesAndTags)
+  async getBranchesAndTags(
     @Ctx() ctx: Context,
     @Arg('id') id: string
-  ): Promise<string[]> {
-    return new RepositoryRepo(ctx, id).getBranches();
+  ): Promise<BranchesAndTags> {
+    return new RepositoryRepo(ctx, id).getBranchesAndTags();
   }
 
   @Query(() => String)
@@ -117,11 +128,11 @@ export class RepositoryTableResolver extends BaseTableResolver {
     });
   }
 
-  @FieldResolver(() => [String])
-  async branches(
+  @FieldResolver(() => BranchesAndTags)
+  async branchesAndTags(
     @Root() repository: Repository,
     @Ctx() ctx: Context
-  ): Promise<string[]> {
-    return new RepositoryRepo(ctx, repository.id).getBranches();
+  ): Promise<BranchesAndTags> {
+    return new RepositoryRepo(ctx, repository.id).getBranchesAndTags();
   }
 }

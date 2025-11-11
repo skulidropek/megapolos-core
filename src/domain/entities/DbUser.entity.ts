@@ -3,6 +3,7 @@ import {
   Entity,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   Property,
 } from '@mikro-orm/core';
 import { Field, ID, ObjectType } from 'type-graphql';
@@ -27,6 +28,9 @@ export class DbUser extends BaseEntity {
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
   password?: string;
+
+  @OneToMany(() => Db, (db) => db.owner)
+  ownedDbs = new Collection<Db>(this);
 
   @ManyToMany({ entity: () => Db, mappedBy: (o) => o.users })
   @Hint({ skip: true })

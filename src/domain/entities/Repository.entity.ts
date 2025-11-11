@@ -43,6 +43,10 @@ export class Repository extends BaseEntity {
   @Property({ length: -1, nullable: true })
   @Field({ nullable: true })
   title?: string;
+
+  @Property({ length: 20 })
+  @Field()
+  repositoryType!: string;
 }
 
 @ObjectType()

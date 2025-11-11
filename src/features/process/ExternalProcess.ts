@@ -51,6 +51,10 @@ class ExternalProcess extends BaseProcess {
               });
           });
         })
+        .on('error', (err) => {
+          this.status = ProcessStatus.Error;
+          reject(err);
+        })
         .connect({
           host: data.host,
           port: 22,
