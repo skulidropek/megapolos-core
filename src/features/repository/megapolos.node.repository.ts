@@ -511,6 +511,16 @@ export default class NodeRepo extends BaseRepo<Node> {
     return lookupPromise(data.host);
   }
 
+  async getDockerService(id: string): Promise<Docker.Service> {
+    const nodeDocker = await this.getDocker();
+    const services = await nodeDocker.listServices();
+    const target = services.find(
+      (s) => s.Spec?.Labels?.['megapolos_id'] === id
+    );
+    const service = nodeDocker.getService(target.Spec.Name);
+    return service;
+  }
+  
   async getSystemInfo(): Promise<NodeSystemInfo[]> {
     const nodes = await this.getAll();
 

@@ -124,6 +124,31 @@ export class ContainerRepo extends BaseRepo<Container> {
     await this._updateLifeStatus('stopped');
   }
 
+  async getDockerService() {
+    const data = await this.getEntity();
+    const node = new NodeRepo(this.ctx, data.node.id);
+    return node.getDockerService(this.id);
+  }
+
+  async restartSwarmService() {
+    await this.checkActionAccess(resources.Container.actions.manage);
+    try {
+      const dockerService = await this.getDockerService();
+      const info = await dockerService.inspect();
+      const spec = { ...info.Spec };
+      spec.TaskTemplate.ForceUpdate += 1;
+
+      await dockerService.update({ version: info.Version.Index, ...spec });
+    } catch (e) {
+      console.trace(e);
+      EventsObserver.listener({
+        type: 'containerError',
+        data: { containerId: this.id, error: e },
+      });
+      throw new Error(e);
+    }
+  }
+
   async update(
     data: RequiredEntityData<Container> & { nodeId?: string }
   ): Promise<boolean> {
