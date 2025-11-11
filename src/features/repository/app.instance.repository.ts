@@ -15,6 +15,16 @@ import { RequiredEntityData } from '@mikro-orm/core';
 import { Container } from '../../domain/entities/Container.entity';
 import { makeEm } from '../db/mikro-orm';
 import AppVersionRepo from './app.version.repository';
+import {
+  ConfiguratedContainerInput,
+  InstanceDataInput,
+} from '../../api/graphql/resolvers/instance.resolver';
+import DomainRepo from './domain.repository';
+import VolumeRepo from './volume.repository';
+import DbRepo from './db/db.repository';
+import ContainerDbRepo from './cantainer/container.db.repository';
+import DbUserRepo from './db/db.user.repository';
+import { ContainerVariable } from '../../domain/entities/ContainerVariable.entity';
 
 export interface InstanceRuntimeVariables {
   containers: {
@@ -238,5 +248,120 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         await containerObject.getRuntimeVariables(true);
     }
     return result;
+  }
+
+  async createConfiguratedInstance(
+    appVersionId: string,
+    instanceId: string | null,
+    instanceData: InstanceDataInput
+  ): Promise<AppInstance> {
+    const appVersionRepo = new AppVersionRepo(this.ctx, appVersionId);
+    const appVersion = await appVersionRepo.getEntity();
+
+    return await makeEm().transactional(async (em) => {
+      this.ctx.setTransactionContextEM(em);
+
+      // Step 1. Create or reuse AppInstance
+      let instance: AppInstance;
+      if (instanceId) {
+        instance = await new AppInstanceRepo(this.ctx, instanceId).getEntity();
+      } else {
+        instance = await this.create({
+          name: instanceData.name,
+          appVersion: appVersion,
+        } as RequiredEntityData<AppInstance>);
+      }
+
+      // Step 2. Create containers
+      for (const containerInput of instanceData.containers) {
+        const containerRepo = new ContainerRepo(this.ctx);
+        const container = await containerRepo.create({
+          name: containerInput.name,
+          node: containerInput.node,
+          image: containerInput.image,
+          outerPort: containerInput.outerPort,
+          appInstance: instance,
+        });
+
+        // Step 3. Handle domain binding
+        if (containerInput.domain) {
+          const { id, domainData } = containerInput.domain;
+          let domain;
+          if (id) {
+            domain = await new DomainRepo(this.ctx, id).getEntity();
+          } else if (domainData) {
+            domain = await new DomainRepo(this.ctx).create(domainData);
+          }
+          await containerRepo.update({ domain });
+        }
+
+        // Step 4. Handle volumes
+        for (const volumeBindData of containerInput.volumes || []) {
+          const innerVolume = volumeBindData.volume;
+          let volumeEntity;
+          if (innerVolume.id) {
+            volumeEntity = await new VolumeRepo(
+              this.ctx,
+              innerVolume.id
+            ).getEntity();
+          } else if (innerVolume.volumeData) {
+            volumeEntity = await new VolumeRepo(this.ctx).create(
+              innerVolume.volumeData
+            );
+          }
+
+          await new VolumeRepo(this.ctx, volumeEntity.id).addToContainer(
+            container.id,
+            volumeBindData.name,
+            volumeBindData.innerPath
+          );
+        }
+
+        // Step 5. Handle DB bindings
+        for (const dbBind of containerInput.dbs || []) {
+          const { db, dbUser, role } = dbBind;
+          let dbEntity, dbUserEntity;
+
+          if (db.id) {
+            dbEntity = await new DbRepo(this.ctx, db.id).getEntity();
+          } else if (db.dbData) {
+            dbEntity = await new DbRepo(this.ctx).create(db.dbData);
+          }
+
+          if (dbUser.id) {
+            dbUserEntity = await new DbUserRepo(
+              this.ctx,
+              dbUser.id
+            ).getEntity();
+          } else if (dbUser.dbUserData) {
+            dbUserEntity = await new DbUserRepo(this.ctx).create(
+              dbUser.dbUserData
+            );
+          }
+
+          await new ContainerDbRepo(this.ctx).create({
+            container: container.id,
+            db: dbEntity.id,
+            dbUser: dbUserEntity.id,
+            role,
+          });
+        }
+
+        // Step 6. Handle environment variables
+        if (containerInput.envs?.length) {
+          const envInputs: RequiredEntityData<ContainerVariable>[] =
+            containerInput.envs.map((env) => ({
+              container: container.id,
+              name: env.name,
+              value: env.value,
+            }));
+          await containerRepo.changeVariables(envInputs);
+        }
+      }
+
+      await em.flush();
+      this.ctx.reliseTransactionContextEM();
+      return instance;
+    });
   }
 }

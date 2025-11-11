@@ -134,15 +134,6 @@ class VolumeBindDataInput {
 }
 
 @InputType()
-class VolumeBindInput {
-  @Field(() => ID, { nullable: true })
-  id?: string;
-
-  @Field(() => VolumeBindDataInput, { nullable: true })
-  volumeBindData?: VolumeBindDataInput;
-}
-
-@InputType()
 class EnvVarInput {
   @Field()
   name!: string;
@@ -152,7 +143,7 @@ class EnvVarInput {
 }
 
 @InputType()
-class ConfiguratedContainerInput {
+export class ConfiguratedContainerInput {
   @Field()
   name!: string;
 
@@ -168,8 +159,8 @@ class ConfiguratedContainerInput {
   @Field(() => DomainBindInput, { nullable: true })
   domain?: DomainBindInput;
 
-  @Field(() => [VolumeBindInput])
-  volumes!: VolumeBindInput[];
+  @Field(() => [VolumeBindDataInput])
+  volumes!: VolumeBindDataInput[];
 
   @Field(() => [DbBindInput])
   dbs!: DbBindInput[];
@@ -179,7 +170,7 @@ class ConfiguratedContainerInput {
 }
 
 @InputType()
-class InstanceDataInput {
+export class InstanceDataInput {
   @Field()
   name!: string;
 
@@ -263,9 +254,14 @@ export class AppInstanceResolver extends CreateBaseResolver(
     @Arg('appVersionId', () => ID) appVersionId: string,
     @Arg('instanceId', () => ID, { nullable: true }) instanceId: string | null,
     @Arg('instanceData', () => InstanceDataInput)
-    instanceData: InstanceDataInput
+    instanceData: InstanceDataInput,
+    @Ctx() ctx: Context
   ): Promise<AppInstance> {
-    throw new Error('not implementaed');
+    return new AppInstanceRepo(ctx).createConfiguratedInstance(
+      appVersionId,
+      instanceId,
+      instanceData
+    );
   }
 }
 
