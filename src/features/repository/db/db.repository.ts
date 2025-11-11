@@ -20,4 +20,8 @@ export default class DbRepo extends BaseRepo<Db> {
     const data = await this.getEntity();
     return new BaseDbmsRepo(this.ctx, data.dbms.id).getEntity();
   }
+
+  async setOwner(userId: string): Promise<void> {
+    await this.update({ owner: userId });
+  }
 }

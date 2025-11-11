@@ -99,6 +99,7 @@ export default class PostgresDmbs extends BaseDbmsRepo {
   ): Promise<boolean> {
     const knex = await this.getKnex(dbName);
     await knex.raw(`ALTER DATABASE ?? OWNER TO ??`, [dbName, userName]);
+    await this.setOwnerChange(dbName, userName);
     return true;
   }
 
