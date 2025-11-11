@@ -549,17 +549,23 @@ export default class NodeRepo extends BaseRepo<Node> {
 
           return {
             nodeId: node.id,
-            totalMemoryMb: totalMem ? Math.round(totalMem / 1024 ** 2) : null,
-            availableMemoryMb: availMem
-              ? Math.round(availMem / 1024 ** 2)
-              : null,
+            totalMemoryMb:
+              totalMem !== null
+                ? parseInt((totalMem / 1024 ** 2).toFixed(0))
+                : null,
+            availableMemoryMb:
+              availMem !== null
+                ? parseInt((availMem / 1024 ** 2).toFixed(0))
+                : null,
             cpuCores,
-            totalDiskGb: totalDisk
-              ? parseFloat((totalDisk / 1024 ** 3).toFixed(2))
-              : null,
-            freeDiskGb: availDisk
-              ? parseFloat((availDisk / 1024 ** 3).toFixed(2))
-              : null,
+            totalDiskGb:
+              totalDisk !== null
+                ? parseFloat((totalDisk / 1024 ** 3).toFixed(2))
+                : null,
+            freeDiskGb:
+              availDisk !== null
+                ? parseFloat((availDisk / 1024 ** 3).toFixed(2))
+                : null,
           };
         } catch (error) {
           console.warn(
