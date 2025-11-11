@@ -5,5 +5,5 @@ WORKDIR /app
 COPY package.json package.json
 RUN npm install
 COPY . .
-RUN cp config/config.docker.ts config/config.ts
+RUN cp src/domain/config/config.docker.ts src/domain/config/config.ts
 CMD ts-node index.ts

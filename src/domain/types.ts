@@ -53,6 +53,7 @@ export interface ContainerInput {
 export interface AppInstanceInput {
   app_id: string;
   name: string;
+  description: string;
   containers: ContainerInput[];
 }
 
