@@ -110,11 +110,11 @@ export default class BaseDbmsRepo extends BaseRepo<Dbms> {
   }
 
   async getDbs(): Promise<Db[]> {
-    return (await mem(async (em) => em.find(Db, { dbms: this.id }))) ?? [];
+    return new DbRepo(this.ctx).getByFields({ dbms: this.id });
   }
 
   async getUsers(): Promise<DbUser[]> {
-    return (await mem(async (em) => em.find(DbUser, { dbms: this.id }))) ?? [];
+    return new DbUserRepo(this.ctx).getByFields({ dbms: this.id });
   }
 
   async getInternalDbs(): Promise<string[]> {

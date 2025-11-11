@@ -3,6 +3,8 @@ import { Dbms } from '../../../domain/entities/Dbms.entity';
 import { DbUser } from '../../../domain/entities/DbUser.entity';
 import { mem } from '../../db/mikro-orm';
 import BaseRepo from '../base.repository';
+import BaseDbmsRepo from '../dbms/base.dbms.repository';
+import DbmsRepo from '../dbms/dbms.repository';
 
 export default class DbUserRepo extends BaseRepo<DbUser> {
   get entityClass() {
@@ -18,10 +20,7 @@ export default class DbUserRepo extends BaseRepo<DbUser> {
   }
 
   async getDbms(): Promise<Dbms> {
-    return (
-      await mem(async (em) =>
-        em.findOne(DbUser, { id: this.id }, { populate: ['dbms'] })
-      )
-    ).dbms;
+    const data = await this.getEntity();
+    return new BaseDbmsRepo(this.ctx, data.dbms.id).getEntity();
   }
 }

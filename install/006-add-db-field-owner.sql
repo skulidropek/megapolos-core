@@ -1,2 +1,9 @@
 ALTER TABLE IF EXISTS public.db
     ADD COLUMN owner_id uuid;
+
+ALTER TABLE IF EXISTS public.db
+    ADD FOREIGN KEY (owner_id)
+    REFERENCES public.db_user (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
