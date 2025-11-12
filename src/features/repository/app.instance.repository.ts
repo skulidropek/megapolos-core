@@ -281,6 +281,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         const containerRepo = new ContainerRepo(this.ctx);
         const container = await containerRepo.create({
           name: containerInput.name,
+          role: containerInput.role,
           node: containerInput.node,
           image: containerInput.image,
           outerPort: containerInput.outerPort,
@@ -317,7 +318,8 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
           await new VolumeRepo(this.ctx, volumeEntity.id).addToContainer(
             container.id,
             volumeBindData.name,
-            volumeBindData.innerPath
+            volumeBindData.innerPath,
+            volumeBindData.role
           );
         }
 

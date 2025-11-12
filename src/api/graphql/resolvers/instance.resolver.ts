@@ -127,6 +127,9 @@ class VolumeBindDataInput {
   name!: string;
 
   @Field()
+  role!: string;
+
+  @Field()
   innerPath!: string;
 
   @Field(() => VolumeInnerInput)
@@ -146,6 +149,9 @@ class EnvVarInput {
 export class ConfiguratedContainerInput {
   @Field()
   name!: string;
+
+  @Field()
+  role!: string;
 
   @Field(() => ID)
   node!: string;

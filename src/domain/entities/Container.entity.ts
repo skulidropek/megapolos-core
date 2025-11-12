@@ -84,4 +84,8 @@ export class Container extends BaseEntity {
   @Property({ columnType: 'timestamp(6)', nullable: true })
   @Field({ nullable: true })
   uptime?: Date;
+
+  @Field()
+  @Property({ length: -1 })
+  role: string;
 }

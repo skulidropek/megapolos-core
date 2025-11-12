@@ -113,3 +113,9 @@ ALTER TABLE IF EXISTS public.app_version
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;
+
+ALTER TABLE IF EXISTS public.container_volume
+    ADD COLUMN role character varying;
+
+ALTER TABLE IF EXISTS public.container
+    ADD COLUMN role character varying;

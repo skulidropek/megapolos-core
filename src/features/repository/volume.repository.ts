@@ -56,7 +56,8 @@ export default class VolumeRepo extends BaseRepo<Volume> {
   async addToContainer(
     containerId: string,
     name: string,
-    innerPath: string
+    innerPath: string,
+    role?: string
   ): Promise<ContainerVolume> {
     let volumeContainerId = uuidv4();
     return await mem(async (em) => {
@@ -65,6 +66,7 @@ export default class VolumeRepo extends BaseRepo<Volume> {
         container: containerId,
         volume: this.id,
         name,
+        role,
         innerPath,
         isDynamic: 0,
       });

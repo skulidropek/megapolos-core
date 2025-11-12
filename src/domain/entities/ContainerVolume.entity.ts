@@ -38,4 +38,8 @@ export class ContainerVolume {
   @Property({ nullable: true })
   @Field({ nullable: true })
   isDynamic?: number;
+
+  @Field()
+  @Property({ length: -1 })
+  role: string;
 }
