@@ -106,3 +106,10 @@ ALTER TABLE "configuration_db_with_user"
 ----
 ALTER TABLE "image"
     ADD COLUMN "role" varchar NULL;
+
+ALTER TABLE IF EXISTS public.app_version
+    ADD FOREIGN KEY (configuration_id)
+    REFERENCES public.configuration (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;

@@ -25,6 +25,10 @@ import DbRepo from './db/db.repository';
 import ContainerDbRepo from './cantainer/container.db.repository';
 import DbUserRepo from './db/db.user.repository';
 import { ContainerVariable } from '../../domain/entities/ContainerVariable.entity';
+import { Domain } from '../../domain/entities/Domain.entity';
+import { Db } from '../../domain/entities/Db.entity';
+import { DbUser } from '../../domain/entities/DbUser.entity';
+import { Volume } from '../../domain/entities/Volume.entity';
 
 export interface InstanceRuntimeVariables {
   containers: {
@@ -286,7 +290,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         // Step 3. Handle domain binding
         if (containerInput.domain) {
           const { id, domainData } = containerInput.domain;
-          let domain;
+          let domain: Domain;
           if (id) {
             domain = await new DomainRepo(this.ctx, id).getEntity();
           } else if (domainData) {
@@ -298,7 +302,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         // Step 4. Handle volumes
         for (const volumeBindData of containerInput.volumes || []) {
           const innerVolume = volumeBindData.volume;
-          let volumeEntity;
+          let volumeEntity: Volume;
           if (innerVolume.id) {
             volumeEntity = await new VolumeRepo(
               this.ctx,
@@ -320,7 +324,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         // Step 5. Handle DB bindings
         for (const dbBind of containerInput.dbs || []) {
           const { db, dbUser, role } = dbBind;
-          let dbEntity, dbUserEntity;
+          let dbEntity: Db, dbUserEntity: DbUser;
 
           if (db.id) {
             dbEntity = await new DbRepo(this.ctx, db.id).getEntity();
