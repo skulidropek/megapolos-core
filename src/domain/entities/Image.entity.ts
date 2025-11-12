@@ -61,10 +61,6 @@ export class Image extends BaseEntity {
   @Hint({ defaultValue: '', skip: true })
   tags: string & Opt = '';
 
-  @Property({ length: -1 })
-  @Field()
-  roleInApp!: string;
-  
   @Property()
   @Field()
   buildNumber!: number;
