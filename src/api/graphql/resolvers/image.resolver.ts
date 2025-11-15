@@ -9,7 +9,10 @@ import {
 } from 'type-graphql';
 import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { Image } from '../../../domain/entities/Image.entity';
-import { Repository } from '../../../domain/entities/Repository.entity';
+import {
+  LogCommit,
+  Repository,
+} from '../../../domain/entities/Repository.entity';
 import { Log } from '../../../domain/entities/Log.entity';
 import { Context } from '../server';
 import ImageRepo from '../../../features/repository/image.repository';
@@ -166,5 +169,15 @@ export class ImageTableResolver extends BaseTableResolver {
     @Ctx() ctx: Context
   ): Promise<Container[]> {
     return new ContainerRepo(ctx).getByFields({ image: { id: image.id } });
+  }
+
+  @FieldResolver(() => LogCommit, { nullable: true })
+  async commit(@Root() image: Image, @Ctx() ctx: Context): Promise<LogCommit> {
+    if (!image.commitId) {
+      return null;
+    }
+    return new RepositoryRepo(ctx, image.repository.id).getCommit(
+      image.commitId
+    );
   }
 }
