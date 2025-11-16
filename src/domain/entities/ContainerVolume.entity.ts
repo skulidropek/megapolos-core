@@ -39,7 +39,7 @@ export class ContainerVolume {
   @Field({ nullable: true })
   isDynamic?: number;
 
-  @Field()
-  @Property({ length: -1 })
+  @Property({ nullable: true, length: -1 })
+  @Field({ nullable: true })
   role: string;
 }

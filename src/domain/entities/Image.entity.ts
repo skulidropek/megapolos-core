@@ -109,7 +109,7 @@ export class Image extends BaseEntity {
 
   getImageVersionName(): string {
     let imageName = this.image;
-    if (!this.app) {
+    if (this.version || this.buildNumber) {
       const versionPart =
         this.version && this.version.trim() !== ''
           ? this.version

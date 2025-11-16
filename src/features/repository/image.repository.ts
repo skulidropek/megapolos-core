@@ -102,25 +102,30 @@ export default class ImageRepo extends BaseRepo<Image> {
         const result = await NodeRepo.currentNode.shellCommand(
           `cd ${path} && docker build ${tags} .`,
           new UserRepo(this.ctx),
-          log
+          log,
+          true
         ).output;
         if (!config.devMode) {
           await NodeRepo.currentNode.shellCommand(
             `docker login -u '${defaultDockerRegistry.user}' -p '${defaultDockerRegistry.password}' ${defaultDockerRegistry.host}:443`,
             new UserRepo(this.ctx, this.ctx.user.id),
-            log
+            log,
+            true
           ).output;
           await NodeRepo.currentNode.shellCommand(
             `docker push ${defaultDockerRegistry.host}:443/${imageName}`,
             new UserRepo(this.ctx, this.ctx.user.id),
-            log
+            log,
+            true
           ).output;
           await NodeRepo.currentNode.shellCommand(
             'docker image prune -f',
             new UserRepo(this.ctx, this.ctx.user.id),
-            log
+            log,
+            true
           ).output;
         }
+        await log.close();
         await this.update({
           status: ImageStatus.Built,
           lastBuildDate: new Date(),

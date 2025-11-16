@@ -384,7 +384,8 @@ export default class NodeRepo extends BaseRepo<Node> {
   shellCommand(
     command: string,
     user: UserRepo,
-    log?: LogRepo
+    log?: LogRepo,
+    dontCloseLog?: boolean
   ): { id: string; output: Promise<{ stdout: string; stderr: string }> } {
     const commandId = uuidv4();
     return {
@@ -424,7 +425,9 @@ export default class NodeRepo extends BaseRepo<Node> {
           throw e;
         }
         if (log) {
-          await log.close();
+          if (!dontCloseLog) {
+            await log.close();
+          }
         }
 
         const result = {
@@ -521,7 +524,7 @@ export default class NodeRepo extends BaseRepo<Node> {
     const service = nodeDocker.getService(target.Spec.Name);
     return service;
   }
-  
+
   async getSystemInfo(): Promise<NodeSystemInfo[]> {
     const nodes = await this.getAll();
 
