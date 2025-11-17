@@ -16,17 +16,43 @@ export class ConfigurationRepo extends BaseRepo<Configuration> {
     return Configuration;
   }
 
-  async createFromData(
-    appId: string,
-    configurationData: ConfigurationDataInput
-  ): Promise<Configuration> {
+  async createOrEditFromData({
+    appId,
+    configurationData,
+  }: {
+    appId?: string;
+    configurationData: ConfigurationDataInput;
+  }): Promise<Configuration> {
+    if (!appId && !this.id) {
+      throw new Error('Either appId or configuration id must be provided');
+    }
     const em = this._getEM();
     return await em.transactional(async (tx) => {
-      const app = await tx.findOneOrFail(App, { id: appId });
-      const configuration = tx.create(Configuration, {
-        app,
-        name: configurationData.name,
-      });
+      let configuration: Configuration;
+      const id = this.id;
+      if (id) {
+        configuration = await tx.findOneOrFail(Configuration, { id }, {});
+        configuration.name = configurationData.name;
+        await configuration.services.loadItems();
+        for (let i in configuration.services.getItems()) {
+          const service = configuration.services.getItems()[i];
+          await service.envs.loadItems();
+          service.envs.removeAll();
+          await service.dbs.loadItems();
+          service.dbs.removeAll();
+          await service.ports.loadItems();
+          service.ports.removeAll();
+          await service.volumes.loadItems();
+          service.volumes.removeAll();
+        }
+        configuration.services.removeAll();
+      } else {
+        const app = await tx.findOneOrFail(App, { id: appId });
+        configuration = await tx.create(Configuration, {
+          app,
+          name: configurationData.name,
+        });
+      }
 
       for (const serviceInp of configurationData.services) {
         const service = tx.create(ConfigurationService, {

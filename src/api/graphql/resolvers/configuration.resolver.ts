@@ -117,7 +117,21 @@ export class ConfigurationResolver {
     @Arg('configurationData') configurationData: ConfigurationDataInput,
     @Ctx() ctx: Context
   ): Promise<Configuration> {
-    return new ConfigurationRepo(ctx).createFromData(appId, configurationData);
+    return new ConfigurationRepo(ctx).createOrEditFromData({
+      appId,
+      configurationData,
+    });
+  }
+
+  @Mutation(() => Configuration)
+  async editConfiguration(
+    @Arg('id') id: string,
+    @Arg('configurationData') configurationData: ConfigurationDataInput,
+    @Ctx() ctx: Context
+  ): Promise<Configuration> {
+    return new ConfigurationRepo(ctx, id).createOrEditFromData({
+      configurationData,
+    });
   }
 
   @Mutation(() => Boolean)
