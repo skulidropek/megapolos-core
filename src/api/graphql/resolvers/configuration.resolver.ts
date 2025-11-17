@@ -27,6 +27,7 @@ import {
 } from '../../../features/repository/configuration.repository';
 import { App } from '../../../domain/entities/App.entity';
 import AppRepo from '../../../features/repository/app.repository';
+import { Repository } from '../../../domain/entities/Repository.entity';
 
 @InputType()
 class ConfigurationVolumeInput {
@@ -76,6 +77,14 @@ class ConfigurationEnvInput {
 class ConfigurationServiceInput {
   @Field()
   role!: string;
+  @Field({ nullable: true })
+  repository: string;
+  @Field(() => Int, { nullable: true })
+  cpuCount: number;
+  @Field(() => Int, { nullable: true })
+  ramSize: number;
+  @Field(() => Int, { nullable: true })
+  diskSize: number;
   @Field(() => [ConfigurationVolumeInput])
   volumes!: ConfigurationVolumeInput[];
   @Field(() => [ConfigurationPortInput])
@@ -164,6 +173,14 @@ export class ConfigurationFieldsResolver {
 
 @Resolver(() => ConfigurationService)
 export class ConfigurationServiceFieldsResolver {
+  @FieldResolver(() => Repository, { nullable: true })
+  async repository(
+    @Root() service: ConfigurationService,
+    @Ctx() ctx: Context
+  ): Promise<Repository | null> {
+    return await new ConfigurationServiceRepo(ctx, service.id).getRepository();
+  }
+
   @FieldResolver(() => [ConfigurationVolume])
   async volumes(
     @Root() service: ConfigurationService,

@@ -11,6 +11,7 @@ import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
 import { BaseEntity } from '../Base.entity';
 import { Hint } from '../../../library/graphql_types_generator';
 import { App } from '../App.entity';
+import { Repository } from '../Repository.entity';
 
 @ObjectType()
 @Entity()
@@ -74,6 +75,21 @@ export class ConfigurationService extends BaseEntity {
   })
   @Hint({ skip: true })
   envs = new Collection<ConfigurationEnvOption>(this);
+
+  @ManyToOne({ entity: () => Repository, nullable: true })
+  repository: Repository;
+
+  @Field({ nullable: true })
+  @Property({ nullable: true })
+  cpuCount: number;
+
+  @Field({ nullable: true })
+  @Property({ nullable: true })
+  ramSize: number;
+
+  @Field({ nullable: true })
+  @Property({ nullable: true })
+  diskSize: number;
 }
 
 @ObjectType()

@@ -10,6 +10,8 @@ import {
   ConfigurationVolume,
 } from '../../domain/entities/configuration/Configuration.entity';
 import { ConfigurationDataInput } from '../../api/graphql/resolvers/configuration.resolver';
+import { Repository } from '../../domain/entities/Repository.entity';
+import RepositoryRepo from './repository.repository';
 
 export class ConfigurationRepo extends BaseRepo<Configuration> {
   get entityClass() {
@@ -58,6 +60,10 @@ export class ConfigurationRepo extends BaseRepo<Configuration> {
         const service = tx.create(ConfigurationService, {
           configuration,
           role: serviceInp.role,
+          repository: serviceInp.repository,
+          cpuCount: serviceInp.cpuCount,
+          ramSize: serviceInp.ramSize,
+          diskSize: serviceInp.diskSize,
         });
 
         for (const volInp of serviceInp.volumes) {
@@ -152,6 +158,14 @@ export class ConfigurationRepo extends BaseRepo<Configuration> {
 export class ConfigurationServiceRepo extends BaseRepo<ConfigurationService> {
   get entityClass() {
     return ConfigurationService;
+  }
+
+  async getRepository(): Promise<Repository | null> {
+    const data = await this.getEntity();
+    if (!data.repository?.id) {
+      return null;
+    }
+    return new RepositoryRepo(this.ctx, data.repository?.id).getEntity();
   }
 
   async getVolumes(): Promise<ConfigurationVolume[]> {

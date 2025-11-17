@@ -119,3 +119,21 @@ ALTER TABLE IF EXISTS public.container_volume
 
 ALTER TABLE IF EXISTS public.container
     ADD COLUMN role character varying;
+
+ALTER TABLE IF EXISTS public.configuration_service
+    ADD COLUMN repository_id uuid;
+
+ALTER TABLE IF EXISTS public.configuration_service
+    ADD COLUMN cpu_count integer;
+
+ALTER TABLE IF EXISTS public.configuration_service
+    ADD COLUMN ram_size integer;
+
+ALTER TABLE IF EXISTS public.configuration_service
+    ADD COLUMN disk_size integer;
+ALTER TABLE IF EXISTS public.configuration_service
+    ADD FOREIGN KEY (repository_id)
+    REFERENCES public.repository (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
