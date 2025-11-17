@@ -26,7 +26,7 @@ export default class UserRepo extends BaseRepo<User> {
       entity.groupUser = groupUser.id;
     }
     const created = await super.create(entity);
-    const em = makeEm();
+    const em = this._getEM();
     const userGroupLink = em.create(UserGroupLink, {
       user: created.id,
       groupUser: created.groupUser.id,
@@ -36,14 +36,14 @@ export default class UserRepo extends BaseRepo<User> {
   }
 
   async delete(): Promise<boolean> {
-    const em = makeEm();
+    const em = this._getEM();
     await em.nativeDelete(UserGroupLink, { user: this.id });
     return super.delete();
   }
 
   // OTHER
   async amIRootUser(): Promise<boolean> {
-    const user = await makeEm().findOneOrFail(
+    const user = await this._getEM().findOneOrFail(
       User,
       { id: this.id },
       { populate: ['groups'] }
@@ -55,7 +55,7 @@ export default class UserRepo extends BaseRepo<User> {
   }
 
   async getPrivileges(): Promise<GroupUserPrivilege[]> {
-    const user = await makeEm().findOneOrFail(
+    const user = await this._getEM().findOneOrFail(
       User,
       { id: this.id },
       { populate: ['groups.privileges'] }
@@ -81,7 +81,7 @@ export default class UserRepo extends BaseRepo<User> {
     }
 
     if (toInsert.length) {
-      const em = makeEm();
+      const em = this._getEM();
       await em.insertMany(UserGroupLink, toInsert);
       await em.flush();
     }
@@ -158,7 +158,7 @@ export default class UserRepo extends BaseRepo<User> {
 
   async getByGroupName(groupName: string): Promise<User[]> {
     return (
-      await makeEm().find(
+      await this._getEM().find(
         GroupUser,
         {
           name: groupName,

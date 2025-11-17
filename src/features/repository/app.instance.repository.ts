@@ -29,6 +29,7 @@ import { Domain } from '../../domain/entities/Domain.entity';
 import { Db } from '../../domain/entities/Db.entity';
 import { DbUser } from '../../domain/entities/DbUser.entity';
 import { Volume } from '../../domain/entities/Volume.entity';
+import { ContainerEnvOption } from '../../domain/entities/ContainerEnvOption.entity';
 
 export interface InstanceRuntimeVariables {
   containers: {
@@ -70,7 +71,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
       lifeStatus: 'stopped',
       appInstanceUrl: input.name,
       app: input.app,
-      description: input.description,
+      description: input.description || '',
       appVersion: input.appVersion,
       // instance_type_id: 'dev',
       // deploy_strategy_id: '',
@@ -273,6 +274,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         instance = await this.create({
           name: instanceData.name,
           appVersion: appVersion,
+          app: appVersion.app.id,
         } as RequiredEntityData<AppInstance>);
       }
 
@@ -355,13 +357,11 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
 
         // Step 6. Handle environment variables
         if (containerInput.envs?.length) {
-          const envInputs: RequiredEntityData<ContainerVariable>[] =
-            containerInput.envs.map((env) => ({
-              container: container.id,
-              name: env.name,
-              value: env.value,
-            }));
-          await containerRepo.changeVariables(envInputs);
+          const envInputs = containerInput.envs.map((env) => ({
+            key: env.name,
+            value: env.value,
+          }));
+          await containerRepo.changeEnvs(envInputs);
         }
       }
 

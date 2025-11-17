@@ -60,7 +60,8 @@ export default class VolumeRepo extends BaseRepo<Volume> {
     role?: string
   ): Promise<ContainerVolume> {
     let volumeContainerId = uuidv4();
-    return await mem(async (em) => {
+    return await (async () => {
+      const em = this._getEM();
       const containerVolume = em.create(ContainerVolume, {
         id: volumeContainerId,
         container: containerId,
@@ -72,12 +73,12 @@ export default class VolumeRepo extends BaseRepo<Volume> {
       });
       await em.persistAndFlush(containerVolume);
       return containerVolume;
-    });
+    })();
   }
 
   async removeFromContainer(containerVolumeId: string): Promise<boolean> {
     return (
-      (await makeEm().nativeDelete(ContainerVolume, {
+      (await this._getEM().nativeDelete(ContainerVolume, {
         id: containerVolumeId,
       })) > 0
     );

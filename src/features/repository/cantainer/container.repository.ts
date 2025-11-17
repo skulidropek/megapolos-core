@@ -432,17 +432,20 @@ export class ContainerRepo extends BaseRepo<Container> {
 
   async addContainerEnvOption(input: Partial<ContainerEnvOptionTable>) {
     await this.checkActionAccess(resources.Container.actions.edit);
-    await knex<ContainerEnvOptionTable>('container_env_option').insert({
-      container_id: this.id,
-      ...input,
+    const em = this._getEM();
+    const created = em.create(ContainerEnvOption, {
+      container: await this.getEntity(),
+      containerEnvName: input.container_env_name,
+      containerEnvValue: input.container_env_value,
     });
+    await em.persistAndFlush(created);
   }
 
   async removeContainerEnvOptions() {
     await this.checkActionAccess(resources.Container.actions.edit);
-    await knex<ContainerEnvOptionTable>('container_env_option')
-      .delete()
-      .where('container_id', this.id);
+    const data = await this.getEntity();
+    const result = data.envs.removeAll();
+    await this._getEM().persistAndFlush(data);
   }
 
   async getDomain(): Promise<Domain | null> {

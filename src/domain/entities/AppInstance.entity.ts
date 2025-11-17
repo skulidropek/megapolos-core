@@ -16,7 +16,7 @@ export class AppInstance extends BaseEntity {
   @Field()
   name!: string;
 
-  @ManyToOne({ entity: () => User })
+  @ManyToOne({ entity: () => User, nullable: true })
   @Field(() => User)
   @Hint({ type: () => ID, skipOnUpdate: true, skipOnInput: true })
   user!: User;
