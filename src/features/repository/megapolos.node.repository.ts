@@ -178,7 +178,7 @@ export default class NodeRepo extends BaseRepo<Node> {
           value: env.containerEnvValue,
         });
       }
-      console.log(envs);
+      // console.log(envs);
       containerResult.envs.push({
         name: 'MEGAPOLOS_LAST_BUILD_DATE',
         value: image.lastBuildDate
@@ -472,7 +472,7 @@ export default class NodeRepo extends BaseRepo<Node> {
         if (err) {
           reject(err);
         } else {
-          console.log(JSON.stringify(services, null, 2));
+          // console.log(JSON.stringify(services, null, 2));
           resolve(
             services
               .filter((c) => c.Spec.Mode.Replicated.Replicas > 0)

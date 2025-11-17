@@ -111,9 +111,9 @@ export class Image extends BaseEntity {
     let imageName = this.image;
     if (this.version || this.buildNumber) {
       const versionPart =
-        this.version && this.version.trim() !== ''
+        (this.version && this.version.trim() !== ''
           ? this.version
-          : this.buildNumber ?? this.id;
+          : this.buildNumber) ?? this.id;
       imageName = `${this.image}:${versionPart}`;
     }
     return imageName;

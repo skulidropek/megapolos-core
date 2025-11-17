@@ -300,7 +300,7 @@ export class ContainerRepo extends BaseRepo<Container> {
     for (let i in input) {
       const env = input[i];
       const envId = uuidv4();
-      console.log(env);
+      // console.log(env);
       await this.addContainerEnvOption({
         id: envId,
         container_env_name: env.key,

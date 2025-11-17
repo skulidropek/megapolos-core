@@ -48,7 +48,6 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   async fetch(): Promise<void> {
     await this.checkActionAccess(resources.Repository.actions.fetch);
     const path = await this._getPath();
-    console.log('fetch', path);
     await simpleGit(path).fetch();
     await this.update({ lastFetchDate: new Date() });
   }

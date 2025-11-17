@@ -22,7 +22,7 @@ class ExternalProcess extends BaseProcess {
       const conn = new Client();
       conn
         .on('ready', () => {
-          console.log('Client :: ready');
+          // console.log('Client :: ready');
           conn.exec(this.command, (err, stream) => {
             if (err) throw err;
             stream
