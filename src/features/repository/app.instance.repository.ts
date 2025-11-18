@@ -68,7 +68,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     const result = await super.create({
       name: input.name,
       user: user.id,
-      lifeStatus: 'stopped',
+      lifeStatus: input.lifeStatus || 'stopped',
       appInstanceUrl: input.name,
       app: input.app,
       description: input.description || '',
@@ -275,6 +275,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
           name: instanceData.name,
           appVersion: appVersion,
           app: appVersion.app.id,
+          lifeStatus: 'running',
         } as RequiredEntityData<AppInstance>);
       }
 
@@ -288,6 +289,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
           image: containerInput.image,
           outerPort: containerInput.outerPort,
           appInstance: instance,
+          lifeStatus: 'running',
         });
 
         // Step 3. Handle domain binding
