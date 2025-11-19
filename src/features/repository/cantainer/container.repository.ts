@@ -302,6 +302,7 @@ export class ContainerRepo extends BaseRepo<Container> {
       const envId = uuidv4();
       // console.log(env);
       await this.addContainerEnvOption({
+        container_id: this.id,
         id: envId,
         container_env_name: env.key,
         container_env_value: env.value,
@@ -443,9 +444,9 @@ export class ContainerRepo extends BaseRepo<Container> {
 
   async removeContainerEnvOptions() {
     await this.checkActionAccess(resources.Container.actions.edit);
-    const data = await this.getEntity();
-    const result = data.envs.removeAll();
-    await this._getEM().persistAndFlush(data);
+    const result = await this._getEM().nativeDelete(ContainerEnvOption, {
+      container: this.id,
+    });
   }
 
   async getDomain(): Promise<Domain | null> {

@@ -163,7 +163,7 @@ export default class NodeRepo extends BaseRepo<Node> {
       for (let j in envs) {
         let env = envs[j];
         env.containerEnvValue = env.containerEnvValue.replace(
-          /\{[a-zA-Z0-9_.]+\}/,
+          /\{.+?\}/g,
           (match) => {
             const path = match.substring(1, match.length - 1);
             const value = jp.value(runtimeVariables, path);
