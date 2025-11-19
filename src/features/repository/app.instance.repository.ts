@@ -249,7 +249,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     for (const i in containers) {
       const container = containers[i];
       const containerObject = new ContainerRepo(this.ctx, container.id);
-      result.containers[container.name] =
+      result.containers[container.role || container.name] =
         await containerObject.getRuntimeVariables(true);
     }
     return result;
