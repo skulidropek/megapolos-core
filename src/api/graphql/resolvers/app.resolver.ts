@@ -51,6 +51,14 @@ export class AppResolver extends CreateBaseResolver(
     await new AppRepo(ctx).installApp(ctx.user.id, input);
     return true;
   }
+  @Mutation(() => Boolean)
+  async exportApp(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new AppRepo(ctx, id).exportApp(id);
+    return true;
+  }
 }
 
 @Resolver(() => App)

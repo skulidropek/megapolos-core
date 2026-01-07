@@ -11,6 +11,9 @@ import { AppInstance } from '../../domain/entities/AppInstance.entity';
 import AppInstanceRepo from './app.instance.repository';
 import { Repository } from '../../domain/entities/Repository.entity';
 import { ResourceType } from '../rights/resources.list';
+import path from 'path';
+import fs from 'fs';
+import { UploadedFiles } from '../../domain/entities/UploadedFiles.entity';
 
 export default class AppRepo extends BaseRepo<App> {
   get entityClass() {
@@ -19,6 +22,23 @@ export default class AppRepo extends BaseRepo<App> {
 
   get resourceType(): ResourceType {
     return ResourceType.App;
+  }
+  async exportApp(id: string) {
+    const exportData = await makeEm().find(App, id, {
+      populate: ['appVersions', 'configurations', 'configurations.services'],
+    });
+    const exist = await makeEm().find(UploadedFiles, {
+      originalName: exportData[0].name,
+    });
+    if (exist.length) throw new Error('Приложение уже экспортировано');
+
+    const fileName = `exportApp-${id}-${Date.now()}.json`;
+    const filePath = path.join(__dirname, '../../../uploads', fileName);
+    fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), 'utf-8');
+    await makeEm().insert(UploadedFiles, {
+      filename: fileName,
+      originalName: exportData[0].name,
+    });
   }
 
   async installApp(userId: string, input: AppInput): Promise<App> {
