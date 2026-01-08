@@ -1,17 +1,7 @@
-import {
-  Collection,
-  Entity,
-  ManyToOne,
-  OneToMany,
-  type Opt,
-  Property,
-} from '@mikro-orm/core';
-import { User } from './User.entity';
+import { Entity, Property } from '@mikro-orm/core';
+
 import { ObjectType, Field, ID } from 'type-graphql';
 import { BaseEntity } from './Base.entity';
-import { Hint } from '../../library/graphql_types_generator';
-import { AppVersion } from './AppVersion.entity';
-import { Configuration } from './configuration/Configuration.entity';
 
 @Entity()
 @ObjectType()

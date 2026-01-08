@@ -23,6 +23,7 @@ import AppInstanceRepo from '../../../features/repository/app.instance.repositor
 import { AppInstance } from '../../../domain/entities/AppInstance.entity';
 import { Configuration } from '../../../domain/entities/configuration/Configuration.entity';
 import { ConfigurationRepo } from '../../../features/repository/configuration.repository';
+
 export const AppInput = generateGraphQLInputType(
   App,
   'AppInput',
@@ -49,14 +50,6 @@ export class AppResolver extends CreateBaseResolver(
     @Ctx() ctx: Context
   ): Promise<boolean> {
     await new AppRepo(ctx).installApp(ctx.user.id, input);
-    return true;
-  }
-  @Mutation(() => Boolean)
-  async exportApp(
-    @Arg('id') id: string,
-    @Ctx() ctx: Context
-  ): Promise<boolean> {
-    await new AppRepo(ctx, id).exportApp(id);
     return true;
   }
 }

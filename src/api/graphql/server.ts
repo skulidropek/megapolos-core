@@ -185,6 +185,8 @@ import {
   ConfigurationServiceFieldsResolver,
   ConfigurationVolumeFieldsResolver,
 } from './resolvers/configuration.resolver';
+import UploadFilesRepo from '../../features/repository/uploadFiles.repository';
+import { UploadResolver } from './resolvers/upload.resolver';
 
 export class Context {
   constructor(data: {
@@ -273,6 +275,7 @@ async function bootstrap() {
       ConfigurationPortResolver,
       ConfigurationDbWithUserResolver,
       ConfigurationEnvOptionResolver,
+      UploadResolver,
     ],
   });
 

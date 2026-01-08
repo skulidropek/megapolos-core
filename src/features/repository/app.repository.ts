@@ -23,23 +23,6 @@ export default class AppRepo extends BaseRepo<App> {
   get resourceType(): ResourceType {
     return ResourceType.App;
   }
-  async exportApp(id: string) {
-    const exportData = await makeEm().find(App, id, {
-      populate: ['appVersions', 'configurations', 'configurations.services'],
-    });
-    const exist = await makeEm().find(UploadedFiles, {
-      originalName: exportData[0].name,
-    });
-    if (exist.length) throw new Error('Приложение уже экспортировано');
-
-    const fileName = `exportApp-${id}-${Date.now()}.json`;
-    const filePath = path.join(__dirname, '../../../uploads', fileName);
-    fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), 'utf-8');
-    await makeEm().insert(UploadedFiles, {
-      filename: fileName,
-      originalName: exportData[0].name,
-    });
-  }
 
   async installApp(userId: string, input: AppInput): Promise<App> {
     const app = await this.create({
