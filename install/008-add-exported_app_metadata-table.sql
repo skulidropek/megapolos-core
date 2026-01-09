@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS public.uploaded_files (
+CREATE TABLE IF NOT EXISTS public.exported_app_metadata (
   id uuid NOT NULL DEFAULT gen_random_uuid () PRIMARY KEY,
   filename TEXT NOT NULL UNIQUE,
   original_name TEXT NOT NULL UNIQUE,

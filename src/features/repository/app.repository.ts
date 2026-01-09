@@ -11,9 +11,6 @@ import { AppInstance } from '../../domain/entities/AppInstance.entity';
 import AppInstanceRepo from './app.instance.repository';
 import { Repository } from '../../domain/entities/Repository.entity';
 import { ResourceType } from '../rights/resources.list';
-import path from 'path';
-import fs from 'fs';
-import { UploadedFiles } from '../../domain/entities/UploadedFiles.entity';
 
 export default class AppRepo extends BaseRepo<App> {
   get entityClass() {

@@ -5,7 +5,7 @@ import { BaseEntity } from './Base.entity';
 
 @Entity()
 @ObjectType()
-export class UploadedFiles extends BaseEntity {
+export class ExportedAppMetadata extends BaseEntity {
   @Property({
     type: 'text',
     unique: true,
