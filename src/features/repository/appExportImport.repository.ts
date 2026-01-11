@@ -197,7 +197,7 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
 
   async uploadAppConfig(file) {
     const em = makeEm();
-    const { filename, mimetype, encoding, createReadStream } = await file;
+    const { filename, mimetype, createReadStream } = await file;
     if (!filename.endsWith('.json') && mimetype !== 'application/json') {
       throw new Error('Only .json files are allowed');
     }
@@ -243,15 +243,17 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
         throw new Error('The structure of the uploaded file is incorrect');
       }
     }
-    const filePath = path.join(UPLOADS_DIR, filename);
+    const newFilename = `export-${jsonData.name}-${
+      jsonData.id
+    }-${Date.now()}.json`;
+    const filePath = path.join(UPLOADS_DIR, newFilename);
 
     try {
-      writeFileSync(filePath, JSON.stringify(jsonData, null, 2), 'utf-8');
-
       await this.create({
-        filename: filename,
+        filename: newFilename,
         originalName: jsonData.name,
       });
+      writeFileSync(filePath, JSON.stringify(jsonData, null, 2), 'utf-8');
     } catch (err) {
       throw new Error('Failed to export template application');
     }
