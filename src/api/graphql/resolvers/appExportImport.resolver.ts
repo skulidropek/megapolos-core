@@ -5,9 +5,9 @@ import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
-import UploadFilesRepo from '../../../features/repository/appExportImport.repository';
 import { ExportedAppMetadata } from '../../../domain/entities/ExportedAppMetadata.entity';
 import AppExportImportRepo from '../../../features/repository/appExportImport.repository';
+import { FileUpload, GraphQLUpload, Upload } from 'graphql-upload-ts';
 export const ExportedAppInput = generateGraphQLInputType(
   ExportedAppMetadata,
   'ExportedAppInput',
@@ -47,11 +47,20 @@ export class AppExportImportResolver extends CreateBaseResolver(
   }
 
   @Mutation(() => Boolean)
-  async importApp(
+  async restoreApp(
     @Arg('id') id: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
-    await new AppExportImportRepo(ctx, id).importApp();
+    await new AppExportImportRepo(ctx, id).restoreApp();
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async uploadAppConfig(
+    @Arg('file', () => GraphQLUpload) file: Promise<FileUpload>,
+    @Ctx() ctx: Context
+  ) {
+    await new AppExportImportRepo(ctx).uploadAppConfig(file);
     return true;
   }
 }

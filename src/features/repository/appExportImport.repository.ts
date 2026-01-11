@@ -59,7 +59,7 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
         originalName: app.name,
       });
     } catch (err) {
-      throw new Error('Failed to export application');
+      throw new Error('Failed to export template application');
     }
   }
 
@@ -81,11 +81,11 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
       unlinkSync(filePath);
       await this.delete();
     } catch (err) {
-      throw new Error('Failed to delete exported app');
+      throw new Error('Failed to delete template app');
     }
   }
 
-  async importApp(): Promise<void> {
+  async restoreApp(): Promise<void> {
     const em = makeEm();
 
     const exportedApp = await this.getEntity();
@@ -98,7 +98,7 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
       name: exportedApp.originalName,
     });
     if (existingApp)
-      throw new Error('The application has already been imported.');
+      throw new Error('The application has already been restored.');
 
     const filePath = path.join(UPLOADS_DIR, exportedApp.filename);
 
@@ -191,7 +191,69 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
         );
       }
     } catch (err) {
-      throw new Error('Import failed');
+      throw new Error('Restore failed');
+    }
+  }
+
+  async uploadAppConfig(file) {
+    const em = makeEm();
+    const { filename, mimetype, encoding, createReadStream } = await file;
+    if (!filename.endsWith('.json') && mimetype !== 'application/json') {
+      throw new Error('Only .json files are allowed');
+    }
+    const chunks: Buffer[] = [];
+    for await (const chunk of createReadStream()) {
+      chunks.push(chunk as Buffer);
+    }
+    const jsonString = Buffer.concat(chunks).toString('utf8');
+
+    let jsonData: any;
+    try {
+      jsonData = JSON.parse(jsonString);
+    } catch (e) {
+      throw new Error('Invalid JSON format');
+    }
+
+    const existing = await em.find(ExportedAppMetadata, {
+      originalName: jsonData.name,
+    });
+    if (existing.length > 0) {
+      throw new Error('The application has already been exported.');
+    }
+
+    if (
+      typeof jsonData !== 'object' ||
+      jsonData === null ||
+      Array.isArray(jsonData)
+    ) {
+      throw new Error('JSON must be an object');
+    }
+
+    const obj = jsonData as Record<string, unknown>;
+
+    const requiredFields = [
+      'name',
+      'appVersions',
+      'configurations',
+      'repositories',
+    ];
+
+    for (const field of requiredFields) {
+      if (!(field in obj)) {
+        throw new Error('The structure of the uploaded file is incorrect');
+      }
+    }
+    const filePath = path.join(UPLOADS_DIR, filename);
+
+    try {
+      writeFileSync(filePath, JSON.stringify(jsonData, null, 2), 'utf-8');
+
+      await this.create({
+        filename: filename,
+        originalName: jsonData.name,
+      });
+    } catch (err) {
+      throw new Error('Failed to export template application');
     }
   }
 }
