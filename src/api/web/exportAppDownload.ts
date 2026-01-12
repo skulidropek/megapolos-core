@@ -4,9 +4,6 @@ import AppExportImportRepo from '../../features/repository/appExportImport.repos
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import config from '../../domain/config/config';
 import UserRepo from '../../features/repository/user/user.repository';
-import path from 'path';
-
-const DOWNLOAD_DIR = path.join(__dirname, '../../../uploads');
 
 const authenticate = async (req: Request, res: Response): Promise<Context> => {
   const token = req.headers.token || '';
@@ -39,15 +36,20 @@ export const downloadExportedApp = async (req: Request, res: Response) => {
     const ctx = await authenticate(req, res);
     const repo = new AppExportImportRepo(ctx, id);
     const metadata = await repo.getEntity();
-    if (!metadata) throw new Error('Exported app not found');
-    const filePath = path.resolve(DOWNLOAD_DIR, metadata.filename);
-    // TODO: Проверка существования файла (Добавить)
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${encodeURIComponent(metadata.originalName)}.json"`
-    );
+    if (!metadata)
+      return res.status(404).json({ error: 'Exported app not found' });
+    const jsonData = metadata.manifest;
+    if (!jsonData) {
+      return res.status(404).json({ error: 'File content is missing' });
+    }
+
+    const filename = `${encodeURIComponent(metadata.name)}.json`;
+    const formatted = JSON.stringify(jsonData, null, 2);
+
     res.setHeader('Content-Type', 'application/json');
-    res.sendFile(filePath);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    res.status(200).send(formatted);
   } catch (error) {
     console.error('Download failed:', error);
     res.status(404).json({ error: 'File not found or access denied' });

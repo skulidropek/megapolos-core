@@ -1,19 +1,16 @@
-import path from 'path';
-import { writeFileSync, existsSync, unlinkSync, readFileSync } from 'node:fs';
 import { App } from '../../domain/entities/App.entity';
-import { ExportedAppMetadata } from '../../domain/entities/ExportedAppMetadata.entity';
+import { AppExport } from '../../domain/entities/AppExport.entity';
 import { makeEm } from '../db/mikro-orm';
 import BaseRepo from './base.repository';
 import AppRepo from './app.repository';
 import RepositoryRepo from './repository.repository';
 import { ConfigurationRepo } from './configuration.repository';
 import AppVersionRepo from './app.version.repository';
+import config from '../../domain/config/config';
 
-const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
-
-export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
+export default class AppExportImportRepo extends BaseRepo<AppExport> {
   get entityClass() {
-    return ExportedAppMetadata;
+    return AppExport;
   }
 
   async exportApp(): Promise<void> {
@@ -41,22 +38,17 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
       throw new Error('Application not found for export.');
     }
 
-    const existing = await em.find(ExportedAppMetadata, {
-      originalName: app.name,
+    const existing = await em.find(AppExport, {
+      name: app.name,
     });
     if (existing.length > 0) {
       throw new Error('The application has already been exported.');
     }
 
-    const fileName = `export-${app.name}-${this.id}-${Date.now()}.json`;
-    const filePath = path.join(UPLOADS_DIR, fileName);
-
     try {
-      writeFileSync(filePath, JSON.stringify(app, null, 2), 'utf-8');
-
       await this.create({
-        filename: fileName,
-        originalName: app.name,
+        name: app.name,
+        manifest: app,
       });
     } catch (err) {
       throw new Error('Failed to export template application');
@@ -69,16 +61,7 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
       throw new Error(
         'The app was not found. It may have already been deleted or not exported.'
       );
-    const filePath = path.join(UPLOADS_DIR, exportedApp.filename);
-
-    if (!existsSync(filePath)) {
-      await this.delete();
-      throw new Error(
-        'Exported application file not found, but record was cleaned up'
-      );
-    }
     try {
-      unlinkSync(filePath);
       await this.delete();
     } catch (err) {
       throw new Error('Failed to delete template app');
@@ -95,22 +78,109 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
       );
 
     const [existingApp] = await em.find(App, {
-      name: exportedApp.originalName,
+      name: exportedApp.name,
     });
     if (existingApp)
       throw new Error('The application has already been restored.');
+    await this.installFromManifest(exportedApp.manifest);
+  }
 
-    const filePath = path.join(UPLOADS_DIR, exportedApp.filename);
-
-    if (!existsSync(filePath)) {
-      throw new Error('Exported application file not found');
+  async uploadAppConfig(file) {
+    const em = makeEm();
+    const { filename, mimetype, createReadStream } = await file;
+    if (!filename.endsWith('.json') && mimetype !== 'application/json') {
+      throw new Error('Only .json files are allowed');
     }
-    let data: any;
+    const chunks: Buffer[] = [];
+    for await (const chunk of createReadStream()) {
+      chunks.push(chunk as Buffer);
+    }
+    const jsonString = Buffer.concat(chunks).toString('utf8');
+
+    let jsonData: any;
     try {
-      data = JSON.parse(readFileSync(filePath, 'utf-8'));
-    } catch (err) {
-      throw new Error('Failed to parse exported app file');
+      jsonData = JSON.parse(jsonString);
+    } catch (e) {
+      throw new Error('Invalid JSON format');
     }
+
+    const existing = await em.find(AppExport, {
+      name: jsonData.name,
+    });
+    if (existing.length > 0) {
+      throw new Error('The application has already been exported.');
+    }
+
+    if (
+      typeof jsonData !== 'object' ||
+      jsonData === null ||
+      Array.isArray(jsonData)
+    ) {
+      throw new Error('JSON must be an object');
+    }
+
+    const obj = jsonData as Record<string, unknown>;
+
+    const requiredFields = [
+      'name',
+      'appVersions',
+      'configurations',
+      'repositories',
+    ];
+
+    for (const field of requiredFields) {
+      if (!(field in obj)) {
+        throw new Error('The structure of the uploaded file is incorrect');
+      }
+    }
+
+    try {
+      await this.create({
+        name: jsonData.name,
+        manifest: jsonData,
+      });
+    } catch (err) {
+      throw new Error('Failed to export template application');
+    }
+  }
+
+  async getListAppsStore() {
+    try {
+      const response = await fetch(`${config.catalogUrl}/apps`);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch: ${response.status} ${response.statusText}`
+        );
+      }
+      const files = await response.json();
+      return files;
+    } catch (err) {
+      throw new Error('Error fetching files');
+    }
+  }
+
+  async installAppFromStore() {
+    try {
+      const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch: ${response.status} ${response.statusText}`
+        );
+      }
+      const manifest = await response.json();
+      await this.installFromManifest(manifest);
+    } catch (err) {
+      throw new Error('Error installing app from store: ' + err.message);
+    }
+  }
+  private async installFromManifest(manifest: any): Promise<void> {
+    const em = makeEm();
+
+    const [existingApp] = await em.find(App, { name: manifest.name });
+    if (existingApp)
+      throw new Error('The application has already been installed.');
 
     const idMap = {
       app: null,
@@ -120,13 +190,13 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
 
     try {
       const newApp = await new AppRepo(this.ctx).installApp(this.ctx.user.id, {
-        name: data.name,
-        description: data.description,
-        images: data.images || [],
+        name: manifest.name,
+        description: manifest.description,
+        images: manifest.images || [],
       });
       idMap.app = newApp.id;
 
-      for (const repo of data.repositories) {
+      for (const repo of manifest.repositories) {
         const data = {
           url: repo.url,
           user: repo.user,
@@ -136,17 +206,14 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
           app: idMap.app,
         };
         const newRepo = await new RepositoryRepo(this.ctx).create(data);
-
         idMap.repositories.set(repo.id, newRepo.id);
       }
 
-      for (const config of data.configurations) {
-        const services = config.services.map((service) => {
-          return {
-            ...service,
-            repository: idMap.repositories.get(service.repository),
-          };
-        });
+      for (const config of manifest.configurations) {
+        const services = config.services.map((service) => ({
+          ...service,
+          repository: idMap.repositories.get(service.repository),
+        }));
 
         const newConfig = await new ConfigurationRepo(
           this.ctx
@@ -157,7 +224,8 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
 
         idMap.configurations.set(config.id, newConfig.id);
       }
-      for (const version of data.appVersions) {
+
+      for (const version of manifest.appVersions) {
         const newConfigId = idMap.configurations.get(version.configuration);
         if (!newConfigId) continue;
 
@@ -191,71 +259,9 @@ export default class AppExportImportRepo extends BaseRepo<ExportedAppMetadata> {
         );
       }
     } catch (err) {
-      throw new Error('Restore failed');
-    }
-  }
-
-  async uploadAppConfig(file) {
-    const em = makeEm();
-    const { filename, mimetype, createReadStream } = await file;
-    if (!filename.endsWith('.json') && mimetype !== 'application/json') {
-      throw new Error('Only .json files are allowed');
-    }
-    const chunks: Buffer[] = [];
-    for await (const chunk of createReadStream()) {
-      chunks.push(chunk as Buffer);
-    }
-    const jsonString = Buffer.concat(chunks).toString('utf8');
-
-    let jsonData: any;
-    try {
-      jsonData = JSON.parse(jsonString);
-    } catch (e) {
-      throw new Error('Invalid JSON format');
-    }
-
-    const existing = await em.find(ExportedAppMetadata, {
-      originalName: jsonData.name,
-    });
-    if (existing.length > 0) {
-      throw new Error('The application has already been exported.');
-    }
-
-    if (
-      typeof jsonData !== 'object' ||
-      jsonData === null ||
-      Array.isArray(jsonData)
-    ) {
-      throw new Error('JSON must be an object');
-    }
-
-    const obj = jsonData as Record<string, unknown>;
-
-    const requiredFields = [
-      'name',
-      'appVersions',
-      'configurations',
-      'repositories',
-    ];
-
-    for (const field of requiredFields) {
-      if (!(field in obj)) {
-        throw new Error('The structure of the uploaded file is incorrect');
-      }
-    }
-    const newFilename = `export-${jsonData.name}-${
-      jsonData.id
-    }-${Date.now()}.json`;
-    const filePath = path.join(UPLOADS_DIR, newFilename);
-
-    try {
-      await this.create({
-        filename: newFilename,
-        originalName: jsonData.name,
-      });
-      writeFileSync(filePath, JSON.stringify(jsonData, null, 2), 'utf-8');
-    } catch (err) {
-      throw new Error('Failed to export template application');
+      throw new Error(
+        'Failed to install application from manifest: ' + err.message
+      );
     }
   }
 }

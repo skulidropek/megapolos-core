@@ -1,30 +1,47 @@
-import { Ctx, Resolver, Mutation, Arg } from 'type-graphql';
+import {
+  Ctx,
+  Resolver,
+  Mutation,
+  Arg,
+  Query,
+  ObjectType,
+  Field,
+} from 'type-graphql';
 import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { Context } from '../server';
 import {
   generateGraphQLInputType,
   GenerationType,
 } from '../../../library/graphql_types_generator';
-import { ExportedAppMetadata } from '../../../domain/entities/ExportedAppMetadata.entity';
+import { AppExport } from '../../../domain/entities/AppExport.entity';
 import AppExportImportRepo from '../../../features/repository/appExportImport.repository';
 import { FileUpload, GraphQLUpload, Upload } from 'graphql-upload-ts';
 export const ExportedAppInput = generateGraphQLInputType(
-  ExportedAppMetadata,
+  AppExport,
   'ExportedAppInput',
   GenerationType.input
 );
 
 export const ExportedAppUpdateInput = generateGraphQLInputType(
-  ExportedAppMetadata,
+  AppExport,
   'ExportedAppUpdateInput',
   GenerationType.update
 );
+
+@ObjectType()
+export class AppsStoreList {
+  @Field()
+  id: string;
+
+  @Field()
+  name: string;
+}
 
 @Resolver()
 export class AppExportImportResolver extends CreateBaseResolver(
   'AppExportImport',
   AppExportImportRepo,
-  ExportedAppMetadata,
+  AppExport,
   ExportedAppInput,
   ExportedAppUpdateInput
 ) {
@@ -61,6 +78,20 @@ export class AppExportImportResolver extends CreateBaseResolver(
     @Ctx() ctx: Context
   ) {
     await new AppExportImportRepo(ctx).uploadAppConfig(file);
+    return true;
+  }
+
+  @Query(() => [AppsStoreList])
+  async getListAppsStore(@Ctx() ctx: Context) {
+    return await new AppExportImportRepo(ctx).getListAppsStore();
+  }
+
+  @Mutation(() => Boolean)
+  async installAppFromStore(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    await new AppExportImportRepo(ctx, id).installAppFromStore();
     return true;
   }
 }
