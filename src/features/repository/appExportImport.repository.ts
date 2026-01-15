@@ -160,7 +160,7 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
     }
   }
 
-  async installAppFromStore() {
+  async getAppStoreVersions(): Promise<string[]> {
     try {
       const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
 
@@ -170,12 +170,28 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
         );
       }
       const manifest = await response.json();
-      await this.installFromManifest(manifest);
+      return manifest.appVersions.map((av) => av.version);
+    } catch (err) {
+      throw new Error('Error fetching files');
+    }
+  }
+
+  async installAppFromStore(): Promise<App> {
+    try {
+      const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch: ${response.status} ${response.statusText}`
+        );
+      }
+      const manifest = await response.json();
+      return this.installFromManifest(manifest);
     } catch (err) {
       throw new Error('Error installing app from store: ' + err.message);
     }
   }
-  private async installFromManifest(manifest: any): Promise<void> {
+  private async installFromManifest(manifest: any): Promise<App> {
     const em = makeEm();
 
     const [existingApp] = await em.find(App, { name: manifest.name });
@@ -257,6 +273,8 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
           },
           imagesData
         );
+
+        return newApp;
       }
     } catch (err) {
       throw new Error(

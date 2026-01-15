@@ -197,6 +197,15 @@ export class ContainerRepo extends BaseRepo<Container> {
       await this.removeVolume(volume.id);
     }
 
+    const dbs = await new ContainerDbRepo(this.ctx).getByFields({
+      container: this.id,
+    });
+    for (let i in dbs) {
+      await new ContainerDbRepo(this.ctx, dbs[i].id).delete();
+    }
+
+    await this.removeContainerEnvOptions();
+
     return super.delete();
   }
 

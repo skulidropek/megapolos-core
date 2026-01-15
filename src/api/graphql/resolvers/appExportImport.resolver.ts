@@ -6,6 +6,8 @@ import {
   Query,
   ObjectType,
   Field,
+  FieldResolver,
+  Root,
 } from 'type-graphql';
 import { CreateBaseResolver, BaseTableResolver } from '../base.resolver';
 import { Context } from '../server';
@@ -16,6 +18,7 @@ import {
 import { AppExport } from '../../../domain/entities/AppExport.entity';
 import AppExportImportRepo from '../../../features/repository/appExportImport.repository';
 import { FileUpload, GraphQLUpload, Upload } from 'graphql-upload-ts';
+import { App } from '../../../domain/entities/App.entity';
 export const ExportedAppInput = generateGraphQLInputType(
   AppExport,
   'ExportedAppInput',
@@ -35,6 +38,14 @@ export class AppsStoreList {
 
   @Field()
   name: string;
+}
+
+@Resolver(() => AppsStoreList)
+export class AppsStoreListResolver {
+  @FieldResolver(() => [String])
+  async versions(@Ctx() ctx: Context, @Root() app: AppsStoreList) {
+    return await new AppExportImportRepo(ctx, app.id).getAppStoreVersions();
+  }
 }
 
 @Resolver()
@@ -86,12 +97,19 @@ export class AppExportImportResolver extends CreateBaseResolver(
     return await new AppExportImportRepo(ctx).getListAppsStore();
   }
 
-  @Mutation(() => Boolean)
+  @Query(() => [String])
+  async getAppStoreVersions(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<string[]> {
+    return await new AppExportImportRepo(ctx, id).getAppStoreVersions();
+  }
+
+  @Mutation(() => App)
   async installAppFromStore(
     @Arg('id') id: string,
     @Ctx() ctx: Context
-  ): Promise<boolean> {
-    await new AppExportImportRepo(ctx, id).installAppFromStore();
-    return true;
+  ): Promise<App> {
+    return await new AppExportImportRepo(ctx, id).installAppFromStore();
   }
 }
