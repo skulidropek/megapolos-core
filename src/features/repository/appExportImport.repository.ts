@@ -176,6 +176,22 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
     }
   }
 
+  async getAppStoreAppManifest(): Promise<any> {
+    try {
+      const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch: ${response.status} ${response.statusText}`
+        );
+      }
+      const manifest = await response.json();
+      return manifest;
+    } catch (err) {
+      throw new Error('Error installing app from store: ' + err.message);
+    }
+  }
+
   async installAppFromStore(): Promise<App> {
     try {
       const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);

@@ -19,6 +19,7 @@ import { AppExport } from '../../../domain/entities/AppExport.entity';
 import AppExportImportRepo from '../../../features/repository/appExportImport.repository';
 import { FileUpload, GraphQLUpload, Upload } from 'graphql-upload-ts';
 import { App } from '../../../domain/entities/App.entity';
+import { JSONResolver } from 'graphql-scalars';
 export const ExportedAppInput = generateGraphQLInputType(
   AppExport,
   'ExportedAppInput',
@@ -95,6 +96,11 @@ export class AppExportImportResolver extends CreateBaseResolver(
   @Query(() => [AppsStoreList])
   async getListAppsStore(@Ctx() ctx: Context) {
     return await new AppExportImportRepo(ctx).getListAppsStore();
+  }
+
+  @Query(() => JSONResolver)
+  async getAppStoreManifest(@Ctx() ctx: Context, @Arg('id') id: string) {
+    return await new AppExportImportRepo(ctx, id).getAppStoreAppManifest();
   }
 
   @Query(() => [String])
