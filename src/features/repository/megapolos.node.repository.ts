@@ -143,6 +143,7 @@ export default class NodeRepo extends BaseRepo<Node> {
         containerResult.auth_password = domain.password;
       }
       containerResult.name = instance.name + '_' + container.name;
+      containerResult.name = (containerResult.name as string).slice(0, 43);
       containerResult.description = container.id;
 
       const defaultDockerRegistry = await new DockerRegistryRepo().getDefault();
