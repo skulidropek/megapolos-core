@@ -289,9 +289,9 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
           },
           imagesData
         );
-
-        return newApp;
       }
+
+      return newApp;
     } catch (err) {
       throw new Error(
         'Failed to install application from manifest: ' + err.message
