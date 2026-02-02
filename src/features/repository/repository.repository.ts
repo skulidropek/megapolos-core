@@ -41,8 +41,9 @@ export default class RepositoryRepo extends BaseRepo<Repository> {
   async delete(): Promise<boolean> {
     await this.checkActionAccess(resources.Repository.actions.remove);
     const path = await this._getPath();
+    const result = await super.delete();
     await fse.remove(path);
-    return super.delete();
+    return result;
   }
 
   async fetch(): Promise<void> {

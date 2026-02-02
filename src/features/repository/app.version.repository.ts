@@ -167,7 +167,7 @@ export default class AppVersionRepo extends BaseRepo<AppVersion> {
       const oldImages = await appVersion.images.loadItems();
 
       appVersion.images.removeAll();
-      this.delete();
+      await this.delete();
       await em.persistAndFlush(appVersion);
 
       for (const oldImage of oldImages) {

@@ -23,6 +23,7 @@ import AppInstanceRepo from '../../../features/repository/app.instance.repositor
 import { AppInstance } from '../../../domain/entities/AppInstance.entity';
 import { Configuration } from '../../../domain/entities/configuration/Configuration.entity';
 import { ConfigurationRepo } from '../../../features/repository/configuration.repository';
+
 export const AppInput = generateGraphQLInputType(
   App,
   'AppInput',

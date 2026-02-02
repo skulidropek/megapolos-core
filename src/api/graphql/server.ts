@@ -185,6 +185,12 @@ import {
   ConfigurationServiceFieldsResolver,
   ConfigurationVolumeFieldsResolver,
 } from './resolvers/configuration.resolver';
+import {
+  AppExportImportResolver,
+  AppsStoreListResolver,
+} from './resolvers/appExportImport.resolver';
+import { graphqlUploadExpress } from 'graphql-upload-ts';
+import { downloadExportedApp } from '../web/exportAppDownload';
 
 export class Context {
   constructor(data: {
@@ -273,21 +279,35 @@ async function bootstrap() {
       ConfigurationPortResolver,
       ConfigurationDbWithUserResolver,
       ConfigurationEnvOptionResolver,
+      AppExportImportResolver,
+      AppsStoreListResolver,
     ],
   });
 
   const server = new ApolloServer<Context>({
     schema,
     introspection: true,
+    csrfPrevention: false,
   });
 
   await server.start();
   const app = express();
 
-  app.use(express.json());
+  app.get('/api/exported-app/download/:id', cors(), downloadExportedApp);
+
   app.use(
     '/',
     cors(),
+    (req, res, next) => {
+      const contentType = req.headers['content-type'];
+      if (contentType && contentType.includes('multipart/form-data')) {
+        return graphqlUploadExpress({
+          maxFileSize: 10 * 1024 * 1024,
+          maxFiles: 1,
+        })(req, res, next);
+      }
+      express.json({ limit: '10mb' })(req, res, next);
+    },
     expressMiddleware(server, {
       // context: async ({ req, res }) => {
       //   return { req, res, user: null };

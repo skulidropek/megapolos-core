@@ -202,9 +202,10 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     const containers = (await this.getContainers()).map(
       (container) => new ContainerRepo(this.ctx, container.id)
     );
-    containers.forEach((container) => {
-      container.delete();
-    });
+    for (let i in containers) {
+      const container = containers[i];
+      await container.delete();
+    };
 
     await super.delete();
 

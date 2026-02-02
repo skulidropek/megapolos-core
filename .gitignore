@@ -5,3 +5,4 @@ config/config.json
 /.vscode
 dist
 temp
+/uploads/*

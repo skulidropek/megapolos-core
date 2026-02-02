@@ -12,6 +12,7 @@ import { BaseEntity } from './Base.entity';
 import { Hint } from '../../library/graphql_types_generator';
 import { AppVersion } from './AppVersion.entity';
 import { Configuration } from './configuration/Configuration.entity';
+import { Repository } from './Repository.entity';
 
 @Entity()
 @ObjectType()
@@ -42,4 +43,9 @@ export class App extends BaseEntity {
   @Field(() => [Configuration])
   @Hint({ skip: true })
   configurations = new Collection<Configuration>(this);
+
+  @OneToMany(() => Repository, (repositories) => repositories.app)
+  @Field(() => [Repository])
+  @Hint({ skip: true })
+  repositories = new Collection<Repository>(this);
 }
