@@ -33,21 +33,36 @@ export const ExportedAppUpdateInput = generateGraphQLInputType(
 );
 
 @ObjectType()
+export class AppStoreVersion {
+  @Field()
+  id: string;
+  @Field()
+  version: string;
+}
+
+@ObjectType()
 export class AppsStoreList {
   @Field()
   id: string;
-
+  @Field()
+  type: string;
+  @Field()
+  description: string;
+  @Field()
+  iconUrl: string;
   @Field()
   name: string;
+  @Field(() => [AppStoreVersion])
+  versions: AppStoreVersion[];
 }
 
-@Resolver(() => AppsStoreList)
-export class AppsStoreListResolver {
-  @FieldResolver(() => [String])
-  async versions(@Ctx() ctx: Context, @Root() app: AppsStoreList) {
-    return await new AppExportImportRepo(ctx, app.id).getAppStoreVersions();
-  }
-}
+// @Resolver(() => AppsStoreList)
+// export class AppsStoreListResolver {
+//   @FieldResolver(() => [String])
+//   async versions(@Ctx() ctx: Context, @Root() app: AppsStoreList) {
+//     return await new AppExportImportRepo(ctx, app.id).getAppStoreVersions();
+//   }
+// }
 
 @Resolver()
 export class AppExportImportResolver extends CreateBaseResolver(
@@ -99,8 +114,14 @@ export class AppExportImportResolver extends CreateBaseResolver(
   }
 
   @Query(() => JSONResolver)
-  async getAppStoreManifest(@Ctx() ctx: Context, @Arg('id') id: string) {
-    return await new AppExportImportRepo(ctx, id).getAppStoreAppManifest();
+  async getAppStoreManifest(
+    @Ctx() ctx: Context,
+    @Arg('id') id: string,
+    @Arg('versionId') versionId: string
+  ) {
+    return await new AppExportImportRepo(ctx, id).getAppStoreAppManifest(
+      versionId
+    );
   }
 
   @Query(() => [String])
@@ -114,8 +135,11 @@ export class AppExportImportResolver extends CreateBaseResolver(
   @Mutation(() => App)
   async installAppFromStore(
     @Arg('id') id: string,
+    @Arg('versionId') versionId: string,
     @Ctx() ctx: Context
   ): Promise<App> {
-    return await new AppExportImportRepo(ctx, id).installAppFromStore();
+    return await new AppExportImportRepo(ctx, id).installAppFromStore(
+      versionId
+    );
   }
 }

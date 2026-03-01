@@ -187,7 +187,7 @@ import {
 } from './resolvers/configuration.resolver';
 import {
   AppExportImportResolver,
-  AppsStoreListResolver,
+  // AppsStoreListResolver,
 } from './resolvers/appExportImport.resolver';
 import { graphqlUploadExpress } from 'graphql-upload-ts';
 import { downloadExportedApp } from '../web/exportAppDownload';
@@ -280,7 +280,7 @@ async function bootstrap() {
       ConfigurationDbWithUserResolver,
       ConfigurationEnvOptionResolver,
       AppExportImportResolver,
-      AppsStoreListResolver,
+      // AppsStoreListResolver,
     ],
   });
 

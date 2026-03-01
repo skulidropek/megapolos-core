@@ -176,9 +176,11 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
     }
   }
 
-  async getAppStoreAppManifest(): Promise<any> {
+  async getAppStoreAppManifest(versionId: string): Promise<any> {
     try {
-      const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
+      const response = await fetch(
+        `${config.catalogUrl}/apps/${this.id}/versions/${versionId}`
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -192,9 +194,11 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
     }
   }
 
-  async installAppFromStore(): Promise<App> {
+  async installAppFromStore(versionId: string): Promise<App> {
     try {
-      const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
+      const response = await fetch(
+        `${config.catalogUrl}/apps/${this.id}/versions/${versionId}`
+      );
 
       if (!response.ok) {
         throw new Error(
