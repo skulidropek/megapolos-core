@@ -44,12 +44,12 @@ export class AppStoreVersion {
 export class AppsStoreList {
   @Field()
   id: string;
-  @Field()
-  type: string;
+  @Field({ nullable: true })
+  type: string | null;
   @Field()
   description: string;
-  @Field()
-  iconUrl: string;
+  @Field({ nullable: true })
+  iconUrl: string | null;
   @Field()
   name: string;
   @Field(() => [AppStoreVersion])
