@@ -38,6 +38,10 @@ export class AppStoreVersion {
   id: string;
   @Field()
   version: string;
+  @Field({ nullable: true })
+  versionComment: string | null;
+  @Field(() => Date, { nullable: true })
+  versionCreated: Date | null;
 }
 
 @ObjectType()
