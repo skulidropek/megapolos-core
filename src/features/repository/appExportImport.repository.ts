@@ -38,12 +38,12 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
       throw new Error('Application not found for export.');
     }
 
-    const existing = await em.find(AppExport, {
-      name: app.name,
-    });
-    if (existing.length > 0) {
-      throw new Error('The application has already been exported.');
-    }
+    // const existing = await em.find(AppExport, {
+    //   name: app.name,
+    // });
+    // if (existing.length > 0) {
+    //   throw new Error('The application has already been exported.');
+    // }
 
     try {
       await this.create({

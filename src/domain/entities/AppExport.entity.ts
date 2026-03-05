@@ -6,7 +6,7 @@ import { BaseEntity } from './Base.entity';
 @Entity({ tableName: 'app_export' })
 @ObjectType()
 export class AppExport extends BaseEntity {
-  @Property({ type: 'text', unique: true })
+  @Property({ type: 'text' })
   @Field()
   name!: string;
 
