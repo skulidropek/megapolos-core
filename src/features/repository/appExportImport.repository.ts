@@ -194,11 +194,9 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
     }
   }
 
-  async installAppFromStore(versionId: string): Promise<App> {
+  async installAppFromStore(): Promise<App> {
     try {
-      const response = await fetch(
-        `${config.catalogUrl}/apps/${this.id}/versions/${versionId}`
-      );
+      const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
 
       if (!response.ok) {
         throw new Error(
