@@ -156,7 +156,7 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
       const files = await response.json();
       return files;
     } catch (err) {
-      throw new Error('Error fetching files');
+      throw err;
     }
   }
 
@@ -172,7 +172,7 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
       const manifest = await response.json();
       return manifest.appVersions.map((av) => av.version);
     } catch (err) {
-      throw new Error('Error fetching files');
+      throw err;
     }
   }
 
