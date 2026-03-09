@@ -156,7 +156,7 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
       const files = await response.json();
       return files;
     } catch (err) {
-      throw new Error('Error fetching files');
+      throw err;
     }
   }
 
@@ -172,13 +172,15 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
       const manifest = await response.json();
       return manifest.appVersions.map((av) => av.version);
     } catch (err) {
-      throw new Error('Error fetching files');
+      throw err;
     }
   }
 
-  async getAppStoreAppManifest(): Promise<any> {
+  async getAppStoreAppManifest(versionId: string): Promise<any> {
     try {
-      const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
+      const response = await fetch(
+        `${config.catalogUrl}/apps/${this.id}/versions/${versionId}`
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -192,9 +194,11 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
     }
   }
 
-  async installAppFromStore(): Promise<App> {
+  async installAppFromStore(versionId: string): Promise<App> {
     try {
-      const response = await fetch(`${config.catalogUrl}/apps/${this.id}`);
+      const response = await fetch(
+        `${config.catalogUrl}/apps/${this.id}/versions/${versionId}`
+      );
 
       if (!response.ok) {
         throw new Error(
