@@ -143,4 +143,13 @@ export class AppExportImportResolver extends CreateBaseResolver(
   ): Promise<App> {
     return await new AppExportImportRepo(ctx, id).installAppFromStore();
   }
+
+  @Mutation(() => [String])
+  async syncAppVersions(
+    @Arg('appName') appName: string,
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<string[]> {
+    return await new AppExportImportRepo(ctx, id).syncAppVersions(appName);
+  }
 }

@@ -7,6 +7,9 @@ import RepositoryRepo from './repository.repository';
 import { ConfigurationRepo } from './configuration.repository';
 import AppVersionRepo from './app.version.repository';
 import config from '../../domain/config/config';
+import { AppVersion } from '../../domain/entities/AppVersion.entity';
+import { Repository } from '../../domain/entities/Repository.entity';
+import { Configuration } from '../../domain/entities/configuration/Configuration.entity';
 
 export default class AppExportImportRepo extends BaseRepo<AppExport> {
   get entityClass() {
@@ -298,6 +301,152 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
       throw new Error(
         'Failed to install application from manifest: ' + err.message
       );
+    }
+  }
+
+  async syncAppVersions(appName: string) {
+    const em = makeEm();
+    const localVersions = await em.find(
+      AppVersion,
+      { app: { name: appName } },
+      { fields: ['version'] }
+    );
+    const versionStrings = localVersions.map((v) => v.version);
+    try {
+      const response = await fetch(
+        `${config.catalogUrl}/apps/${this.id}/versions`
+      );
+      if (!response.ok) {
+        throw new Error(`Catalog sync failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const remoteVersions = data.versionList;
+
+      const localSet = new Set(versionStrings);
+      const versionsToDownload = remoteVersions.filter((v) => !localSet.has(v));
+
+      const loadManifests = versionsToDownload.map(
+        (version) => data.manifests[version]
+      );
+      if (versionsToDownload.length > 0) {
+        this.loadAppVersion(loadManifests);
+      }
+
+      return versionsToDownload;
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new Error(`Sync failed: ${err.message}`);
+      }
+      throw new Error('An unexpected error occurred during synchronization');
+    }
+  }
+
+  private async loadAppVersion(manifests: any) {
+    const em = makeEm();
+    const appName = manifests[0].name;
+
+    const [app] = await em.find(App, { name: appName });
+
+    const idMap = {
+      app: null,
+      repositories: new Map(),
+      configurations: new Map(),
+    };
+
+    try {
+      // const newApp = await new AppRepo(this.ctx).installApp(this.ctx.user.id, {
+      //   name: manifest.name,
+      //   description: manifest.description,
+      //   images: manifest.images || [],
+      // });
+      idMap.app = app.id;
+      for (const manifest of manifests) {
+        for (const repo of manifest.repositories) {
+          const data = {
+            url: repo.url,
+            user: repo.user,
+            password: repo.password,
+            name: repo.name,
+            repositoryType: repo.repositoryType,
+            app: idMap.app,
+          };
+
+          const [repository] = await em.find(Repository, {
+            name: repo.name,
+            url: repo.url,
+          });
+
+          if (!repository) {
+            const newRepo = await new RepositoryRepo(this.ctx).create(data);
+
+            idMap.repositories.set(repo.id, newRepo.id);
+          } else {
+            idMap.repositories.set(repo.id, repository.id);
+          }
+        }
+
+        for (const config of manifest.configurations) {
+          const services = config.services.map((service) => ({
+            ...service,
+            repository: idMap.repositories.get(service.repository),
+          }));
+
+          const [conf] = await em.find(Configuration, {
+            name: config.name,
+          });
+
+          if (!conf) {
+            const newConfig = await new ConfigurationRepo(
+              this.ctx
+            ).createOrEditFromData({
+              appId: idMap.app!,
+              configurationData: { name: config.name, services },
+            });
+
+            idMap.configurations.set(config.id, newConfig.id);
+          } else {
+            idMap.configurations.set(config.id, conf.id);
+          }
+        }
+
+        for (const version of manifest.appVersions) {
+          const newConfigId = idMap.configurations.get(version.configuration);
+
+          if (!newConfigId) continue;
+
+          const imagesData = version.images.map((img) => ({
+            imageData: {
+              name: img.name,
+              role: img.role,
+              image: img.image,
+              innerPort: img.innerPort,
+              hasState: img.hasState,
+              buildNumber: img.buildNumber,
+              version: img.version || '',
+              versionComment: img.versionComment,
+              branch: img.branch,
+              status: img.status,
+              repository: idMap.repositories.get(img.repository),
+              app: idMap.app,
+              commitId: img.commitId,
+            },
+          }));
+
+          await new AppVersionRepo(this.ctx).createAppVersion(
+            {
+              app: idMap.app!,
+              configuration: newConfigId,
+              version: version.version,
+              buildNumber: version.buildNumber,
+              versionComment: version.versionComment,
+            },
+            imagesData
+          );
+        }
+      }
+    } catch (err) {
+      throw new Error('Failed to load application version: ' + err.message);
     }
   }
 }
