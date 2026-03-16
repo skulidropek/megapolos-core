@@ -38,6 +38,10 @@ export class AppStoreVersion {
   id: string;
   @Field()
   version: string;
+  @Field({ nullable: true })
+  versionComment: string | null;
+  @Field(() => Date, { nullable: true })
+  versionCreated: Date | null;
 }
 
 @ObjectType()
@@ -135,11 +139,17 @@ export class AppExportImportResolver extends CreateBaseResolver(
   @Mutation(() => App)
   async installAppFromStore(
     @Arg('id') id: string,
-    @Arg('versionId') versionId: string,
     @Ctx() ctx: Context
   ): Promise<App> {
-    return await new AppExportImportRepo(ctx, id).installAppFromStore(
-      versionId
-    );
+    return await new AppExportImportRepo(ctx, id).installAppFromStore();
+  }
+
+  @Mutation(() => [String])
+  async syncAppVersions(
+    @Arg('appName') appName: string,
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<string[]> {
+    return await new AppExportImportRepo(ctx, id).syncAppVersions(appName);
   }
 }
