@@ -85,7 +85,7 @@ export class Container extends BaseEntity {
   @Field({ nullable: true })
   uptime?: Date;
 
-  @Field()
-  @Property({ length: -1 })
-  role: string;
+  @Field({ nullable: true })
+  @Property({ length: -1, nullable: true })
+  role?: string;
 }
