@@ -44,10 +44,6 @@
         with_registry_auth: yes
         compose:
         - "{{ compose_file }}"
-  - name: Update services
-    ansible.builtin.shell: docker service update --image {{ item.image }} {{ name }}_{{ item.name }}
-    with_items: "{{ data.containers }}"
-    when: data.isPartialUpdate is defined and data.isPartialUpdate == True and item.isUpdated == True
   - name: clear docker images
     shell: |
       docker image prune -a -f
