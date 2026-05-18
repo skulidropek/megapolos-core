@@ -10,6 +10,7 @@ import config from '../../domain/config/config';
 import { AppVersion } from '../../domain/entities/AppVersion.entity';
 import { Repository } from '../../domain/entities/Repository.entity';
 import { Configuration } from '../../domain/entities/configuration/Configuration.entity';
+import { FileUpload } from 'graphql-upload-ts';
 
 export default class AppExportImportRepo extends BaseRepo<AppExport> {
   get entityClass() {
@@ -88,7 +89,7 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
     await this.installFromManifest(exportedApp.manifest);
   }
 
-  async uploadAppConfig(file) {
+  async uploadAppConfig(file: Promise<FileUpload>) {
     const em = makeEm();
     const { filename, mimetype, createReadStream } = await file;
     if (!filename.endsWith('.json') && mimetype !== 'application/json') {
@@ -98,7 +99,7 @@ export default class AppExportImportRepo extends BaseRepo<AppExport> {
     for await (const chunk of createReadStream()) {
       chunks.push(chunk as Buffer);
     }
-    const jsonString = Buffer.concat(chunks).toString('utf8');
+    const jsonString = Buffer.concat(chunks as any).toString('utf8');
 
     let jsonData: any;
     try {
