@@ -92,7 +92,11 @@ export default class NodeRepo extends BaseRepo<Node> {
     NodeRepo.currentNode = new NodeRepo(undefined);
   }
 
-  async updateNode(init?: boolean, withRebuild?: boolean) {
+  async updateNode(
+    init?: boolean,
+    withRebuild?: boolean,
+    containerIds?: string[]
+  ) {
     const data = await this.getEntity();
     if (data.lifeStatus === 'updating') {
       throw new Error('Node is updating');
@@ -102,6 +106,7 @@ export default class NodeRepo extends BaseRepo<Node> {
       volumes: [],
       host: data.host,
       node: data,
+      isPartialUpdate: !!(containerIds && containerIds.length),
     };
     const containers: ContainerTable[] = await knex('container').where({
       node_id: this.id,
@@ -160,6 +165,8 @@ export default class NodeRepo extends BaseRepo<Node> {
       containerResult.domain_name = domain ? domain.name : null;
       containerResult.auth = domain ? domain.auth : '';
       containerResult.disabled = container.life_status !== 'running';
+      containerResult.isUpdated =
+        !containerIds || !containerIds.length || containerIds.includes(container.id);
 
       for (let j in envs) {
         let env = envs[j];

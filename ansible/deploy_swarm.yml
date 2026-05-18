@@ -7,7 +7,7 @@
   tasks:
   - name: init
     import_tasks: init_include.yml
-    when: data.init is defined and data.init != None
+    when: data.init is defined and data.init != None and data.init != False
   - name: volume directories
     ansible.builtin.file:
       path: "{{ item }}"
@@ -26,8 +26,13 @@
         mode: 0444
     register: stack_file
     tags: stack
-  - name: Pull images
+  - name: Pull all images
     ansible.builtin.shell: docker compose -f /opt/megapolos_swarm_compose.yml pull
+    when: data.isPartialUpdate is not defined or data.isPartialUpdate != True
+  - name: Pull specific images
+    ansible.builtin.shell: docker compose -f /opt/megapolos_swarm_compose.yml pull {{ item.name }}
+    with_items: "{{ data.containers }}"
+    when: data.isPartialUpdate is defined and data.isPartialUpdate == True and item.isUpdated == True
   - name: start swarm
     community.docker.docker_swarm:
       state: present
@@ -39,6 +44,10 @@
         with_registry_auth: yes
         compose:
         - "{{ compose_file }}"
+  - name: Update services
+    ansible.builtin.shell: docker service update --image {{ item.image }} {{ name }}_{{ item.name }}
+    with_items: "{{ data.containers }}"
+    when: data.isPartialUpdate is defined and data.isPartialUpdate == True and item.isUpdated == True
   - name: clear docker images
     shell: |
       docker image prune -a -f

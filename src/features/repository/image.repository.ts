@@ -28,6 +28,7 @@ import NodeRepo from './megapolos.node.repository';
 import { ImageEnvRequirement } from '../../domain/entities/ImageEnvRequirement.entity';
 import { ImageEnvRequirementInput } from '../../api/graphql/resolvers/image.resolver';
 import docker from '../docker/coreDocker';
+import { Context } from '../../api/graphql/server';
 import DockerRegistryRepo from './docker.registry.repository';
 import { RightsChecker } from '../rights/RightsChecker';
 
@@ -207,7 +208,7 @@ export default class ImageRepo extends BaseRepo<Image> {
     return new AppRepo(this.ctx, data.app.id);
   }
 
-  async updateNodes(): Promise<void> {
+  async updateNodes(onlyRelated?: boolean): Promise<void> {
     await this.checkAppAccess(
       resources.App.actions.build_images,
       resources.Image.actions.update_nodes
@@ -216,15 +217,55 @@ export default class ImageRepo extends BaseRepo<Image> {
     const containers = await new ContainerRepo(this.ctx).getByFields({
       image: this.id,
     });
-    const nodes: string[] = [];
+    const nodes: { [nodeId: string]: string[] } = {};
     for (let i in containers) {
       const container = containers[i];
-      if (container.node?.id && !nodes.includes(container.node.id)) {
-        nodes.push(container.node.id);
-        await new NodeRepo(this.ctx, container.node.id).updateNode();
+      if (container.node?.id) {
+        if (!nodes[container.node.id]) {
+          nodes[container.node.id] = [];
+        }
+        nodes[container.node.id].push(container.id);
       }
     }
-    console.log(nodes);
+    for (const nodeId in nodes) {
+      await new NodeRepo(this.ctx, nodeId).updateNode(
+        false,
+        false,
+        onlyRelated ? nodes[nodeId] : undefined
+      );
+    }
+    console.log(Object.keys(nodes));
+  }
+
+  static async bulkUpdateNodes(
+    ctx: Context,
+    imageIds: string[],
+    onlyRelated?: boolean
+  ): Promise<void> {
+    const context = ctx.cloneNoRightsCheck();
+    const containers = await new ContainerRepo(context).getByFields({
+      image: { id: imageIds },
+    });
+
+    const nodes: { [nodeId: string]: string[] } = {};
+    for (const container of containers) {
+      if (container.node?.id) {
+        if (!nodes[container.node.id]) {
+          nodes[container.node.id] = [];
+        }
+        if (!nodes[container.node.id].includes(container.id)) {
+          nodes[container.node.id].push(container.id);
+        }
+      }
+    }
+
+    for (const nodeId in nodes) {
+      await new NodeRepo(context, nodeId).updateNode(
+        false,
+        false,
+        onlyRelated ? nodes[nodeId] : undefined
+      );
+    }
   }
 
   async changeEnvs(

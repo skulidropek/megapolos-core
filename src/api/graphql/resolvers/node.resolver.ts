@@ -68,9 +68,11 @@ export class NodeResolver extends CreateBaseResolver(
     @Arg('id') id: string,
     @Arg('init', () => Boolean, { nullable: true }) init?: boolean,
     @Arg('withRebuild', () => Boolean, { nullable: true })
-    withRebuild?: boolean
+    withRebuild?: boolean,
+    @Arg('containerIds', () => [String], { nullable: true })
+    containerIds?: string[]
   ): Promise<boolean> {
-    await new NodeRepo(ctx, id).updateNode(init, withRebuild);
+    await new NodeRepo(ctx, id).updateNode(init, withRebuild, containerIds);
     return true;
   }
 

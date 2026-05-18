@@ -103,6 +103,8 @@ export class ImageResolver extends CreateBaseResolver(
   @Mutation(() => Boolean)
   async updateNodesOfImage(
     @Arg('imageId') imageId: string,
+    @Arg('onlyRelated', () => Boolean, { nullable: true })
+    onlyRelated: boolean,
     @Ctx() ctx: Context
   ): Promise<boolean> {
     var imageRepo = new ImageRepo(ctx, imageId);
@@ -111,7 +113,26 @@ export class ImageResolver extends CreateBaseResolver(
       resources.Image.actions.update_nodes
     );
 
-    void imageRepo.updateNodes(); //!!! fire-and-forget execution
+    void imageRepo.updateNodes(onlyRelated); //!!! fire-and-forget execution
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async updateNodesOfImages(
+    @Arg('imageIds', () => [String]) imageIds: string[],
+    @Arg('onlyRelated', () => Boolean, { nullable: true })
+    onlyRelated: boolean,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    for (const imageId of imageIds) {
+      const imageRepo = new ImageRepo(ctx, imageId);
+      await imageRepo.checkAppAccess(
+        resources.App.actions.build_images,
+        resources.Image.actions.update_nodes
+      );
+    }
+
+    void ImageRepo.bulkUpdateNodes(ctx, imageIds, onlyRelated); //!!! fire-and-forget execution
     return true;
   }
 
