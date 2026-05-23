@@ -30,6 +30,16 @@ import { Db } from '../../domain/entities/Db.entity';
 import { DbUser } from '../../domain/entities/DbUser.entity';
 import { Volume } from '../../domain/entities/Volume.entity';
 import { ContainerEnvOption } from '../../domain/entities/ContainerEnvOption.entity';
+import ArtifactRepo from './artifact.repository';
+import DbBackupRepo from './db/db.backup.repository';
+import VolumeBackupRepo from './volume.backup.repository';
+import AppInstanceBackupRepo from './app.instance.backup.repository';
+import LogRepo from './log.repository';
+import { LogType } from '../db/tables';
+import DbmsRepo from './dbms/dbms.repository';
+import AdmZip from 'adm-zip';
+import fse from 'fs-extra';
+import { megapolosPath } from '../../..';
 
 export interface InstanceRuntimeVariables {
   containers: {
@@ -254,6 +264,128 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         await containerObject.getRuntimeVariables(true);
     }
     return result;
+  }
+
+  async export(): Promise<string> {
+    await this.checkActionAccess(resources.AppInstance.actions.read);
+    const instance = await this.getEntity();
+    const containers = await this.getContainers();
+
+    const artifactRepo = new ArtifactRepo(this.ctx);
+    const exportArtifact = await artifactRepo.create({
+      name: 'Export instance ' + instance.name,
+      type: 'instance_export',
+    });
+
+    const exportPath = await artifactRepo.getPath();
+    const manifestPath = exportPath + '/manifest.json';
+    const log = new LogRepo(this.ctx);
+    await log.create({
+      name: 'Export instance ' + instance.name,
+      type: LogType.InstanceExport,
+      objectId: instance.id,
+      objectName: instance.name,
+    });
+
+    const manifest: any = {
+      instanceId: instance.id,
+      name: instance.name,
+      exportDate: new Date().toISOString(),
+      containers: [],
+    };
+
+    for (const container of containers) {
+      const containerRepo = new ContainerRepo(this.ctx, container.id);
+      const containerDomain = await containerRepo.getDomain();
+      const containerVolumes = await containerRepo.getVolumes();
+      const containerDbs = await new ContainerDbRepo(this.ctx).getByFields({
+        container: container.id,
+      });
+
+      const image = (await containerRepo.getImage()).getEntity();
+
+      const containerInfo = {
+        id: container.id,
+        name: container.name,
+        role: container.role,
+        image: (await image).image,
+        domains: containerDomain ? [containerDomain.name] : [],
+        volumes: [],
+        databases: [],
+      };
+
+      // Backup Databases
+      for (const containerDb of containerDbs) {
+        const dbRepo = new DbRepo(this.ctx, containerDb.db.id);
+        const db = await dbRepo.getEntity();
+        const dbmsRepo = await DbmsRepo.getById(db.dbms.id);
+        dbmsRepo.ctx = this.ctx;
+        
+        const dbBackup = await dbmsRepo.backup(
+          db.id,
+          'Export ' + instance.name + ' db ' + db.name,
+          false
+        );
+
+        const dbArtifactPath = await (await new DbBackupRepo(this.ctx, dbBackup.id).getArtifactRepo()).getPath();
+        const dbBackupFile = 'db_' + container.role + '_' + db.name + '.sql';
+        await fse.copy(dbArtifactPath + '/backup.sql', exportPath + '/' + dbBackupFile);
+
+        containerInfo.databases.push({
+          name: db.name,
+          role: containerDb.role,
+          backupFile: dbBackupFile,
+        });
+      }
+
+      // Backup Volumes
+      for (const item of containerVolumes) {
+        const containerVolume = item.containerVolume;
+        const volumeRepo = item.volume;
+        const volume = await volumeRepo.getEntity();
+        const volumeBackupRepo = new VolumeBackupRepo(this.ctx);
+        const volumeBackup = await volumeBackupRepo.backup(
+          volumeRepo,
+          'Export ' + instance.name + ' vol ' + volume.name
+        );
+
+        const volumeArtifactPath = await (new ArtifactRepo(this.ctx, volumeBackup.artifact.id)).getPath();
+        const volumeBackupFile = 'vol_' + container.role + '_' + (containerVolume.role || 'default') + '.zip';
+        await fse.copy(volumeArtifactPath + '/backup.zip', exportPath + '/' + volumeBackupFile);
+
+        containerInfo.volumes.push({
+          name: volume.name,
+          role: containerVolume.role,
+          innerPath: containerVolume.innerPath,
+          backupFile: volumeBackupFile,
+        });
+      }
+
+      manifest.containers.push(containerInfo);
+    }
+
+    // Write manifest
+    await fse.writeJson(manifestPath, manifest, { spaces: 2 });
+
+    // Zip everything into a temporary file first to avoid zipping the result
+    const zip = new AdmZip();
+    zip.addLocalFolder(exportPath);
+    const tempZipPath = megapolosPath + '/temp/' + exportArtifact.id + '.zip';
+    await fse.ensureDir(megapolosPath + '/temp');
+    zip.writeZip(tempZipPath);
+
+    // Move to artifact directory
+    await fse.move(tempZipPath, exportPath + '/export.zip');
+
+    // Create AppInstanceBackup record
+    await new AppInstanceBackupRepo(this.ctx).create({
+      name: 'Export ' + instance.name + ' ' + new Date().toLocaleString(),
+      appInstance: instance,
+      artifact: exportArtifact,
+    });
+
+    await log.close();
+    return exportArtifact.id;
   }
 
   async createConfiguratedInstance(

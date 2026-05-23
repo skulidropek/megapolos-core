@@ -1,26 +1,28 @@
 import {
   Entity,
   ManyToOne,
-  type Opt,
-  PrimaryKey,
   Property,
 } from '@mikro-orm/core';
+import { Field, ID, ObjectType } from 'type-graphql';
+import { BaseEntity } from './Base.entity';
 import { Artifact } from './Artifact.entity';
+import { Volume } from './Volume.entity';
+import { Hint } from '../../library/graphql_types_generator';
 
 @Entity()
-export class VolumeBackup {
-  @PrimaryKey({ type: 'uuid', defaultRaw: `gen_random_uuid()` })
-  id!: string & Opt;
-
+@ObjectType()
+export class VolumeBackup extends BaseEntity {
   @Property({ length: -1 })
+  @Field()
   name!: string;
 
-  @Property({ columnType: 'timestamp(6)', nullable: true, defaultRaw: `now()` })
-  createDate?: Date;
-
-  @Property({ columnType: 'timestamp(6)', nullable: true })
-  updateDate?: Date;
-
   @ManyToOne({ entity: () => Artifact, nullable: true })
+  @Field(() => Artifact, { nullable: true })
+  @Hint({ type: () => Artifact })
   artifact?: Artifact;
+
+  @ManyToOne({ entity: () => Volume, nullable: true })
+  @Field(() => Volume, { nullable: true })
+  @Hint({ type: () => Volume })
+  volume?: Volume;
 }
