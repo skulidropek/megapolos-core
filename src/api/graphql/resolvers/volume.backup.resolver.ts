@@ -34,10 +34,11 @@ export class VolumeBackupResolver {
   @Mutation(() => VolumeBackup)
   async backupVolume(
     @Arg('volumeId') volumeId: string,
+    @Arg('containerId') containerId: string,
     @Ctx() ctx: Context
   ): Promise<VolumeBackup> {
     const volumeRepo = new VolumeRepo(ctx, volumeId);
-    return new VolumeBackupRepo(ctx).backup(volumeRepo);
+    return new VolumeBackupRepo(ctx).backup(volumeRepo, containerId);
   }
 }
 

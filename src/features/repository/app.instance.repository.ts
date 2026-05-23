@@ -287,7 +287,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
       objectName: instance.name,
     });
 
-    const manifest: any = {
+    const manifest = {
       instanceId: instance.id,
       name: instance.name,
       exportDate: new Date().toISOString(),
@@ -346,6 +346,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         const volumeBackupRepo = new VolumeBackupRepo(this.ctx);
         const volumeBackup = await volumeBackupRepo.backup(
           volumeRepo,
+          container.id,
           'Export ' + instance.name + ' vol ' + volume.name
         );
 
@@ -366,16 +367,6 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
 
     // Write manifest
     await fse.writeJson(manifestPath, manifest, { spaces: 2 });
-
-    // Zip everything into a temporary file first to avoid zipping the result
-    const zip = new AdmZip();
-    zip.addLocalFolder(exportPath);
-    const tempZipPath = megapolosPath + '/temp/' + exportArtifact.id + '.zip';
-    await fse.ensureDir(megapolosPath + '/temp');
-    zip.writeZip(tempZipPath);
-
-    // Move to artifact directory
-    await fse.move(tempZipPath, exportPath + '/export.zip');
 
     // Create AppInstanceBackup record
     await new AppInstanceBackupRepo(this.ctx).create({

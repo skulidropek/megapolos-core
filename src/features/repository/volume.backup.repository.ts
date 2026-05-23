@@ -2,6 +2,7 @@ import { VolumeBackup } from '../../domain/entities/VolumeBackup.entity';
 import ArtifactRepo from './artifact.repository';
 import BaseRepo from './base.repository';
 import VolumeRepo from './volume.repository';
+import { ContainerRepo } from './cantainer/container.repository';
 import LogRepo from './log.repository';
 import { LogType } from '../db/tables';
 import NodeRepo from './megapolos.node.repository';
@@ -15,7 +16,11 @@ export default class VolumeBackupRepo extends BaseRepo<VolumeBackup> {
     return VolumeBackup;
   }
 
-  async backup(volumeRepo: VolumeRepo, customName?: string): Promise<VolumeBackup> {
+  async backup(
+    volumeRepo: VolumeRepo,
+    containerId: string,
+    customName?: string
+  ): Promise<VolumeBackup> {
     const volume = await volumeRepo.getEntity();
     const artifactRepo = new ArtifactRepo(this.ctx);
     const backupName = customName || ('Backup volume ' + volume.name);
@@ -28,6 +33,7 @@ export default class VolumeBackupRepo extends BaseRepo<VolumeBackup> {
       name: backupName,
       artifact: artifact,
       volume: volume,
+      container: containerId,
     });
 
     const log = new LogRepo(this.ctx);
@@ -38,9 +44,8 @@ export default class VolumeBackupRepo extends BaseRepo<VolumeBackup> {
       objectName: volumeBackup.name,
     });
 
-    const nodeRepo = volume.nodeId
-      ? new NodeRepo(this.ctx, volume.nodeId)
-      : NodeRepo.currentNode;
+    const container = await new ContainerRepo(this.ctx, containerId).getEntity();
+    const nodeRepo = new NodeRepo(this.ctx, container.node.id);
 
     const artifactPath = await artifactRepo.getPath();
     const tempZipName = uuidv4() + '.zip';
@@ -49,9 +54,9 @@ export default class VolumeBackupRepo extends BaseRepo<VolumeBackup> {
 
     try {
       if (volume.outerPath) {
-        // Zip the volume directory on the node
+        // Ensure zip is installed and then zip the volume directory on the node
         await nodeRepo.shellCommand(
-          `cd ${volume.outerPath} && zip -r ${remoteTempZipPath} .`,
+          `sudo apt-get update && sudo apt-get install -y zip && cd ${volume.outerPath} && zip -r ${remoteTempZipPath} .`,
           new UserRepo(undefined, ''),
           log
         ).output;

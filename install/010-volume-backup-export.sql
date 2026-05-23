@@ -1,6 +1,7 @@
 -- Migration for VolumeBackup changes and adding new log types
 -- Added optional volume relation to VolumeBackup
 ALTER TABLE "volume_backup" ADD COLUMN IF NOT EXISTS "volume_id" uuid NULL;
+ALTER TABLE "volume_backup" ADD COLUMN IF NOT EXISTS "container_id" uuid NULL;
 
 -- Fix VolumeBackup table to match entity (ensure audit columns exist if they didn't)
 -- Based on the entity class VolumeBackup extends BaseEntity, 

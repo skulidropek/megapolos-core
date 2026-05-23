@@ -252,6 +252,7 @@ WHERE (tc.constraint_type = 'PRIMARY KEY' OR tc.constraint_type = 'UNIQUE') AND 
       objectId: backupData.id,
       objectName: backupData.name,
     });
+    // await NodeRepo.currentNode.shellCommand('docker pull postgres', new UserRepo(undefined, ''), log).output;
     await NodeRepo.currentNode.shellCommand(
       `docker run -i --rm -e PGPASSWORD=${
         data.password
