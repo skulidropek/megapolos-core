@@ -6,7 +6,7 @@ import config from '../../domain/config/config';
 import UserRepo from '../../features/repository/user/user.repository';
 import fse from 'fs-extra';
 import path from 'path';
-import AdmZip from 'adm-zip';
+import NodeRepo from '../../features/repository/megapolos.node.repository';
 import { megapolosPath } from '../../..';
 
 const authenticate = async (req: Request, res: Response, artifactId?: string): Promise<Context> => {
@@ -49,14 +49,16 @@ export const downloadArtifact = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Artifact directory not found' });
     }
 
-    const zip = new AdmZip();
-    zip.addLocalFolder(artifactPath);
-
     const zipFileName = `${artifact.name || id}.zip`;
     const tempZipPath = path.join(megapolosPath, 'temp', `download_${id}.zip`);
 
     await fse.ensureDir(path.dirname(tempZipPath));
-    zip.writeZip(tempZipPath);
+    
+    // Using systems shellCommand of local node instead of direct child_process
+    await NodeRepo.currentNode.shellCommand(
+      `cd ${artifactPath} && zip -r ${tempZipPath} .`,
+      new UserRepo(ctx, ctx.user.id)
+    ).output;
 
     res.download(tempZipPath, zipFileName, async (err) => {
       if (err) {

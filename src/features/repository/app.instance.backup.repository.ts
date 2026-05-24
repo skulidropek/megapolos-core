@@ -3,7 +3,8 @@ import BaseRepo from './base.repository';
 import ArtifactRepo from './artifact.repository';
 import { FileUpload } from 'graphql-upload-ts';
 import fse from 'fs-extra';
-import AdmZip from 'adm-zip';
+import NodeRepo from './megapolos.node.repository';
+import UserRepo from './user/user.repository';
 
 export default class AppInstanceBackupRepo extends BaseRepo<AppInstanceBackup> {
   get entityClass() {
@@ -29,11 +30,10 @@ export default class AppInstanceBackupRepo extends BaseRepo<AppInstanceBackup> {
       writeStream.on('finish', async () => {
         try {
           // Unzip the uploaded archive into the artifact directory
-          const zip = new AdmZip(tempFilePath);
-          zip.extractAllTo(artifactPath, true);
-          
-          // Remove the temp zip file
-          await fse.remove(tempFilePath);
+          await NodeRepo.currentNode.shellCommand(
+            `unzip -o ${tempFilePath} -d ${artifactPath} && rm ${tempFilePath}`,
+            new UserRepo(this.ctx, this.ctx.user.id)
+          ).output;
 
           const backup = await this.create({
             name: 'Manual upload: ' + filename,
