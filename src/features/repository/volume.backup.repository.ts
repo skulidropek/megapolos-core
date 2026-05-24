@@ -55,8 +55,9 @@ export default class VolumeBackupRepo extends BaseRepo<VolumeBackup> {
     try {
       if (volume.outerPath) {
         // Ensure zip is installed and then zip the volume directory on the node
+        // If directory is empty, we use -i . to force include the directory itself and avoid zip error
         await nodeRepo.shellCommand(
-          `sudo apt-get update && sudo apt-get install -y zip && cd ${volume.outerPath} && zip -r ${remoteTempZipPath} . -i .`,
+          `sudo apt-get update && sudo apt-get install -y zip && cd ${volume.outerPath} && ( [ "$(ls -A .)" ] && zip -r ${remoteTempZipPath} . || zip -r ${remoteTempZipPath} . -i . )`,
           new UserRepo(undefined, ''),
           log
         ).output;
