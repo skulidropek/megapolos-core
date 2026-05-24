@@ -316,11 +316,11 @@ async function bootstrap() {
       const contentType = req.headers['content-type'];
       if (contentType && contentType.includes('multipart/form-data')) {
         return graphqlUploadExpress({
-          maxFileSize: 10 * 1024 * 1024,
-          maxFiles: 1,
+          maxFileSize: 1024 * 1024 * 1024 * 10, // 10 GB
+          maxFiles: 1000,
         })(req, res, next);
       }
-      express.json({ limit: '10mb' })(req, res, next);
+      express.json({ limit: '10tb' })(req, res, next);
     },
     expressMiddleware(server, {
       // context: async ({ req, res }) => {
