@@ -9,19 +9,22 @@ import path from 'path';
 import AdmZip from 'adm-zip';
 import { megapolosPath } from '../../..';
 
-const authenticate = async (req: Request, res: Response): Promise<Context> => {
-  const token = req.headers.token || req.query.token || '';
-  let decoded: JwtPayload & { id: string };
+const authenticate = async (req: Request, res: Response, artifactId?: string): Promise<Context> => {
+  const token = (req.headers.token || req.query.token || '') as string;
+  let decoded: JwtPayload & { id: string; artifactId?: string };
   try {
-    decoded = jwt.verify(token as string, config.secret) as JwtPayload & {
-      id: string;
-    };
+    decoded = jwt.verify(token, config.secret) as any;
   } catch (err) {
     if (config.allowUnauthorized) {
       return new Context({ req, res, user: undefined });
     } else {
       throw new Error('Unauthorized');
     }
+  }
+
+  // If this is a temporary download token, it must match the artifactId
+  if (decoded.artifactId && artifactId && decoded.artifactId !== artifactId) {
+    throw new Error('Forbidden: Token is for a different artifact');
   }
 
   const user = new UserRepo(undefined, decoded.id);
@@ -37,7 +40,7 @@ const authenticate = async (req: Request, res: Response): Promise<Context> => {
 export const downloadArtifact = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const ctx = await authenticate(req, res);
+    const ctx = await authenticate(req, res, id);
     const repo = new ArtifactRepo(ctx, id);
     const artifact = await repo.getEntity();
     const artifactPath = await repo.getPath();

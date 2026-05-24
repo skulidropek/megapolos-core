@@ -16,6 +16,8 @@ import AppInstanceBackupRepo from '../../../features/repository/app.instance.bac
 import AppInstanceRepo from '../../../features/repository/app.instance.repository';
 import ArtifactRepo from '../../../features/repository/artifact.repository';
 import { GraphQLUpload, FileUpload } from 'graphql-upload-ts';
+import jwt from 'jsonwebtoken';
+import config from '../../../domain/config/config';
 
 @Resolver()
 export class AppInstanceBackupResolver {
@@ -38,6 +40,23 @@ export class AppInstanceBackupResolver {
     @Ctx() ctx: Context
   ): Promise<AppInstanceBackup> {
     return new AppInstanceBackupRepo(ctx).uploadBackup(file);
+  }
+
+  @Query(() => String)
+  async getArtifactDownloadUrl(
+    @Arg('artifactId') artifactId: string,
+    @Ctx() ctx: Context
+  ): Promise<string> {
+    const artifact = await new ArtifactRepo(ctx, artifactId).getEntity();
+    const token = jwt.sign(
+      { 
+        id: ctx.user.id, 
+        artifactId: artifact.id,
+        exp: Math.floor(Date.now() / 1000) + 10 
+      }, 
+      config.secret
+    );
+    return `/api/artifact/download/${artifact.id}?token=${token}`;
   }
 }
 
