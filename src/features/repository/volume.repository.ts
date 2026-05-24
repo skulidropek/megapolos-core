@@ -5,11 +5,45 @@ import { Volume } from '../../domain/entities/Volume.entity';
 import { makeEm, mem } from '../db/mikro-orm';
 import { ContainerVolume } from '../../domain/entities/ContainerVolume.entity';
 import NodeRepo from './megapolos.node.repository';
+import { ContainerRepo } from './cantainer/container.repository';
 import { RequiredEntityData } from '@mikro-orm/core';
+
+import UserRepo from './user/user.repository';
+import LogRepo from './log.repository';
+import { LogType } from '../db/tables';
 
 export default class VolumeRepo extends BaseRepo<Volume> {
   get entityClass() {
     return Volume;
+  }
+
+  async restore(
+    containerId: string,
+    archivePath: string,
+    log?: LogRepo
+  ): Promise<boolean> {
+    const volume = await this.getEntity();
+    if (!volume.outerPath) {
+      throw new Error('Volume outerPath is not set');
+    }
+
+    const containerRepo = new ContainerRepo(this.ctx, containerId);
+    const container = await containerRepo.getEntity();
+    const nodeRepo = new NodeRepo(this.ctx, container.node.id);
+
+    // 1. Upload archive to node
+    const tempArchivePath = `/tmp/${uuidv4()}.zip`;
+    await nodeRepo.uploadFile(archivePath, tempArchivePath);
+
+    // 2. Clear volume directory and extract archive
+    // We use sudo because volume folders are often owned by root or docker user
+    await nodeRepo.shellCommand(
+      `sudo apt-get update && sudo apt-get install -y unzip && sudo rm -rf ${volume.outerPath}/* && sudo unzip -o ${tempArchivePath} -d ${volume.outerPath} && sudo rm ${tempArchivePath}`,
+      new UserRepo(undefined, ''),
+      log
+    ).output;
+
+    return true;
   }
 
   async create(input: RequiredEntityData<Volume>): Promise<Volume> {

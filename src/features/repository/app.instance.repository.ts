@@ -379,6 +379,105 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     return exportArtifact.id;
   }
 
+  async restoreFromBackup(backupId: string): Promise<boolean> {
+    await this.checkActionAccess(resources.AppInstance.actions.edit);
+    const instance = await this.getEntity();
+    const backupRepo = new AppInstanceBackupRepo(this.ctx, backupId);
+    const backupEntity = await backupRepo.getEntity();
+    const artifactRepo = await backupRepo.getArtifactRepo();
+    const artifactPath = await artifactRepo.getPath();
+
+    const log = new LogRepo(this.ctx);
+    await log.create({
+      name: 'Restore instance ' + instance.name + ' from backup ' + (backupEntity.name || backupId),
+      type: LogType.InstanceExport,
+      objectId: instance.id,
+      objectName: instance.name,
+    });
+
+    try {
+      // 1. Backup current state
+      await log.append('Backing up current state before restore...\n');
+      await this.export();
+
+      // 2. Identify manifest (now expecting it to be already extracted)
+      const packagePath = artifactPath;
+      const manifestPath = packagePath + '/manifest.json';
+      
+      if (!(await fse.pathExists(manifestPath))) {
+        throw new Error('Manifest not found in backup. Make sure the uploaded archive contains manifest.json at the root.');
+      }
+      const manifest = await fse.readJson(manifestPath);
+
+      // 3. Match and Restore
+      const containers = await this.getContainers();
+
+      for (const containerInfo of manifest.containers) {
+        const container = containers.find(c => c.role === containerInfo.role);
+        if (!container) {
+          await log.append(`Warning: Container with role ${containerInfo.role} not found in current instance. Skipping.\n`);
+          continue;
+        }
+
+        // Restore Databases
+        for (const dbInfo of containerInfo.databases) {
+          const containerDbs = await new ContainerDbRepo(this.ctx).getByFields({
+            container: container.id,
+            role: dbInfo.role
+          });
+          const containerDb = containerDbs[0];
+          if (!containerDb) {
+            await log.append(`Warning: DB with role ${dbInfo.role} not found in container ${container.role}. Skipping.\n`);
+            continue;
+          }
+
+          const dbRepo = new DbRepo(this.ctx, containerDb.db.id);
+          const db = await dbRepo.getEntity();
+          const dbmsRepo = await DbmsRepo.getById(db.dbms.id);
+          dbmsRepo.ctx = this.ctx;
+
+          // Create temporary backup entity for restore
+          const tempArtifact = new ArtifactRepo(this.ctx);
+          await tempArtifact.create({ name: 'Temp restore artifact', type: 'backup' });
+          const tempArtifactPath = await tempArtifact.getPath();
+          await fse.copy(packagePath + '/' + dbInfo.backupFile, tempArtifactPath + '/backup.sql');
+
+          const tempBackup = new DbBackupRepo(this.ctx);
+          const dbBackup = await tempBackup.create({
+            name: 'Temp restore backup',
+            artifact: tempArtifact.id,
+            type: (await dbmsRepo.getEntity()).type
+          });
+
+          await log.append(`Restoring database ${db.name} for role ${dbInfo.role}...\n`);
+          await dbmsRepo.restore(db.id, dbBackup.id);
+        }
+
+        // Restore Volumes
+        for (const volInfo of containerInfo.volumes) {
+          const containerVolumes = await new VolumeRepo(this.ctx).getVolumesOfContainer(container.id);
+          const cv = containerVolumes.find(v => v.role === volInfo.role);
+          if (!cv) {
+            await log.append(`Warning: Volume with role ${volInfo.role} not found in container ${container.role}. Skipping.\n`);
+            continue;
+          }
+
+          const volumeRepo = new VolumeRepo(this.ctx, cv.volume.id);
+          await log.append(`Restoring volume ${volInfo.name} for role ${volInfo.role}...\n`);
+          await volumeRepo.restore(container.id, packagePath + '/' + volInfo.backupFile, log);
+        }
+      }
+
+      await log.append('Restore completed successfully.\n');
+      await log.close();
+      return true;
+    } catch (e) {
+      await log.append('Restore failed: ' + e.message + '\n');
+      await log.close();
+      throw e;
+    }
+  }
+
   async createConfiguratedInstance(
     appVersionId: string,
     instanceId: string | null,
