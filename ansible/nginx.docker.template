@@ -5,6 +5,8 @@ server {
     ssl_certificate /etc/letsencrypt/live/{{ data.node.host }}/fullchain.pem; # managed by Certbot
     ssl_certificate_key /etc/letsencrypt/live/{{ data.node.host }}/privkey.pem; # managed by Certbot
 
+    client_max_body_size 0;
+
     server_name {{ data.node.host }};
     location / {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
