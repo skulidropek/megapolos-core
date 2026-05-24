@@ -5,6 +5,8 @@
     "repositories/**",
     "ansible/**",
     "temp/**",
-    "uploads/"
+    "uploads/",
+    "artifacts/**",
+    "logs/**"
   ]
 }

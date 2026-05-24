@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import dns from 'dns';
 import { v4 as uuidv4 } from 'uuid';
+import { Client } from 'ssh2';
 import EventsObserver from '../events/eventsObserver';
 import Process from '../process/Process';
 import BaseProcess from '../process/BaseProcess';
@@ -449,6 +450,80 @@ export default class NodeRepo extends BaseRepo<Node> {
         return result;
       })(),
     };
+  }
+
+  async downloadFile(remotePath: string, localPath: string): Promise<void> {
+    if (!this.id) {
+      await fse.copy(remotePath, localPath);
+      return;
+    }
+    const data = await this.getEntity();
+    return new Promise((resolve, reject) => {
+      const conn = new Client();
+      conn
+        .on('ready', () => {
+          conn.sftp((err, sftp) => {
+            if (err) {
+              conn.end();
+              return reject(err);
+            }
+            sftp.fastGet(remotePath, localPath, (err) => {
+              if (err) {
+                conn.end();
+                return reject(err);
+              }
+              conn.end();
+              resolve();
+            });
+          });
+        })
+        .on('error', (err) => {
+          reject(err);
+        })
+        .connect({
+          host: data.host,
+          port: 22,
+          username: data.user,
+          password: data.password,
+        });
+    });
+  }
+
+  async uploadFile(localPath: string, remotePath: string): Promise<void> {
+    if (!this.id) {
+      await fse.copy(localPath, remotePath);
+      return;
+    }
+    const data = await this.getEntity();
+    return new Promise((resolve, reject) => {
+      const conn = new Client();
+      conn
+        .on('ready', () => {
+          conn.sftp((err, sftp) => {
+            if (err) {
+              conn.end();
+              return reject(err);
+            }
+            sftp.fastPut(localPath, remotePath, (err) => {
+              if (err) {
+                conn.end();
+                return reject(err);
+              }
+              conn.end();
+              resolve();
+            });
+          });
+        })
+        .on('error', (err) => {
+          reject(err);
+        })
+        .connect({
+          host: data.host,
+          port: 22,
+          username: data.user,
+          password: data.password,
+        });
+    });
   }
 
   async getContainers(): Promise<Container[]> {

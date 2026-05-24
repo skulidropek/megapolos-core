@@ -192,6 +192,15 @@ export class AppInstanceResolver extends CreateBaseResolver(
   AppInstanceInput,
   AppInstanceUpdateInput
 ) {
+  @Mutation(() => ID, { nullable: true })
+  async exportInstance(
+    @Arg('id') id: string,
+    @Arg('name', { nullable: true }) name: string,
+    @Ctx() ctx: Context
+  ): Promise<string> {
+    return await new AppInstanceRepo(ctx, id).export(name);
+  }
+
   @Mutation(() => Boolean)
   async startAppInstance(
     @Arg('id') id: string,
@@ -209,7 +218,14 @@ export class AppInstanceResolver extends CreateBaseResolver(
     await new AppInstanceRepo(ctx, id).stop();
     return true;
   }
-
+  @Mutation(() => Boolean)
+  async restoreInstanceFromBackup(
+    @Arg('id') id: string,
+    @Arg('backupId') backupId: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    return await new AppInstanceRepo(ctx, id).restoreFromBackup(backupId);
+  }
   @Mutation(() => Boolean)
   async restartAppInstance(
     @Arg('id') id: string,

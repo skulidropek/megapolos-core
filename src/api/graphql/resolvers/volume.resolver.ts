@@ -1,4 +1,11 @@
-import { Mutation, Ctx, Resolver, Arg, InputType, Field } from 'type-graphql';
+import {
+  Mutation,
+  Ctx,
+  Resolver,
+  Arg,
+  InputType,
+  Field,
+} from 'type-graphql';
 import { CreateBaseResolver } from '../base.resolver';
 import { Volume } from '../../../domain/entities/Volume.entity';
 import { ContainerVolume } from '../../../domain/entities/ContainerVolume.entity';
@@ -46,12 +53,14 @@ export class VolumeResolver extends CreateBaseResolver(
     @Arg('containerId') containerId: string,
     @Arg('name') name: string,
     @Arg('innerPath') innerPath: string,
+    @Arg('role', { nullable: true }) role: string,
     @Ctx() ctx: Context
   ): Promise<boolean> {
     return !!new VolumeRepo(ctx, volumeId).addToContainer(
       containerId,
       name,
-      innerPath
+      innerPath,
+      role
     );
   }
 
@@ -75,3 +84,4 @@ export class VolumeResolver extends CreateBaseResolver(
     return true;
   }
 }
+

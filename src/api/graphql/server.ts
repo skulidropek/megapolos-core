@@ -139,8 +139,16 @@ import {
   AppInstanceResolver,
   AppInstanceTableResolver,
 } from './resolvers/instance.resolver';
+import {
+  AppInstanceBackupResolver,
+  AppInstanceBackupTableResolver,
+} from './resolvers/instance.backup.resolver';
 import { NodeResolver, NodeTableResolver } from './resolvers/node.resolver';
 import { VolumeResolver } from './resolvers/volume.resolver';
+import {
+  VolumeBackupResolver,
+  VolumeBackupTableResolver,
+} from './resolvers/volume.backup.resolver';
 import { LogResolver, LogTableResolver } from './resolvers/log.resolver';
 import { EventResolver } from './resolvers/event.resolver';
 import { AppResolver, AppTableResolver } from './resolvers/app.resolver';
@@ -191,6 +199,7 @@ import {
 } from './resolvers/appExportImport.resolver';
 import { graphqlUploadExpress } from 'graphql-upload-ts';
 import { downloadExportedApp } from '../web/exportAppDownload';
+import { downloadArtifact } from '../web/artifactDownload';
 
 export class Context {
   constructor(data: {
@@ -250,10 +259,14 @@ async function bootstrap() {
       ImageTableResolver,
       AppInstanceResolver,
       AppInstanceTableResolver,
+      AppInstanceBackupResolver,
+      AppInstanceBackupTableResolver,
       LogResolver,
       NodeResolver,
       NodeTableResolver,
       VolumeResolver,
+      VolumeBackupResolver,
+      VolumeBackupTableResolver,
       EventResolver,
       DbmsResolver,
       DbmsTableResolver,
@@ -294,6 +307,7 @@ async function bootstrap() {
   const app = express();
 
   app.get('/api/exported-app/download/:id', cors(), downloadExportedApp);
+  app.get('/api/artifact/download/:id', cors(), downloadArtifact);
 
   app.use(
     '/',

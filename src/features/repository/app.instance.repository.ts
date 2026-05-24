@@ -30,11 +30,45 @@ import { Db } from '../../domain/entities/Db.entity';
 import { DbUser } from '../../domain/entities/DbUser.entity';
 import { Volume } from '../../domain/entities/Volume.entity';
 import { ContainerEnvOption } from '../../domain/entities/ContainerEnvOption.entity';
+import ArtifactRepo from './artifact.repository';
+import DbBackupRepo from './db/db.backup.repository';
+import VolumeBackupRepo from './volume.backup.repository';
+import AppInstanceBackupRepo from './app.instance.backup.repository';
+import LogRepo from './log.repository';
+import { LogType } from '../db/tables';
+import DbmsRepo from './dbms/dbms.repository';
+import AdmZip from 'adm-zip';
+import fse from 'fs-extra';
+import { megapolosPath } from '../../..';
 
 export interface InstanceRuntimeVariables {
   containers: {
     [key: string]: ContainerRuntimeVariables;
   };
+}
+
+export interface InstanceBackupManifest {
+  instanceId: string;
+  name: string;
+  exportDate: string;
+  containers: {
+    id: string;
+    name: string;
+    role: string;
+    image: string;
+    domains: string[];
+    volumes: {
+      name: string;
+      role?: string;
+      innerPath: string;
+      backupFile: string;
+    }[];
+    databases: {
+      name: string;
+      role?: string;
+      backupFile: string;
+    }[];
+  }[];
 }
 
 export interface AppInstanceResult extends AppInstance {
@@ -254,6 +288,218 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         await containerObject.getRuntimeVariables(true);
     }
     return result;
+  }
+
+  async export(customName?: string): Promise<string> {
+    await this.checkActionAccess(resources.AppInstance.actions.read);
+    const instance = await this.getEntity();
+    const containers = await this.getContainers();
+
+    const artifactRepo = new ArtifactRepo(this.ctx);
+    const exportArtifact = await artifactRepo.create({
+      name: customName || ('Export instance ' + instance.name),
+      type: 'instance_export',
+    });
+
+    const exportPath = await artifactRepo.getPath();
+    const manifestPath = exportPath + '/manifest.json';
+    const log = new LogRepo(this.ctx);
+    await log.create({
+      name: customName || ('Export instance ' + instance.name),
+      type: LogType.InstanceExport,
+      objectId: instance.id,
+      objectName: instance.name,
+    });
+
+    const manifest: InstanceBackupManifest = {
+      instanceId: instance.id,
+      name: instance.name,
+      exportDate: new Date().toISOString(),
+      containers: [],
+    };
+
+    for (const container of containers) {
+      const containerRepo = new ContainerRepo(this.ctx, container.id);
+      const containerDomain = await containerRepo.getDomain();
+      const containerVolumes = await containerRepo.getVolumes();
+      const containerDbs = await new ContainerDbRepo(this.ctx).getByFields({
+        container: container.id,
+      });
+
+      const image = (await containerRepo.getImage()).getEntity();
+
+      const containerInfo = {
+        id: container.id,
+        name: container.name,
+        role: container.role,
+        image: (await image).image,
+        domains: containerDomain ? [containerDomain.name] : [],
+        volumes: [],
+        databases: [],
+      };
+
+      // Backup Databases
+      for (const containerDb of containerDbs) {
+        const dbRepo = new DbRepo(this.ctx, containerDb.db.id);
+        const db = await dbRepo.getEntity();
+        const dbmsRepo = await DbmsRepo.getById(db.dbms.id);
+        dbmsRepo.ctx = this.ctx;
+        
+        const dbBackup = await dbmsRepo.backup(
+          db.id,
+          customName ? `${customName} db ${db.name}` : 'Export ' + instance.name + ' db ' + db.name,
+          false
+        );
+
+        const dbArtifactPath = await (await new DbBackupRepo(this.ctx, dbBackup.id).getArtifactRepo()).getPath();
+        const dbBackupFile = 'db_' + container.role + '_' + db.name + '.sql';
+        await fse.copy(dbArtifactPath + '/backup.sql', exportPath + '/' + dbBackupFile);
+
+        containerInfo.databases.push({
+          name: db.name,
+          role: containerDb.role,
+          backupFile: dbBackupFile,
+        });
+      }
+
+      // Backup Volumes
+      for (const item of containerVolumes) {
+        const containerVolume = item.containerVolume;
+        const volumeRepo = item.volume;
+        const volume = await volumeRepo.getEntity();
+        const volumeBackupRepo = new VolumeBackupRepo(this.ctx);
+        const volumeBackup = await volumeBackupRepo.backup(
+          volumeRepo,
+          container.id,
+          customName ? `${customName} vol ${volume.name}` : 'Export ' + instance.name + ' vol ' + volume.name
+        );
+
+        const volumeArtifactPath = await (new ArtifactRepo(this.ctx, volumeBackup.artifact.id)).getPath();
+        const volumeBackupFile = 'vol_' + container.role + '_' + (containerVolume.role || 'default') + '.zip';
+        await fse.copy(volumeArtifactPath + '/backup.zip', exportPath + '/' + volumeBackupFile);
+
+        containerInfo.volumes.push({
+          name: volume.name,
+          role: containerVolume.role,
+          innerPath: containerVolume.innerPath,
+          backupFile: volumeBackupFile,
+        });
+      }
+
+      manifest.containers.push(containerInfo);
+    }
+
+    // Write manifest
+    await fse.writeJson(manifestPath, manifest, { spaces: 2 });
+
+    // Create AppInstanceBackup record
+    await new AppInstanceBackupRepo(this.ctx).create({
+      name: customName || ('Export ' + instance.name + ' ' + new Date().toLocaleString()),
+      appInstance: instance,
+      artifact: exportArtifact,
+    });
+
+    await log.close();
+    return exportArtifact.id;
+  }
+
+  async restoreFromBackup(backupId: string): Promise<boolean> {
+    await this.checkActionAccess(resources.AppInstance.actions.edit);
+    const instance = await this.getEntity();
+    const backupRepo = new AppInstanceBackupRepo(this.ctx, backupId);
+    const backupEntity = await backupRepo.getEntity();
+    const artifactRepo = await backupRepo.getArtifactRepo();
+    const artifactPath = await artifactRepo.getPath();
+
+    const log = new LogRepo(this.ctx);
+    await log.create({
+      name: 'Restore instance ' + instance.name + ' from backup ' + (backupEntity.name || backupId),
+      type: LogType.InstanceExport,
+      objectId: instance.id,
+      objectName: instance.name,
+    });
+
+    try {
+      // 1. Backup current state
+      await log.append('Backing up current state before restore...\n');
+      await this.export('Auto-backup before restore of ' + (backupEntity.name || backupId));
+
+      // 2. Identify manifest (now expecting it to be already extracted)
+      const packagePath = artifactPath;
+      const manifestPath = packagePath + '/manifest.json';
+      
+      if (!(await fse.pathExists(manifestPath))) {
+        throw new Error('Manifest not found in backup. Make sure the uploaded archive contains manifest.json at the root.');
+      }
+      const manifest: InstanceBackupManifest = await fse.readJson(manifestPath);
+
+      // 3. Match and Restore
+      const containers = await this.getContainers();
+
+      for (const containerInfo of manifest.containers) {
+        const container = containers.find(c => c.role === containerInfo.role);
+        if (!container) {
+          await log.append(`Warning: Container with role ${containerInfo.role} not found in current instance. Skipping.\n`);
+          continue;
+        }
+
+        // Restore Databases
+        for (const dbInfo of containerInfo.databases) {
+          const containerDbs = await new ContainerDbRepo(this.ctx).getByFields({
+            container: container.id,
+            role: dbInfo.role
+          });
+          const containerDb = containerDbs[0];
+          if (!containerDb) {
+            await log.append(`Warning: DB with role ${dbInfo.role} not found in container ${container.role}. Skipping.\n`);
+            continue;
+          }
+
+          const dbRepo = new DbRepo(this.ctx, containerDb.db.id);
+          const db = await dbRepo.getEntity();
+          const dbmsRepo = await DbmsRepo.getById(db.dbms.id);
+          dbmsRepo.ctx = this.ctx;
+
+          // Create temporary backup entity for restore
+          const tempArtifact = new ArtifactRepo(this.ctx);
+          await tempArtifact.create({ name: 'Temp restore artifact', type: 'backup' });
+          const tempArtifactPath = await tempArtifact.getPath();
+          await fse.copy(packagePath + '/' + dbInfo.backupFile, tempArtifactPath + '/backup.sql');
+
+          const tempBackup = new DbBackupRepo(this.ctx);
+          const dbBackup = await tempBackup.create({
+            name: 'Temp restore backup',
+            artifact: tempArtifact.id,
+            type: (await dbmsRepo.getEntity()).type
+          });
+
+          await log.append(`Restoring database ${db.name} for role ${dbInfo.role}...\n`);
+          await dbmsRepo.restore(db.id, dbBackup.id);
+        }
+
+        // Restore Volumes
+        for (const volInfo of containerInfo.volumes) {
+          const containerVolumes = await new VolumeRepo(this.ctx).getVolumesOfContainer(container.id);
+          const cv = containerVolumes.find(v => v.role === volInfo.role);
+          if (!cv) {
+            await log.append(`Warning: Volume with role ${volInfo.role} not found in container ${container.role}. Skipping.\n`);
+            continue;
+          }
+
+          const volumeRepo = new VolumeRepo(this.ctx, cv.volume.id);
+          await log.append(`Restoring volume ${volInfo.name} for role ${volInfo.role}...\n`);
+          await volumeRepo.restore(container.id, packagePath + '/' + volInfo.backupFile, log);
+        }
+      }
+
+      await log.append('Restore completed successfully.\n');
+      await log.close();
+      return true;
+    } catch (e) {
+      await log.append('Restore failed: ' + e.message + '\n');
+      await log.close();
+      throw e;
+    }
   }
 
   async createConfiguratedInstance(

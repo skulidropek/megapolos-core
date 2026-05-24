@@ -511,6 +511,8 @@ export enum LogType {
   NodePrepareForCore = 'node_prepare_for_core',
   DbBackup = 'db_backup',
   DbRestore = 'db_restore',
+  VolumeBackup = 'volume_backup',
+  InstanceExport = 'instance_export',
 }
 
 export interface LogTable {
