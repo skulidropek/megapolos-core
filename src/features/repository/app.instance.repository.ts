@@ -47,6 +47,30 @@ export interface InstanceRuntimeVariables {
   };
 }
 
+export interface InstanceBackupManifest {
+  instanceId: string;
+  name: string;
+  exportDate: string;
+  containers: {
+    id: string;
+    name: string;
+    role: string;
+    image: string;
+    domains: string[];
+    volumes: {
+      name: string;
+      role?: string;
+      innerPath: string;
+      backupFile: string;
+    }[];
+    databases: {
+      name: string;
+      role?: string;
+      backupFile: string;
+    }[];
+  }[];
+}
+
 export interface AppInstanceResult extends AppInstance {
   containers?: ContainerResult[];
 }
@@ -266,14 +290,14 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     return result;
   }
 
-  async export(): Promise<string> {
+  async export(customName?: string): Promise<string> {
     await this.checkActionAccess(resources.AppInstance.actions.read);
     const instance = await this.getEntity();
     const containers = await this.getContainers();
 
     const artifactRepo = new ArtifactRepo(this.ctx);
     const exportArtifact = await artifactRepo.create({
-      name: 'Export instance ' + instance.name,
+      name: customName || ('Export instance ' + instance.name),
       type: 'instance_export',
     });
 
@@ -281,13 +305,13 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     const manifestPath = exportPath + '/manifest.json';
     const log = new LogRepo(this.ctx);
     await log.create({
-      name: 'Export instance ' + instance.name,
+      name: customName || ('Export instance ' + instance.name),
       type: LogType.InstanceExport,
       objectId: instance.id,
       objectName: instance.name,
     });
 
-    const manifest = {
+    const manifest: InstanceBackupManifest = {
       instanceId: instance.id,
       name: instance.name,
       exportDate: new Date().toISOString(),
@@ -323,7 +347,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         
         const dbBackup = await dbmsRepo.backup(
           db.id,
-          'Export ' + instance.name + ' db ' + db.name,
+          customName ? `${customName} db ${db.name}` : 'Export ' + instance.name + ' db ' + db.name,
           false
         );
 
@@ -347,7 +371,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
         const volumeBackup = await volumeBackupRepo.backup(
           volumeRepo,
           container.id,
-          'Export ' + instance.name + ' vol ' + volume.name
+          customName ? `${customName} vol ${volume.name}` : 'Export ' + instance.name + ' vol ' + volume.name
         );
 
         const volumeArtifactPath = await (new ArtifactRepo(this.ctx, volumeBackup.artifact.id)).getPath();
@@ -370,7 +394,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
 
     // Create AppInstanceBackup record
     await new AppInstanceBackupRepo(this.ctx).create({
-      name: 'Export ' + instance.name + ' ' + new Date().toLocaleString(),
+      name: customName || ('Export ' + instance.name + ' ' + new Date().toLocaleString()),
       appInstance: instance,
       artifact: exportArtifact,
     });
@@ -398,7 +422,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
     try {
       // 1. Backup current state
       await log.append('Backing up current state before restore...\n');
-      await this.export();
+      await this.export('Auto-backup before restore of ' + (backupEntity.name || backupId));
 
       // 2. Identify manifest (now expecting it to be already extracted)
       const packagePath = artifactPath;
@@ -407,7 +431,7 @@ export default class AppInstanceRepo extends BaseRepo<AppInstance> {
       if (!(await fse.pathExists(manifestPath))) {
         throw new Error('Manifest not found in backup. Make sure the uploaded archive contains manifest.json at the root.');
       }
-      const manifest = await fse.readJson(manifestPath);
+      const manifest: InstanceBackupManifest = await fse.readJson(manifestPath);
 
       // 3. Match and Restore
       const containers = await this.getContainers();

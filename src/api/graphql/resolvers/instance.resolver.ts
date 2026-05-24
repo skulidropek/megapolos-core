@@ -195,9 +195,10 @@ export class AppInstanceResolver extends CreateBaseResolver(
   @Mutation(() => ID, { nullable: true })
   async exportInstance(
     @Arg('id') id: string,
+    @Arg('name', { nullable: true }) name: string,
     @Ctx() ctx: Context
   ): Promise<string> {
-    return await new AppInstanceRepo(ctx, id).export();
+    return await new AppInstanceRepo(ctx, id).export(name);
   }
 
   @Mutation(() => Boolean)
