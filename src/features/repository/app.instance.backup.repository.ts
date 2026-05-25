@@ -11,6 +11,15 @@ export default class AppInstanceBackupRepo extends BaseRepo<AppInstanceBackup> {
     return AppInstanceBackup;
   }
 
+  async delete(): Promise<boolean> {
+    const backup = await this.getEntity();
+    const result = await super.delete();
+    if (result && backup.artifact) {
+      await new ArtifactRepo(this.ctx, backup.artifact.id).delete();
+    }
+    return result;
+  }
+
   async uploadBackup(file: Promise<FileUpload>): Promise<AppInstanceBackup> {
     const { createReadStream, filename } = await file;
     const stream = createReadStream();

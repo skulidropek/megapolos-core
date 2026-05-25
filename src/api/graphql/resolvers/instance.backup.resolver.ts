@@ -6,6 +6,7 @@ import {
   FieldResolver,
   Root,
   Mutation,
+  Float,
 } from 'type-graphql';
 import { BaseTableResolver } from '../base.resolver';
 import { AppInstanceBackup } from '../../../domain/entities/AppInstanceBackup.entity';
@@ -40,6 +41,14 @@ export class AppInstanceBackupResolver {
     @Ctx() ctx: Context
   ): Promise<AppInstanceBackup> {
     return new AppInstanceBackupRepo(ctx).uploadBackup(file);
+  }
+
+  @Mutation(() => Boolean)
+  async deleteAppInstanceBackup(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    return new AppInstanceBackupRepo(ctx, id).delete();
   }
 
   @Query(() => String)
@@ -78,5 +87,16 @@ export class AppInstanceBackupTableResolver extends BaseTableResolver {
   ): Promise<Artifact | null> {
     if (!backup.artifact) return null;
     return new ArtifactRepo(ctx, backup.artifact.id).getEntity();
+  }
+
+  @FieldResolver(() => Float, { nullable: true })
+  async size(
+    @Root() backup: AppInstanceBackup,
+    @Ctx() ctx: Context
+  ): Promise<number | undefined> {
+    if (!backup.artifact) {
+      return 0;
+    }
+    return new ArtifactRepo(ctx, backup.artifact.id).getSize();
   }
 }

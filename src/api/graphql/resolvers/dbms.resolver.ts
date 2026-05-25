@@ -9,6 +9,7 @@ import {
   ObjectType,
   Field,
   InputType,
+  Float,
 } from 'type-graphql';
 import { BaseTableResolver } from '../base.resolver';
 import { Dbms } from '../../../domain/entities/Dbms.entity';
@@ -31,6 +32,7 @@ import { RequiredEntityData } from '@mikro-orm/core';
 import DbUserRepo from '../../../features/repository/db/db.user.repository';
 import DbSchemaRepo from '../../../features/repository/db/db.schema.repository';
 import DbRepo from '../../../features/repository/db/db.repository';
+import ArtifactRepo from '../../../features/repository/artifact.repository';
 import { DbUserInput } from './db.user.resolver';
 import { ContainerDb } from '../../../domain/entities/ContainerDb.entity';
 import ContainerDbRepo from '../../../features/repository/cantainer/container.db.repository';
@@ -277,6 +279,14 @@ export class DbmsResolver {
   }
 
   @Mutation(() => Boolean)
+  async deleteDbBackup(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    return new DbBackupRepo(ctx, id).delete();
+  }
+
+  @Mutation(() => Boolean)
   async cloneDb(
     @Arg('fromDbId') fromDbId: string,
     @Arg('toDbId') toDbId: string,
@@ -384,5 +394,19 @@ export class DbSchemaTableResolver extends BaseTableResolver {
   @FieldResolver(() => DbSchemaSchema)
   async schema(@Root() dbSchema: DbSchema): Promise<DbSchemaSchema> {
     return JSON.parse(dbSchema.schema);
+  }
+}
+
+@Resolver(() => DbBackup)
+export class DbBackupTableResolver extends BaseTableResolver {
+  @FieldResolver(() => Float, { nullable: true })
+  async size(
+    @Root() backup: DbBackup,
+    @Ctx() ctx: Context
+  ): Promise<number | undefined> {
+    if (!backup.artifact) {
+      return 0;
+    }
+    return new ArtifactRepo(ctx, backup.artifact.id).getSize();
   }
 }

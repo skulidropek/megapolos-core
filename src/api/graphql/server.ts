@@ -152,7 +152,7 @@ import {
 import { LogResolver, LogTableResolver } from './resolvers/log.resolver';
 import { EventResolver } from './resolvers/event.resolver';
 import { AppResolver, AppTableResolver } from './resolvers/app.resolver';
-import { DbmsResolver, DbmsTableResolver } from './resolvers/dbms.resolver';
+import { DbBackupTableResolver, DbmsResolver, DbmsTableResolver } from './resolvers/dbms.resolver';
 import {
   ContainerResolver,
   ContainerTableResolver,
@@ -293,6 +293,7 @@ async function bootstrap() {
       ConfigurationDbWithUserResolver,
       ConfigurationEnvOptionResolver,
       AppExportImportResolver,
+      DbBackupTableResolver,
       // AppsStoreListResolver,
     ],
   });

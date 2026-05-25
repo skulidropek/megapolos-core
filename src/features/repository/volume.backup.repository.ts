@@ -16,6 +16,15 @@ export default class VolumeBackupRepo extends BaseRepo<VolumeBackup> {
     return VolumeBackup;
   }
 
+  async delete(): Promise<boolean> {
+    const backup = await this.getEntity();
+    const result = await super.delete();
+    if (result && backup.artifact) {
+      await new ArtifactRepo(this.ctx, backup.artifact.id).delete();
+    }
+    return result;
+  }
+
   async backup(
     volumeRepo: VolumeRepo,
     containerId: string,

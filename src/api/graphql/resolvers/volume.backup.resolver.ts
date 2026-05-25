@@ -6,6 +6,7 @@ import {
   FieldResolver,
   Root,
   Mutation,
+  Float,
 } from 'type-graphql';
 import { BaseTableResolver } from '../base.resolver';
 import { VolumeBackup } from '../../../domain/entities/VolumeBackup.entity';
@@ -40,6 +41,14 @@ export class VolumeBackupResolver {
     const volumeRepo = new VolumeRepo(ctx, volumeId);
     return new VolumeBackupRepo(ctx).backup(volumeRepo, containerId);
   }
+
+  @Mutation(() => Boolean)
+  async deleteVolumeBackup(
+    @Arg('id') id: string,
+    @Ctx() ctx: Context
+  ): Promise<boolean> {
+    return new VolumeBackupRepo(ctx, id).delete();
+  }
 }
 
 @Resolver(() => VolumeBackup)
@@ -51,6 +60,17 @@ export class VolumeBackupTableResolver extends BaseTableResolver {
   ): Promise<Volume | null> {
     if (!volumeBackup.volume) return null;
     return new VolumeRepo(ctx, volumeBackup.volume.id).getEntity();
+  }
+
+  @FieldResolver(() => Float, { nullable: true })
+  async size(
+    @Root() volumeBackup: VolumeBackup,
+    @Ctx() ctx: Context
+  ): Promise<number | undefined> {
+    if (!volumeBackup.artifact) {
+      return 0;
+    }
+    return new ArtifactRepo(ctx, volumeBackup.artifact.id).getSize();
   }
 
   @FieldResolver(() => Artifact, { nullable: true })
