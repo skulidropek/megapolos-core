@@ -26,13 +26,12 @@
         mode: 0444
     register: stack_file
     tags: stack
-  - name: Pull all images
-    ansible.builtin.shell: docker compose -f /opt/megapolos_swarm_compose.yml pull
-    when: data.isPartialUpdate is not defined or data.isPartialUpdate != True
-  - name: Pull specific images
+  - name: Pull images
     ansible.builtin.shell: docker compose -f /opt/megapolos_swarm_compose.yml pull {{ item.name }}
     with_items: "{{ data.containers }}"
-    when: data.isPartialUpdate is defined and data.isPartialUpdate == True and item.isUpdated == True
+    when: 
+      - (item.disabled is not defined or item.disabled == False)
+      - (data.isPartialUpdate is not defined or data.isPartialUpdate != True) or (item.isUpdated is defined and item.isUpdated == True)
   - name: start swarm
     community.docker.docker_swarm:
       state: present
