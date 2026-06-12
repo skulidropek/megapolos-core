@@ -51,7 +51,8 @@
     common_name: "{{ data.node.host }}"
     subject_alt_name:
       - "DNS:{{ data.node.host }}"
-      - "IP:{{ data.node.host }}"
+      - "DNS:localhost"
+      - "IP:127.0.0.1"
 - name: Sign node certificate with Root CA
   community.crypto.x509_certificate:
     path: /data/nginx/ssl/{{ data.node.host }}.crt
