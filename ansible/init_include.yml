@@ -6,28 +6,60 @@
   ansible.builtin.file:
     path: /data/nginx/conf
     state: directory
-- name: certbot cron
-  ansible.builtin.cron:
-    name: "certbot cron"
-    minute: "0"
-    hour: "3"
-    job: "certbot renew --quiet --pre-hook \"docker stop nginx\" --post-hook \"docker start nginx\""
+- name: ssl directory
+  ansible.builtin.file:
+    path: /data/nginx/ssl/ca
+    state: directory
 - name: Install pip
   ansible.builtin.apt:
     name: pip
     state: present
 - name: Install packages
   ansible.builtin.pip:
-    name: 
-      - jsondiff 
+    name:
+      - jsondiff
       - docker
       - passlib
       - urllib3
       - ansible
+      - cryptography
 - name: Install collection community.docker
   community.general.ansible_galaxy_install:
     type: collection
     name: community.docker
+- name: Generate Root CA private key
+  community.crypto.openssl_privatekey:
+    path: /data/nginx/ssl/ca/ca.key
+    size: 4096
+- name: Generate Root CA certificate
+  community.crypto.x509_certificate:
+    path: /data/nginx/ssl/ca/ca.crt
+    privatekey_path: /data/nginx/ssl/ca/ca.key
+    provider: selfsigned
+    selfsigned_not_after: "+3650d"
+    subject:
+      commonName: "Megapolos Root CA"
+      organizationName: "Megapolos"
+- name: Generate node private key
+  community.crypto.openssl_privatekey:
+    path: /data/nginx/ssl/{{ data.node.host }}.key
+    size: 2048
+- name: Generate node CSR
+  community.crypto.openssl_csr:
+    path: /data/nginx/ssl/{{ data.node.host }}.csr
+    privatekey_path: /data/nginx/ssl/{{ data.node.host }}.key
+    common_name: "{{ data.node.host }}"
+    subject_alt_name:
+      - "DNS:{{ data.node.host }}"
+      - "IP:{{ data.node.host }}"
+- name: Sign node certificate with Root CA
+  community.crypto.x509_certificate:
+    path: /data/nginx/ssl/{{ data.node.host }}.crt
+    csr_path: /data/nginx/ssl/{{ data.node.host }}.csr
+    provider: ownca
+    ownca_path: /data/nginx/ssl/ca/ca.crt
+    ownca_privatekey_path: /data/nginx/ssl/ca/ca.key
+    ownca_not_after: "+825d"
 - name: Copy nginx conf file
   template:
     src: nginx.conf.template
@@ -43,7 +75,7 @@
       - "5102:5102"
       - "5104:5104"
     volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
+      - /data/nginx/ssl:/etc/nginx/ssl
       - /data/nginx/conf:/etc/nginx/conf.d
       - /var/run/docker.sock:/var/run/docker.sock
       - /data/nginx/nginx.conf:/etc/nginx/nginx.conf
@@ -56,25 +88,6 @@
     path: /data/nginx/conf/docker.htpasswd
     name: megapolos
     password: "{{ data.node.password }}"
-# - name: openssl_privatekey
-#   openssl_privatekey:
-#     path: /data/nginx/conf/certificate.key
-#     size: 2048 
-# - name: openssl_csr
-#   openssl_csr:
-#     path: /data/nginx/conf/certificate.csr
-#     privatekey_path: /data/nginx/conf/certificate.key
-# - name: openssl_certificate
-#   openssl_certificate:
-#     provider: selfsigned
-#     path: /data/nginx/conf/certificate.crt
-#     privatekey_path: /data/nginx/conf/certificate.key
-#     csr_path: /data/nginx/conf/certificate.csr
-- name: certificate
-  shell: |
-    certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ data.node.host }} -d {{ data.node.host }} --register-unsafely-without-email
-  args: 
-    creates: /etc/letsencrypt/live/{{ data.node.host }}/fullchain.pem
 - name: Copy docker nginx conf
   template:
     src: nginx.docker.template

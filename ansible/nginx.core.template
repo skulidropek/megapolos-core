@@ -1,9 +1,8 @@
 server {
-    listen 5104 ssl; # managed by Certbot
+    listen 5104 ssl;
 
-    # RSA certificate
-    ssl_certificate /etc/letsencrypt/live/{{ data.node.host }}/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/{{ data.node.host }}/privkey.pem; # managed by Certbot
+    ssl_certificate /etc/nginx/ssl/{{ data.node.host }}.crt;
+    ssl_certificate_key /etc/nginx/ssl/{{ data.node.host }}.key;
 
     client_max_body_size 0;
 
