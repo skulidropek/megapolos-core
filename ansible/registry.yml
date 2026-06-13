@@ -31,18 +31,16 @@
     shell: |
       docker run --entrypoint htpasswd httpd:2 -Bbn '{{ data.registry_user }}' '{{ data.registry_password }}' > /data/registry/auth/htpasswd
   - ansible.builtin.pip:
-      name: 
+      name:
         - docker
-        - docker-compose
+        - "urllib3<2"
+        - "requests<2.32"
       state: present
+      extra_args: --break-system-packages
   - name: docker compose
     community.docker.docker_compose_v2:
       project_src: /data/registry
       # state: restarted
-  - ansible.builtin.pip:
-      name: 
-        - urllib3
-      state: absent
   - name: Generate registry private key
     community.crypto.openssl_privatekey:
       path: /data/nginx/ssl/{{ data.registry_domain }}.key
@@ -62,10 +60,6 @@
       ownca_path: /data/nginx/ssl/ca/ca.crt
       ownca_privatekey_path: /data/nginx/ssl/ca/ca.key
       ownca_not_after: "+825d"
-  - ansible.builtin.pip:
-      name: 
-        - urllib3
-      state: present
   - name: ensure a nginx is running
     docker_container:
       name: nginx

@@ -29,7 +29,8 @@
   - ansible.builtin.pip:
       name:
         - docker
-        - docker-compose
+        - "urllib3<2"
+        - "requests<2.32"
       state: present
       extra_args: --break-system-packages
   - name: docker compose

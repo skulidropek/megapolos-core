@@ -52,7 +52,7 @@
   #     name: pm2
   #     global: true
 
-  - name: Copy docker nginx conf
+  - name: Copy core nginx conf
     template:
       src: nginx.core.template
       dest: /data/nginx/conf/core.conf
