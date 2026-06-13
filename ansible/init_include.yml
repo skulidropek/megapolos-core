@@ -20,7 +20,8 @@
       - jsondiff
       - docker
       - passlib
-      - urllib3
+      - "urllib3<2"
+      - "requests<2.32"
       - ansible
       - cryptography
     extra_args: --break-system-packages
