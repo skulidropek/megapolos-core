@@ -5,15 +5,10 @@
 //   -> (опц.) репозиторий -> app -> image -> build -> version -> instance -> deploy.
 //
 // Управление через переменные окружения:
-//   MEGAPOLOS_NODE_HOST       (default: megapolos.local в devMode, иначе localhost)
-//   MEGAPOLOS_NODE_USER       (default: root)
-//   MEGAPOLOS_NODE_PASSWORD   (default: root)
-//   MEGAPOLOS_REGISTRY_HOST   (default: config.registryHost || node host)
-//   MEGAPOLOS_BOOTSTRAP_APP_REPO    (git URL приложения для авто-деплоя; пусто = пропустить)
-//   MEGAPOLOS_BOOTSTRAP_APP_NAME    (default: megapolos-gui)
-//   MEGAPOLOS_BOOTSTRAP_APP_PORT    (inner port, default: 80)
-//   MEGAPOLOS_BOOTSTRAP_APP_DOMAIN  (поддомен приложения, напр. gui.megapolos.local)
-//   MEGAPOLOS_BOOTSTRAP_APP_OUTER_PORT (default: 3000)
+//   MEGAPOLOS_NODE_HOST / MEGAPOLOS_NODE_USER / MEGAPOLOS_NODE_PASSWORD
+//   MEGAPOLOS_REGISTRY_HOST
+//   MEGAPOLOS_BOOTSTRAP_APP_REPO    (git URL приложения; пусто = пропустить деплой)
+//   MEGAPOLOS_BOOTSTRAP_APP_NAME / _PORT / _DOMAIN / _OUTER_PORT
 
 import config from './src/domain/config/config';
 import { initMikroOrm } from './src/features/db/mikro-orm';
@@ -28,6 +23,7 @@ import AppVersionRepo from './src/features/repository/app.version.repository';
 import { ConfigurationRepo } from './src/features/repository/configuration.repository';
 import AppInstanceRepo from './src/features/repository/app.instance.repository';
 import { ensureMegapolosCA } from './src/features/ca/megapolos-ca';
+import { Context } from './src/api/graphql/server';
 
 const env = process.env;
 const NODE_HOST =
@@ -44,13 +40,16 @@ const APP_PORT = Number(env.MEGAPOLOS_BOOTSTRAP_APP_PORT || 80);
 const APP_DOMAIN = env.MEGAPOLOS_BOOTSTRAP_APP_DOMAIN || '';
 const APP_OUTER_PORT = Number(env.MEGAPOLOS_BOOTSTRAP_APP_OUTER_PORT || 3000);
 
+// admin-контекст (root, без проверки прав) — операции репозиториев требуют ctx.user
+let ctx: Context;
+
 function log(msg: string) {
   console.log(`[install] ${msg}`);
 }
 
 async function waitNodeRunning(nodeId: string, label: string) {
   for (let i = 0; i < 90; i++) {
-    const n = await new NodeRepo(undefined, nodeId).getEntity(true);
+    const n = await new NodeRepo(ctx, nodeId).getEntity(true);
     if (n.lifeStatus === 'running') return;
     await new Promise((r) => setTimeout(r, 3000));
   }
@@ -58,11 +57,10 @@ async function waitNodeRunning(nodeId: string, label: string) {
 }
 
 async function setupNode(): Promise<string> {
-  // нода (создать или найти существующую)
-  let nodes = await new NodeRepo(undefined).getByFields({ name: 'localhost' });
+  let nodes = await new NodeRepo(ctx).getByFields({ name: 'localhost' });
   let node = nodes[0];
   if (!node) {
-    node = await new NodeRepo(undefined).create({
+    node = await new NodeRepo(ctx).create({
       name: 'localhost',
       host: NODE_HOST,
       user: NODE_USER,
@@ -73,10 +71,9 @@ async function setupNode(): Promise<string> {
     log(`нода уже существует: ${node.id}`);
   }
 
-  // дефолтный docker registry
-  const existingReg = await new DockerRegistryRepo().getDefault();
+  const existingReg = await new DockerRegistryRepo(ctx).getDefault();
   if (!existingReg) {
-    await new DockerRegistryRepo(undefined).create({
+    await new DockerRegistryRepo(ctx).create({
       name: 'default',
       host: REGISTRY_HOST,
       user: REGISTRY_USER,
@@ -87,15 +84,15 @@ async function setupNode(): Promise<string> {
   }
 
   log('INIT ноды (nginx, единый CA)...');
-  await new NodeRepo(undefined, node.id).init();
+  await new NodeRepo(ctx, node.id).init();
   await waitNodeRunning(node.id, 'INIT');
 
   log('PREPARE FOR CORE...');
-  await new NodeRepo(undefined, node.id).prepareForCore();
+  await new NodeRepo(ctx, node.id).prepareForCore();
   await waitNodeRunning(node.id, 'PREPARE FOR CORE');
 
   log('INSTALL REGISTRY...');
-  await new NodeRepo(undefined, node.id).installRegistry();
+  await new NodeRepo(ctx, node.id).installRegistry();
   await waitNodeRunning(node.id, 'INSTALL REGISTRY');
 
   log('нода готова');
@@ -109,46 +106,39 @@ async function deployApp(nodeId: string, rootUserId: string) {
   }
   log(`деплой приложения ${APP_NAME} из ${APP_REPO}...`);
 
-  // репозиторий
-  const repo = await new RepositoryRepo(undefined).create({
+  const repo = await new RepositoryRepo(ctx).create({
     name: APP_NAME,
     url: APP_REPO,
     repositoryType: 'remote',
   });
 
-  // приложение + образ
-  const app = await new AppRepo(undefined).installApp(rootUserId, {
+  const app = await new AppRepo(ctx).installApp(rootUserId, {
     name: APP_NAME,
     description: APP_NAME,
     images: [{ name: APP_NAME, image: APP_NAME, inner_port: APP_PORT }],
   } as any);
 
-  const images = await new ImageRepo(undefined).getByFields({ app: app.id });
+  const images = await new ImageRepo(ctx).getByFields({ app: app.id });
   const image = images[0];
-  await new ImageRepo(undefined, image.id).update({ repository: repo.id as any });
+  await new ImageRepo(ctx, image.id).update({ repository: repo.id as any });
 
   log('сборка образа (build + push в registry)...');
-  await new ImageRepo(undefined, image.id).build();
+  await new ImageRepo(ctx, image.id).build();
   for (let i = 0; i < 120; i++) {
-    const img = await new ImageRepo(undefined, image.id).getEntity(true);
+    const img = await new ImageRepo(ctx, image.id).getEntity(true);
     if (img.status === ImageStatus.Built) break;
-    if (img.status === ImageStatus.NotExist && i > 2) {
-      log('WARN: статус образа NotExist — возможна ошибка сборки');
-    }
     await new Promise((r) => setTimeout(r, 5000));
   }
 
-  // конфигурация + версия
-  const conf = await new ConfigurationRepo(undefined).createOrEditFromData({
+  const conf = await new ConfigurationRepo(ctx).createOrEditFromData({
     appId: app.id,
     configurationData: { name: 'default', services: [] } as any,
   });
-  const version = await new AppVersionRepo(undefined).createAppVersion(
+  const version = await new AppVersionRepo(ctx).createAppVersion(
     { app: app.id, configuration: conf.id, buildNumber: 1, version: '1.0.0' } as any,
     [{ imageId: image.id } as any]
   );
 
-  // инстанс из версии (+ домен)
   const container: any = {
     name: APP_NAME,
     role: 'app',
@@ -162,13 +152,12 @@ async function deployApp(nodeId: string, rootUserId: string) {
   if (APP_DOMAIN) {
     container.domain = { domainData: { name: APP_DOMAIN } };
   }
-  await new AppInstanceRepo(undefined).createConfiguratedInstance(version.id, null, {
+  await new AppInstanceRepo(ctx).createConfiguratedInstance(version.id, null, {
     name: APP_NAME,
     containers: [container],
   } as any);
 
-  // деплой (pull из registry + swarm)
-  await new NodeRepo(undefined, nodeId).updateNode(false, false, []);
+  await new NodeRepo(ctx, nodeId).updateNode(false, false, []);
   log(`приложение ${APP_NAME} задеплоено${APP_DOMAIN ? ' на https://' + APP_DOMAIN : ''}`);
 }
 
@@ -180,9 +169,11 @@ async function deployApp(nodeId: string, rootUserId: string) {
   ensureMegapolosCA();
 
   const rootUser = (await new UserRepo(undefined).getByGroupName('root'))[0];
+  if (!rootUser) throw new Error('root user not found');
+  ctx = new Context({ req: {} as any, res: {} as any, user: rootUser, noRightsCheck: true });
 
   const nodeId = await setupNode();
-  await deployApp(nodeId, rootUser?.id);
+  await deployApp(nodeId, rootUser.id);
 
   log('установка завершена');
   process.exit(0);

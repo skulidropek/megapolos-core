@@ -5,42 +5,53 @@ import { megapolosPath } from '../../..';
 // Единый корневой сертификат Megapolos.
 // Создаётся один раз на ядре, раздаётся на все ноды (в devMode self-signed),
 // и доступен пользователю для скачивания, чтобы доверять ресурсам кластера.
+//
+// Пути вычисляем лениво (внутри функций): megapolosPath инициализируется
+// в index.ts и при циклическом импорте на момент загрузки модуля может быть
+// ещё не определён.
 
-export const caDir = `${megapolosPath}/data/ca`;
-export const caCrtPath = `${caDir}/ca.crt`;
-export const caKeyPath = `${caDir}/ca.key`;
+function caDir(): string {
+  return `${megapolosPath}/data/ca`;
+}
+export function caCrtPath(): string {
+  return `${caDir()}/ca.crt`;
+}
+export function caKeyPath(): string {
+  return `${caDir()}/ca.key`;
+}
 
 /**
  * Генерирует Megapolos Root CA, если его ещё нет. Идемпотентно.
  */
 export function ensureMegapolosCA(): void {
-  if (fs.existsSync(caCrtPath) && fs.existsSync(caKeyPath)) {
+  const dir = caDir();
+  const crt = caCrtPath();
+  const key = caKeyPath();
+  if (fs.existsSync(crt) && fs.existsSync(key)) {
     return;
   }
-  fs.mkdirSync(caDir, { recursive: true });
+  fs.mkdirSync(dir, { recursive: true });
 
-  // приватный ключ CA
-  execSync(`openssl genrsa -out "${caKeyPath}" 4096`, { stdio: 'ignore' });
-  fs.chmodSync(caKeyPath, 0o600);
+  execSync(`openssl genrsa -out "${key}" 4096`, { stdio: 'ignore' });
+  fs.chmodSync(key, 0o600);
 
-  // самоподписанный корневой сертификат (10 лет)
   execSync(
-    `openssl req -x509 -new -nodes -key "${caKeyPath}" -sha256 -days 3650 ` +
-      `-out "${caCrtPath}" -subj "/O=Megapolos/CN=Megapolos Root CA" ` +
+    `openssl req -x509 -new -nodes -key "${key}" -sha256 -days 3650 ` +
+      `-out "${crt}" -subj "/O=Megapolos/CN=Megapolos Root CA" ` +
       `-addext "basicConstraints=critical,CA:TRUE" ` +
       `-addext "keyUsage=critical,keyCertSign,cRLSign"`,
     { stdio: 'ignore' }
   );
 
-  console.log('Megapolos Root CA generated at', caCrtPath);
+  console.log('Megapolos Root CA generated at', crt);
 }
 
 export function getCaCrt(): string {
   ensureMegapolosCA();
-  return fs.readFileSync(caCrtPath, 'utf8');
+  return fs.readFileSync(caCrtPath(), 'utf8');
 }
 
 export function getCaKey(): string {
   ensureMegapolosCA();
-  return fs.readFileSync(caKeyPath, 'utf8');
+  return fs.readFileSync(caKeyPath(), 'utf8');
 }
