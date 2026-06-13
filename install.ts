@@ -48,7 +48,11 @@ function log(msg: string) {
 }
 
 async function waitNodeRunning(nodeId: string, label: string) {
-  for (let i = 0; i < 90; i++) {
+  // init()/prepareForCore()/installRegistry() запускают ansible в фоне (не await)
+  // и сразу возвращаются. Сначала ждём перехода в 'updating' (ansible стартовал),
+  // затем — обратно в 'running' (ansible завершился). Иначе поймаем прошлый 'running'.
+  await new Promise((r) => setTimeout(r, 8000));
+  for (let i = 0; i < 150; i++) {
     const n = await new NodeRepo(ctx, nodeId).getEntity(true);
     if (n.lifeStatus === 'running') return;
     await new Promise((r) => setTimeout(r, 3000));
