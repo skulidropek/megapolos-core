@@ -6,3 +6,4 @@ config/config.json
 dist
 temp
 /uploads/*
+.agent-plan.json
