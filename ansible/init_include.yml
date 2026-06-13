@@ -6,10 +6,6 @@
   ansible.builtin.file:
     path: /data/nginx/conf
     state: directory
-- name: ssl directory
-  ansible.builtin.file:
-    path: /data/nginx/ssl/ca
-    state: directory
 - name: Install pip
   ansible.builtin.apt:
     name: pip
@@ -29,34 +25,38 @@
   community.general.ansible_galaxy_install:
     type: collection
     name: community.docker
-- name: Generate Root CA private key
-  community.crypto.openssl_privatekey:
-    path: /data/nginx/ssl/ca/ca.key
-    size: 4096
-- name: Generate Root CA CSR
-  community.crypto.openssl_csr:
-    path: /data/nginx/ssl/ca/ca.csr
-    privatekey_path: /data/nginx/ssl/ca/ca.key
-    common_name: "Megapolos Root CA"
-    organization_name: "Megapolos"
-    basic_constraints:
-      - "CA:TRUE"
-    basic_constraints_critical: yes
-    key_usage:
-      - keyCertSign
-      - cRLSign
-    key_usage_critical: yes
-- name: Generate Root CA certificate (self-signed)
-  community.crypto.x509_certificate:
-    path: /data/nginx/ssl/ca/ca.crt
-    privatekey_path: /data/nginx/ssl/ca/ca.key
-    csr_path: /data/nginx/ssl/ca/ca.csr
-    provider: selfsigned
-    selfsigned_not_after: "+3650d"
+
+# ===== PROD (devMode=false): Let's Encrypt / certbot =====
+- name: certbot cron
+  ansible.builtin.cron:
+    name: "certbot cron"
+    minute: "0"
+    hour: "3"
+    job: "certbot renew --quiet --pre-hook \"docker stop nginx\" --post-hook \"docker start nginx\""
+  when: not (data.dev_mode | default(false))
+
+# ===== DEV (devMode=true): единый Megapolos Root CA (приходит от ядра) =====
+- name: ssl directory
+  ansible.builtin.file:
+    path: /data/nginx/ssl/ca
+    state: directory
+  when: data.dev_mode | default(false)
+- name: Write Megapolos Root CA certificate (from core)
+  ansible.builtin.copy:
+    content: "{{ data.ca_crt }}"
+    dest: /data/nginx/ssl/ca/ca.crt
+  when: data.dev_mode | default(false)
+- name: Write Megapolos Root CA private key (from core)
+  ansible.builtin.copy:
+    content: "{{ data.ca_key }}"
+    dest: /data/nginx/ssl/ca/ca.key
+    mode: "0600"
+  when: data.dev_mode | default(false)
 - name: Generate node private key
   community.crypto.openssl_privatekey:
     path: /data/nginx/ssl/{{ data.node.host }}.key
     size: 2048
+  when: data.dev_mode | default(false)
 - name: Generate node CSR
   community.crypto.openssl_csr:
     path: /data/nginx/ssl/{{ data.node.host }}.csr
@@ -66,7 +66,8 @@
       - "DNS:{{ data.node.host }}"
       - "DNS:localhost"
       - "IP:127.0.0.1"
-- name: Sign node certificate with Root CA
+  when: data.dev_mode | default(false)
+- name: Sign node certificate with Megapolos Root CA
   community.crypto.x509_certificate:
     path: /data/nginx/ssl/{{ data.node.host }}.crt
     csr_path: /data/nginx/ssl/{{ data.node.host }}.csr
@@ -74,13 +75,18 @@
     ownca_path: /data/nginx/ssl/ca/ca.crt
     ownca_privatekey_path: /data/nginx/ssl/ca/ca.key
     ownca_not_after: "+825d"
+  when: data.dev_mode | default(false)
+
+# ===== nginx (общий шаг сноса, затем dev/prod контейнер) =====
 - name: remove old nginx if misconfigured
   community.docker.docker_container:
     name: nginx
     state: absent
     force_kill: yes
   ignore_errors: yes
-- name: nginx
+
+# DEV: host network + самоподписанные серты из /data/nginx/ssl
+- name: nginx (dev)
   community.docker.docker_container:
     name: nginx
     image: nginx
@@ -92,6 +98,31 @@
       - /data/nginx/ssl:/etc/nginx/ssl
       - /data/nginx/conf:/etc/nginx/conf.d
       - /var/run/docker.sock:/var/run/docker.sock
+  when: data.dev_mode | default(false)
+
+# PROD: bridge + порты + Let's Encrypt (как в оригинале)
+- name: Copy nginx conf file
+  template:
+    src: nginx.conf.template
+    dest: /data/nginx/nginx.conf
+  when: not (data.dev_mode | default(false))
+- name: nginx (prod)
+  community.docker.docker_container:
+    name: nginx
+    image: nginx
+    restart: yes
+    ports:
+      - "80:80"
+      - "443:443"
+      - "5102:5102"
+      - "5104:5104"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /data/nginx/conf:/etc/nginx/conf.d
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /data/nginx/nginx.conf:/etc/nginx/nginx.conf
+  when: not (data.dev_mode | default(false))
+
 - name: docker access
   community.docker.docker_container_exec:
     container: nginx
@@ -101,9 +132,18 @@
     path: /data/nginx/conf/docker.htpasswd
     name: megapolos
     password: "{{ data.node.password }}"
+
+# PROD: certbot для хоста ноды
+- name: certificate
+  shell: |
+    certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ data.node.host }} -d {{ data.node.host }} --register-unsafely-without-email
+  args:
+    creates: /etc/letsencrypt/live/{{ data.node.host }}/fullchain.pem
+  when: not (data.dev_mode | default(false))
+
 - name: Copy docker nginx conf
   template:
-    src: nginx.docker.template
+    src: "{{ 'nginx.docker.template' if (data.dev_mode | default(false)) else 'nginx.docker.prod.template' }}"
     dest: /data/nginx/conf/docker.conf
 - name: ensure a nginx is running
   docker_container:

@@ -15,17 +15,21 @@ if (!config.noRoot) {
 
 export const megapolosPath = __dirname;
 
-(async () => {
-  await initMikroOrm();
-  NodeRepo.createCurrentNode();
+// Запускаем ядро только когда index.ts — точка входа.
+// При импорте (например, из install.ts ради megapolosPath) сервер не стартует.
+if (require.main === module) {
+  (async () => {
+    await initMikroOrm();
+    NodeRepo.createCurrentNode();
 
-  await new UserRepo(undefined).checkGroupUserLinks();
-  await new UserRepo(undefined).createRootUser();
-  const users = await new UserRepo(undefined).getUsersWithToken();
-  console.log(users.map((u) => ({ name: u.name, token: u.token })));
+    await new UserRepo(undefined).checkGroupUserLinks();
+    await new UserRepo(undefined).createRootUser();
+    const users = await new UserRepo(undefined).getUsersWithToken();
+    console.log(users.map((u) => ({ name: u.name, token: u.token })));
 
-  graphqlServer();
-})();
+    graphqlServer();
+  })();
+}
 
 export function sleep(ms: number) {
   return new Promise((resolve) => {

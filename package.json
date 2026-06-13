@@ -6,6 +6,7 @@
     "start": "nodemon dist/app.js",
     "dev": "nodemon index.ts",
     "prod": "ts-node index.ts",
+    "bootstrap": "ts-node install.ts",
     "build": "tsc -p .",
     "prestart": "copyfiles -u 3  ansible\\*.* .\\dist\\ansible\\",
     "semantic-release": "semantic-release",

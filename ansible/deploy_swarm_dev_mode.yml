@@ -1,15 +1,11 @@
 - hosts: 127.0.0.1
   connection: local
   no_log: "{{ lookup('ansible.builtin.env', 'MEGAPOLOS_DEBUG') == '0' }}"
-  vars: 
+  vars:
     name: "megapolos"
     compose_file: /opt/megapolos_swarm_compose.yml
     data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
   tasks:
-  # - ansible.builtin.pip:
-  #     name: 
-  #       - jsondiff
-  #     state: present
   - name: volume directories
     ansible.builtin.file:
       path: "{{ item }}"
@@ -33,3 +29,53 @@
         with_registry_auth: yes
         compose:
         - "{{ compose_file }}"
+  # ===== self-signed серты доменов приложений (через единый Megapolos Root CA) =====
+  - name: Generate domain private key
+    community.crypto.openssl_privatekey:
+      path: /data/nginx/ssl/{{ item.domain_name }}.key
+      size: 2048
+    with_items: "{{ data.containers }}"
+    when: item.domain_name != None
+  - name: Generate domain CSR
+    community.crypto.openssl_csr:
+      path: /data/nginx/ssl/{{ item.domain_name }}.csr
+      privatekey_path: /data/nginx/ssl/{{ item.domain_name }}.key
+      common_name: "{{ item.domain_name }}"
+      subject_alt_name:
+        - "DNS:{{ item.domain_name }}"
+    with_items: "{{ data.containers }}"
+    when: item.domain_name != None
+  - name: Sign domain certificate with Megapolos Root CA
+    community.crypto.x509_certificate:
+      path: /data/nginx/ssl/{{ item.domain_name }}.crt
+      csr_path: /data/nginx/ssl/{{ item.domain_name }}.csr
+      provider: ownca
+      ownca_path: /data/nginx/ssl/ca/ca.crt
+      ownca_privatekey_path: /data/nginx/ssl/ca/ca.key
+      ownca_not_after: "+825d"
+    with_items: "{{ data.containers }}"
+    when: item.domain_name != None
+  - name: remove conf
+    shell: |
+      rm -f /data/nginx/conf/*.vhost.conf
+  - name: Copy nginx virtualhosts conf
+    template:
+      src: nginx.vhost.template
+      dest: /data/nginx/conf/{{ item.domain_name }}.vhost.conf
+    with_items: "{{ data.containers }}"
+    when: item.domain_name != None
+  - name: domain password
+    community.general.htpasswd:
+      path: /data/nginx/conf/{{ item.domain_name }}.htpasswd
+      name: "{{ item.auth_user }}"
+      password: "{{ item.auth_password }}"
+    with_items: "{{ data.containers }}"
+    when: item.auth_user is defined
+  - name: ensure a nginx is running
+    docker_container:
+      name: nginx
+      state: started
+  - name: reload nginx
+    community.docker.docker_container_exec:
+      container: nginx
+      command: nginx -s reload

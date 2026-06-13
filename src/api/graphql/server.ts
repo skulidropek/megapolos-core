@@ -127,6 +127,7 @@ import {
 } from './resolvers/user.resolver';
 import express from 'express';
 import cors from 'cors';
+import { getCaCrt } from '../../features/ca/megapolos-ca';
 import { expressMiddleware } from '@apollo/server/express4';
 import { User } from '../../domain/entities/User.entity';
 import {
@@ -309,6 +310,22 @@ async function bootstrap() {
 
   app.get('/api/exported-app/download/:id', cors(), downloadExportedApp);
   app.get('/api/artifact/download/:id', cors(), downloadArtifact);
+
+  // Скачивание единого Megapolos Root CA — пользователь ставит его в доверенные,
+  // чтобы открывались ресурсы кластера (self-signed домены) без предупреждений.
+  app.get('/api/ca/download', cors(), (_req, res) => {
+    try {
+      const crt = getCaCrt();
+      res.setHeader('Content-Type', 'application/x-x509-ca-cert');
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename="megapolos-root-ca.crt"'
+      );
+      res.send(crt);
+    } catch (e) {
+      res.status(500).send('CA not available');
+    }
+  });
 
   app.use(
     '/',

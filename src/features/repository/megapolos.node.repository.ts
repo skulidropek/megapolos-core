@@ -15,6 +15,7 @@ import {
 } from '../db/tables';
 import { knex } from '../db/knex';
 import config from '../../domain/config/config';
+import { getCaCrt, getCaKey } from '../ca/megapolos-ca';
 import fse from 'fs-extra';
 import Docker from 'dockerode';
 import ExternalProcess from '../process/ExternalProcess';
@@ -289,6 +290,13 @@ export default class NodeRepo extends BaseRepo<Node> {
   async runAnsible(playbook: string, data: any, log?: LogRepo) {
     const node = await this.getEntity();
     data.node = node;
+    // В dev-режиме раздаём ноде единый Megapolos Root CA (один на кластер)
+    // и помечаем dev_mode, чтобы плейбуки шли по self-signed ветке.
+    if (config.devMode) {
+      data.dev_mode = true;
+      data.ca_crt = getCaCrt();
+      data.ca_key = getCaKey();
+    }
     const jsonPath = megapolosPath + `/ansible/${uuidv4()}.json`;
     await fse.writeFile(jsonPath, JSON.stringify(data, null, 2));
 

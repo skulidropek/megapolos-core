@@ -16,7 +16,7 @@
       state: directory
   - name: Copy nginx conf
     template:
-      src: nginx.registry.template
+      src: nginx.registry.prod.template
       dest: /data/nginx/conf/registry.conf
   - name: Copy docker compose
     template:
@@ -41,25 +41,11 @@
     community.docker.docker_compose_v2:
       project_src: /data/registry
       # state: restarted
-  - name: Generate registry private key
-    community.crypto.openssl_privatekey:
-      path: /data/nginx/ssl/{{ data.registry_domain }}.key
-      size: 2048
-  - name: Generate registry CSR
-    community.crypto.openssl_csr:
-      path: /data/nginx/ssl/{{ data.registry_domain }}.csr
-      privatekey_path: /data/nginx/ssl/{{ data.registry_domain }}.key
-      common_name: "{{ data.registry_domain }}"
-      subject_alt_name:
-        - "DNS:{{ data.registry_domain }}"
-  - name: Sign registry certificate with Root CA
-    community.crypto.x509_certificate:
-      path: /data/nginx/ssl/{{ data.registry_domain }}.crt
-      csr_path: /data/nginx/ssl/{{ data.registry_domain }}.csr
-      provider: ownca
-      ownca_path: /data/nginx/ssl/ca/ca.crt
-      ownca_privatekey_path: /data/nginx/ssl/ca/ca.key
-      ownca_not_after: "+825d"
+  - name: certificate
+    shell: |
+      certbot certonly  --pre-hook "docker stop nginx || true" --post-hook "docker start nginx || true" --standalone --noninteractive --agree-tos --cert-name {{ data.registry_domain }} -d {{ data.registry_domain }} --register-unsafely-without-email
+    args:
+      creates: /etc/letsencrypt/live/{{ data.registry_domain }}/fullchain.pem
   - name: ensure a nginx is running
     docker_container:
       name: nginx

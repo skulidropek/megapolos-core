@@ -54,7 +54,7 @@
 
   - name: Copy core nginx conf
     template:
-      src: nginx.core.template
+      src: nginx.core.prod.template
       dest: /data/nginx/conf/core.conf
 
   - name: ensure a nginx is running
