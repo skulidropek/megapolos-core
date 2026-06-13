@@ -116,15 +116,22 @@ async function deployApp(nodeId: string, rootUserId: string) {
     repositoryType: 'remote',
   });
 
+  // installApp без images (его создание образа не задаёт buildNumber) —
+  // образ создаём отдельно с buildNumber и привязкой к репозиторию.
   const app = await new AppRepo(ctx).installApp(rootUserId, {
     name: APP_NAME,
     description: APP_NAME,
-    images: [{ name: APP_NAME, image: APP_NAME, inner_port: APP_PORT }],
+    images: [],
   } as any);
 
-  const images = await new ImageRepo(ctx).getByFields({ app: app.id });
-  const image = images[0];
-  await new ImageRepo(ctx, image.id).update({ repository: repo.id as any });
+  const image = await new ImageRepo(ctx).create({
+    app: app.id,
+    name: APP_NAME,
+    image: APP_NAME,
+    innerPort: APP_PORT,
+    buildNumber: 1,
+    repository: repo.id,
+  } as any);
 
   log('сборка образа (build + push в registry)...');
   await new ImageRepo(ctx, image.id).build();
