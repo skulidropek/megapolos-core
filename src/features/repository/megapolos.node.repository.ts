@@ -230,9 +230,6 @@ export default class NodeRepo extends BaseRepo<Node> {
   }
 
   async init() {
-    if (config.devMode) {
-      return;
-    }
     const data = await this.getEntity();
     const log = new LogRepo(this.ctx);
     await log.create({
@@ -241,13 +238,13 @@ export default class NodeRepo extends BaseRepo<Node> {
       nodeName: data.name,
       type: LogType.NodeInit,
     });
-    this.runAnsible(`${megapolosPath}/ansible/init.yml`, {}, log);
+    const playbook = config.devMode
+      ? `${megapolosPath}/ansible/init_dev_mode.yml`
+      : `${megapolosPath}/ansible/init.yml`;
+    this.runAnsible(playbook, {}, log);
   }
 
   async prepareForCore() {
-    if (config.devMode) {
-      return;
-    }
     const data = await this.getEntity();
     const log = new LogRepo(this.ctx);
     await log.create({
@@ -256,13 +253,13 @@ export default class NodeRepo extends BaseRepo<Node> {
       nodeName: data.name,
       type: LogType.NodePrepareForCore,
     });
-    this.runAnsible(`${megapolosPath}/ansible/core.yml`, {}, log);
+    const playbook = config.devMode
+      ? `${megapolosPath}/ansible/core_dev_mode.yml`
+      : `${megapolosPath}/ansible/core.yml`;
+    this.runAnsible(playbook, {}, log);
   }
 
   async installRegistry() {
-    if (config.devMode) {
-      return;
-    }
     const data = await this.getEntity();
     const log = new LogRepo(this.ctx);
     await log.create({
@@ -274,8 +271,12 @@ export default class NodeRepo extends BaseRepo<Node> {
 
     const defaultDockerRegistry = await new DockerRegistryRepo().getDefault();
 
+    const playbook = config.devMode
+      ? `${megapolosPath}/ansible/registry_dev_mode.yml`
+      : `${megapolosPath}/ansible/registry.yml`;
+
     this.runAnsible(
-      `${megapolosPath}/ansible/registry.yml`,
+      playbook,
       {
         registry_domain: defaultDockerRegistry.host,
         registry_user: defaultDockerRegistry.user,
@@ -311,7 +312,7 @@ export default class NodeRepo extends BaseRepo<Node> {
     if (config.devMode) {
       command = `MEGAPOLOS_DEBUG=${
         config.debug ? '1' : '0'
-      } JSON_PATH=${jsonPath} ansible-playbook ${playbook}`;
+      } ANSIBLE_CONFIG=${megapolosPath}/ansible/ansible.cfg JSON_PATH=${jsonPath} ansible-playbook -i 127.0.0.1, --connection=local ${playbook}`;
     }
     try {
       await this.update({ lifeStatus: 'updating' });

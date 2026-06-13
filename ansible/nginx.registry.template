@@ -2,13 +2,10 @@ server {
     listen 80;
     server_name {{ data.registry_domain }};
 
-    listen 443 ssl; # managed by Certbot
+    listen 443 ssl;
 
-    # RSA certificate
-    ssl_certificate /etc/letsencrypt/live/{{ data.registry_domain }}/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/{{ data.registry_domain }}/privkey.pem; # managed by Certbot
-
-    # include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_certificate /etc/nginx/ssl/{{ data.registry_domain }}.crt;
+    ssl_certificate_key /etc/nginx/ssl/{{ data.registry_domain }}.key;
 
     client_max_body_size 0;
 

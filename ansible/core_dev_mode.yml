@@ -1,0 +1,23 @@
+- hosts: 127.0.0.1
+  connection: local
+  vars:
+    name: "megapolos"
+    compose_file: /opt/megapolos_swarm_compose.yml
+    data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
+  gather_facts: yes
+  become: yes
+  tasks:
+  - name: init
+    import_tasks: init_include.yml
+  - name: Copy core nginx conf
+    template:
+      src: nginx.core.template
+      dest: /data/nginx/conf/core.conf
+  - name: ensure nginx is running
+    docker_container:
+      name: nginx
+      state: started
+  - name: reload nginx
+    community.docker.docker_container_exec:
+      container: nginx
+      command: nginx -s reload

@@ -1,5 +1,6 @@
-- hosts: all
-  vars: 
+- hosts: 127.0.0.1
+  connection: local
+  vars:
     name: "megapolos"
     compose_file: /opt/megapolos_swarm_compose.yml
     data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
@@ -22,27 +23,18 @@
     template:
       src: registry.compose.template
       dest: /data/registry/docker-compose.yml
-  # - name: registry password
-  #   community.general.htpasswd:
-  #     path: /data/registry/auth/htpasswd
-  #     name: "{{ data.registry_user }}"
-  #     password: "{{ data.registry_password }}"
   - name: registry password
     shell: |
       docker run --entrypoint htpasswd httpd:2 -Bbn '{{ data.registry_user }}' '{{ data.registry_password }}' > /data/registry/auth/htpasswd
   - ansible.builtin.pip:
-      name: 
+      name:
         - docker
         - docker-compose
       state: present
+      extra_args: --break-system-packages
   - name: docker compose
     community.docker.docker_compose_v2:
       project_src: /data/registry
-      # state: restarted
-  - ansible.builtin.pip:
-      name: 
-        - urllib3
-      state: absent
   - name: Generate registry private key
     community.crypto.openssl_privatekey:
       path: /data/nginx/ssl/{{ data.registry_domain }}.key
@@ -54,6 +46,7 @@
       common_name: "{{ data.registry_domain }}"
       subject_alt_name:
         - "DNS:{{ data.registry_domain }}"
+        - "IP:127.0.0.1"
   - name: Sign registry certificate with Root CA
     community.crypto.x509_certificate:
       path: /data/nginx/ssl/{{ data.registry_domain }}.crt
@@ -62,11 +55,7 @@
       ownca_path: /data/nginx/ssl/ca/ca.crt
       ownca_privatekey_path: /data/nginx/ssl/ca/ca.key
       ownca_not_after: "+825d"
-  - ansible.builtin.pip:
-      name: 
-        - urllib3
-      state: present
-  - name: ensure a nginx is running
+  - name: ensure nginx is running
     docker_container:
       name: nginx
       state: started
