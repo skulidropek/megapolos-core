@@ -36,7 +36,8 @@
         - "urllib3<2"
         - "requests<2.32"
       state: present
-      extra_args: --break-system-packages
+      # --ignore-installed: не удалять системный (debian) urllib3 2.x (нет RECORD)
+      extra_args: --break-system-packages --ignore-installed
   - name: docker compose
     community.docker.docker_compose_v2:
       project_src: /data/registry

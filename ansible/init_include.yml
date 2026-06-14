@@ -20,7 +20,10 @@
       - "requests<2.32"
       - ansible
       - cryptography
-    extra_args: --break-system-packages
+    # --ignore-installed: не пытаться удалять системные (debian) пакеты вроде
+    # urllib3 2.x — у них нет RECORD-файла, pip падает "Cannot uninstall".
+    # Ставим нужные версии в /usr/local (раньше в sys.path) поверх системных.
+    extra_args: --break-system-packages --ignore-installed
 - name: Install collection community.docker
   community.general.ansible_galaxy_install:
     type: collection
