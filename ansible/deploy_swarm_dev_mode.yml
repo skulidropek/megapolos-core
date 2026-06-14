@@ -21,6 +21,8 @@
   - name: start swarm
     community.docker.docker_swarm:
       state: present
+      # advertise_addr нужен в WSL/multi-IP, иначе swarm init не выберет адрес
+      advertise_addr: "{{ ansible_default_ipv4.address | default(omit) }}"
   - name: Deploy stack
     docker_stack:
         state: present
