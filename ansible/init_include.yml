@@ -131,10 +131,11 @@
     container: nginx
     command: "chmod -v 0777 /var/run/docker.sock"
 - name: docker password
-  community.general.htpasswd:
-    path: /data/nginx/conf/docker.htpasswd
-    name: megapolos
-    password: "{{ data.node.password }}"
+  # через docker (httpd:2), а НЕ community.general.htpasswd — тот требует python-passlib,
+  # которого может не быть в интерпретаторе, выбранном ansible (напр. python3.14)
+  shell: >
+    docker run --rm --entrypoint htpasswd httpd:2 -Bbn
+    'megapolos' '{{ data.node.password }}' > /data/nginx/conf/docker.htpasswd
 
 # PROD: certbot для хоста ноды
 - name: certificate

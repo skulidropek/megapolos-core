@@ -64,10 +64,11 @@
     with_items: "{{ data.containers }}"
     when: item.domain_name != None
   - name: domain password
-    community.general.htpasswd:
-      path: /data/nginx/conf/{{ item.domain_name }}.htpasswd
-      name: "{{ item.auth_user }}"
-      password: "{{ item.auth_password }}"
+    # docker-htpasswd вместо community.general.htpasswd (не зависит от python-passlib)
+    shell: >
+      docker run --rm --entrypoint htpasswd httpd:2 -Bbn
+      '{{ item.auth_user }}' '{{ item.auth_password }}'
+      > /data/nginx/conf/{{ item.domain_name }}.htpasswd
     with_items: "{{ data.containers }}"
     when: item.auth_user is defined
   - name: ensure a nginx is running
