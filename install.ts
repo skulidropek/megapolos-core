@@ -117,13 +117,26 @@ async function deployApp(nodeId: string, rootUserId: string) {
     log('MEGAPOLOS_BOOTSTRAP_APP_REPO не задан — пропускаю деплой приложения');
     return;
   }
+  // идемпотентность: если приложение уже есть (повторный прогон) — не падаем на
+  // unique constraint, просто докатываем swarm и выходим (для пересоздания — чистка БД)
+  const existingApps = await new AppRepo(ctx).getByFields({ name: APP_NAME });
+  if (existingApps.length) {
+    log(`приложение ${APP_NAME} уже существует — пропускаю деплой (для пересоздания очистите БД)`);
+    await new NodeRepo(ctx, nodeId).updateNode(false, false, []);
+    return;
+  }
+
   log(`деплой приложения ${APP_NAME} из ${APP_REPO}...`);
 
-  const repo = await new RepositoryRepo(ctx).create({
-    name: APP_NAME,
-    url: APP_REPO,
-    repositoryType: 'remote',
-  });
+  // repo тоже get-or-create (прошлый прогон мог создать репозиторий, но не дойти до app)
+  const repos = await new RepositoryRepo(ctx).getByFields({ name: APP_NAME });
+  const repo =
+    repos[0] ||
+    (await new RepositoryRepo(ctx).create({
+      name: APP_NAME,
+      url: APP_REPO,
+      repositoryType: 'remote',
+    }));
 
   // installApp без images (его создание образа не задаёт buildNumber) —
   // образ создаём отдельно с buildNumber и привязкой к репозиторию.
