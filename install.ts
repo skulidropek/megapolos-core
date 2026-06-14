@@ -71,6 +71,15 @@ async function setupNode(): Promise<string> {
       password: NODE_PASSWORD,
     });
     log(`нода создана: ${node.id} (${NODE_HOST})`);
+  } else if (node.host !== NODE_HOST || node.user !== NODE_USER) {
+    // нода могла остаться от прошлого прогона с другим host (напр. megapolos.local) —
+    // чиним, иначе nginx core.conf делает upstream на нерезолвимый хост и падает
+    await new NodeRepo(ctx, node.id).update({
+      host: NODE_HOST,
+      user: NODE_USER,
+      password: NODE_PASSWORD,
+    } as any);
+    log(`нода обновлена: ${node.id} (host → ${NODE_HOST})`);
   } else {
     log(`нода уже существует: ${node.id}`);
   }
