@@ -2,7 +2,7 @@
   vars: 
     name: "megapolos"
     compose_file: /opt/megapolos_swarm_compose.yml
-    data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) }}"
+    data: "{{ lookup('file',lookup('ansible.builtin.env', 'JSON_PATH')) | from_json }}"
   gather_facts: yes
   become: yes
   tasks:
