@@ -22,7 +22,7 @@ import { ImageStatus } from './src/domain/entities/Image.entity';
 import AppVersionRepo from './src/features/repository/app.version.repository';
 import { ConfigurationRepo } from './src/features/repository/configuration.repository';
 import AppInstanceRepo from './src/features/repository/app.instance.repository';
-import { ensureMegapolosCA } from './src/features/ca/megapolos-ca';
+import { ensureMegapolosCA, caCrtPath } from './src/features/ca/megapolos-ca';
 import { Context } from './src/api/graphql/server';
 
 const env = process.env;
@@ -173,6 +173,15 @@ async function deployApp(nodeId: string, rootUserId: string) {
 }
 
 (async () => {
+  // Режим «только CA»: сгенерировать единый Megapolos Root CA и выйти.
+  // Нужен установочным скриптам, чтобы поставить CA в системный/Docker trust
+  // ДО основной оркестрации (требует только openssl, без БД).
+  if (process.env.MEGAPOLOS_BOOTSTRAP_CA_ONLY) {
+    ensureMegapolosCA();
+    log(`CA готов: ${caCrtPath()}`);
+    process.exit(0);
+  }
+
   await initMikroOrm();
   NodeRepo.createCurrentNode();
   await new UserRepo(undefined).checkGroupUserLinks();
