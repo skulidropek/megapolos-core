@@ -39,6 +39,9 @@ const APP_NAME = env.MEGAPOLOS_BOOTSTRAP_APP_NAME || 'megapolos-gui';
 const APP_PORT = Number(env.MEGAPOLOS_BOOTSTRAP_APP_PORT || 80);
 const APP_DOMAIN = env.MEGAPOLOS_BOOTSTRAP_APP_DOMAIN || '';
 const APP_OUTER_PORT = Number(env.MEGAPOLOS_BOOTSTRAP_APP_OUTER_PORT || 3000);
+// адрес бэкенда для GUI (env MEGAPOLOS_SERVER в контейнере) — фронт ходит на домен по HTTPS,
+// а не на localhost:5100. Пусто = не задавать env (GUI возьмёт дефолт).
+const APP_SERVER = env.MEGAPOLOS_BOOTSTRAP_APP_SERVER || '';
 
 // admin-контекст (root, без проверки прав) — операции репозиториев требуют ctx.user
 let ctx: Context;
@@ -180,7 +183,7 @@ async function deployApp(nodeId: string, rootUserId: string) {
     outerPort: APP_OUTER_PORT,
     volumes: [],
     dbs: [],
-    envs: [],
+    envs: APP_SERVER ? [{ name: 'MEGAPOLOS_SERVER', value: APP_SERVER }] : [],
   };
   if (APP_DOMAIN) {
     container.domain = { domainData: { name: APP_DOMAIN } };

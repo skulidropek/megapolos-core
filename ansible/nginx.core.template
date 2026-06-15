@@ -20,3 +20,28 @@ server {
         proxy_request_buffering off;
     }
 }
+
+# API на доменном имени по HTTPS (:443) — чтобы фронт ходил на домен, а не localhost:5100.
+# Серт ноды ({{ data.node.host }}.crt) включает SAN *.megapolos.localhost → валиден тут.
+server {
+    listen 443 ssl;
+    server_name api.megapolos.localhost;
+
+    ssl_certificate /etc/nginx/ssl/{{ data.node.host }}.crt;
+    ssl_certificate_key /etc/nginx/ssl/{{ data.node.host }}.key;
+
+    client_max_body_size 0;
+
+    location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://{{ data.node.host }}:5100;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_request_buffering off;
+    }
+}

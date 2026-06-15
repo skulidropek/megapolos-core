@@ -68,6 +68,7 @@
     subject_alt_name:
       - "DNS:{{ data.node.host }}"
       - "DNS:localhost"
+      - "DNS:*.megapolos.localhost"
       - "IP:127.0.0.1"
   when: data.dev_mode | default(false)
 - name: Sign node certificate with Megapolos Root CA
