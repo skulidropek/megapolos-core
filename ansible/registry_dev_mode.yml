@@ -48,6 +48,8 @@
       common_name: "{{ data.registry_domain }}"
       subject_alt_name:
         - "DNS:{{ data.registry_domain }}"
+        - "DNS:localhost"
+        - "DNS:*.megapolos.localhost"
         - "IP:127.0.0.1"
   - name: Sign registry certificate with Root CA
     community.crypto.x509_certificate:
